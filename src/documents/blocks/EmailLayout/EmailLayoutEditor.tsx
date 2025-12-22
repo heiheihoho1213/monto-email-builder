@@ -81,17 +81,31 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
               <EditorChildrenIds
                 childrenIds={childrenIds}
                 onChange={({ block, blockId, childrenIds }) => {
-                  setDocument({
-                    [blockId]: block,
-                    [currentBlockId]: {
-                      type: 'EmailLayout',
-                      data: {
-                        ...document[currentBlockId].data,
-                        childrenIds: childrenIds,
+                  // 如果是拖拽排序（block 没有 type），只更新 childrenIds
+                  if (!block.type) {
+                    setDocument({
+                      [currentBlockId]: {
+                        type: 'EmailLayout',
+                        data: {
+                          ...document[currentBlockId].data,
+                          childrenIds: childrenIds,
+                        },
                       },
-                    },
-                  });
-                  setSelectedBlockId(blockId);
+                    });
+                  } else {
+                    // 如果是新增块，创建新块并更新 childrenIds
+                    setDocument({
+                      [blockId]: block,
+                      [currentBlockId]: {
+                        type: 'EmailLayout',
+                        data: {
+                          ...document[currentBlockId].data,
+                          childrenIds: childrenIds,
+                        },
+                      },
+                    });
+                    setSelectedBlockId(blockId);
+                  }
                 }}
               />
             </td>

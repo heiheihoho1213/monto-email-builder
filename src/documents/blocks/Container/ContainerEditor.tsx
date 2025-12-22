@@ -19,17 +19,31 @@ export default function ContainerEditor({ style, props }: ContainerProps) {
       <EditorChildrenIds
         childrenIds={childrenIds}
         onChange={({ block, blockId, childrenIds }) => {
-          setDocument({
-            [blockId]: block,
-            [currentBlockId]: {
-              type: 'Container',
-              data: {
-                ...document[currentBlockId].data,
-                props: { childrenIds: childrenIds },
+          // 如果是拖拽排序（block 没有 type），只更新 childrenIds
+          if (!block.type) {
+            setDocument({
+              [currentBlockId]: {
+                type: 'Container',
+                data: {
+                  ...document[currentBlockId].data,
+                  props: { childrenIds: childrenIds },
+                },
               },
-            },
-          });
-          setSelectedBlockId(blockId);
+            });
+          } else {
+            // 如果是新增块，创建新块并更新 childrenIds
+            setDocument({
+              [blockId]: block,
+              [currentBlockId]: {
+                type: 'Container',
+                data: {
+                  ...document[currentBlockId].data,
+                  props: { childrenIds: childrenIds },
+                },
+              },
+            });
+            setSelectedBlockId(blockId);
+          }
         }}
       />
     </BaseContainer>

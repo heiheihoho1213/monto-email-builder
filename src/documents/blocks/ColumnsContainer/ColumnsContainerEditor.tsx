@@ -19,20 +19,37 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
   const updateColumn = (columnIndex: 0 | 1 | 2, { block, blockId, childrenIds }: EditorChildrenChange) => {
     const nColumns = [...columnsValue];
     nColumns[columnIndex] = { childrenIds };
-    setDocument({
-      [blockId]: block,
-      [currentBlockId]: {
-        type: 'ColumnsContainer',
-        data: ColumnsContainerPropsSchema.parse({
-          style,
-          props: {
-            ...restProps,
-            columns: nColumns,
-          },
-        }),
-      },
-    });
-    setSelectedBlockId(blockId);
+    // 如果是拖拽排序（block 没有 type），只更新 childrenIds
+    if (!block.type) {
+      setDocument({
+        [currentBlockId]: {
+          type: 'ColumnsContainer',
+          data: ColumnsContainerPropsSchema.parse({
+            style,
+            props: {
+              ...restProps,
+              columns: nColumns,
+            },
+          }),
+        },
+      });
+    } else {
+      // 如果是新增块，创建新块并更新 childrenIds
+      setDocument({
+        [blockId]: block,
+        [currentBlockId]: {
+          type: 'ColumnsContainer',
+          data: ColumnsContainerPropsSchema.parse({
+            style,
+            props: {
+              ...restProps,
+              columns: nColumns,
+            },
+          }),
+        },
+      });
+      setSelectedBlockId(blockId);
+    }
   };
 
   return (

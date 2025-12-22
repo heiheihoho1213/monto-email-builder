@@ -14,30 +14,49 @@ type TEditorBlockWrapperProps = {
 export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProps) {
   const selectedBlockId = useSelectedBlockId();
   const [mouseInside, setMouseInside] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const blockId = useCurrentBlockId();
 
   let outline: CSSProperties['outline'];
   if (selectedBlockId === blockId) {
     outline = '2px solid rgba(0,121,204, 1)';
-  } else if (mouseInside) {
+  } else if (mouseInside && !isDragging) {
     outline = '2px solid rgba(0,121,204, 0.3)';
   }
 
   const renderMenu = () => {
-    if (selectedBlockId !== blockId) {
+    if (selectedBlockId !== blockId || isDragging) {
       return null;
     }
     return <TuneMenu blockId={blockId} />;
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', blockId);
+    // 设置全局变量，以便在 dragOver 事件中使用
+    (window as any).__currentDraggedBlockId = blockId;
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    (window as any).__currentDraggedBlockId = null;
+  };
+
   return (
     <Box
+      draggable
       sx={{
         position: 'relative',
         maxWidth: '100%',
         outlineOffset: '-1px',
         outline,
+        opacity: isDragging ? 0.5 : 1,
+        cursor: isDragging ? 'grabbing' : 'grab',
       }}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       onMouseEnter={(ev) => {
         setMouseInside(true);
         ev.stopPropagation();
