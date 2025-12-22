@@ -73,6 +73,16 @@
     "muted": "Muted",
     "controls": "Show controls"
   },
+  "columns": {
+    "title": "Columns block",
+    "layout": "Layout",
+    "numberOfColumns": "Number of columns",
+    "ratio": "Column width ratio",
+    "custom": "Custom",
+    "column": "Column {{number}}",
+    "gap": "Columns gap",
+    "alignment": "Alignment"
+  },
   "emailLayout": {
     "global": "Global",
     "backdropColor": "Backdrop color",

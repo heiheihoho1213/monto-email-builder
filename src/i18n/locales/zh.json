@@ -73,6 +73,16 @@
     "muted": "静音",
     "controls": "显示控制条"
   },
+  "columns": {
+    "title": "列块",
+    "layout": "分栏",
+    "numberOfColumns": "列数",
+    "ratio": "列宽比例",
+    "custom": "自定义",
+    "column": "列 {{number}}",
+    "gap": "列间距",
+    "alignment": "对齐方式"
+  },
   "emailLayout": {
     "global": "全局",
     "backdropColor": "背景颜色",

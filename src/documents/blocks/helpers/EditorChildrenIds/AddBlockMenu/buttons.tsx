@@ -160,6 +160,7 @@ export const BUTTONS: TButtonProps[] = [
           columnsGap: 16,
           columnsCount: 3,
           columns: [{ childrenIds: [] }, { childrenIds: [] }, { childrenIds: [] }],
+          fixedWidths: [null, null, null, null],
         },
         style: { padding: { top: 16, bottom: 16, left: 24, right: 24 } },
       },
