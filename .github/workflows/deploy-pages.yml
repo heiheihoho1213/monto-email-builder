@@ -26,7 +26,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -35,18 +35,35 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
 
+      - name: Check lockfile
+        run: |
+          echo "Checking for pnpm-lock.yaml..."
+          ls -la pnpm-lock.yaml || echo "pnpm-lock.yaml not found"
+          if [ -f pnpm-lock.yaml ]; then
+            echo "pnpm-lock.yaml exists"
+            head -5 pnpm-lock.yaml
+          fi
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "pnpm-lock.yaml not found, installing without frozen lockfile"
+            pnpm install
+          fi
 
       - name: Build
         env:
-          # 设置 base 路径为仓库名（例如：/editor-sample/）
+          # 设置 base 路径为仓库名（例如：/monto-email-builder/）
           # 如果是用户/组织主页，可以设置为 '/'
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
         run: pnpm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
+        with:
+          enablement: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
