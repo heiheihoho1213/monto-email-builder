@@ -1,0 +1,65 @@
+{
+  "common": {
+    "newDocument": "New Blank Document",
+    "useBuiltInTemplates": "Use Built-in Templates",
+    "emailBuilder": "Email Builder",
+    "save": "Save",
+    "saving": "Saving...",
+    "saveAndExit": "Save and Exit",
+    "namePlaceholder": "Enter template name",
+    "unnamedTemplate": "",
+    "desktopView": "Desktop view",
+    "mobileView": "Mobile view",
+    "downloadJson": "Download JSON file",
+    "importJson": "Import JSON"
+  },
+  "samples": {
+    "welcomeEmail": "Marketing Template",
+    "oneTimePasscode": "One-time passcode (OTP)",
+    "resetPassword": "Reset password",
+    "orderEcommerce": "E-commerce receipt",
+    "subscriptionReceipt": "Subscription receipt",
+    "reservationReminder": "Verification Code Template",
+    "postMetrics": "Post metrics",
+    "respondToMessage": "Respond to inquiry",
+    "quickStart": "Quick Start"
+  },
+  "inspector": {
+    "styles": "Styles",
+    "inspect": "Inspect",
+    "clickBlockToInspect": "Click on a block to inspect.",
+    "blockNotFound": "Block with id {{id}} was not found. Click on a block to reset."
+  },
+  "tabs": {
+    "edit": "Edit",
+    "preview": "Preview",
+    "htmlOutput": "HTML output",
+    "jsonOutput": "JSON output"
+  },
+  "image": {
+    "title": "Image block",
+    "sourceUrl": "Source URL",
+    "altText": "Alt text",
+    "clickThroughUrl": "Click through URL",
+    "width": "Width",
+    "height": "Height",
+    "alignment": "Alignment",
+    "backgroundColor": "Background color",
+    "upload": "Upload",
+    "url": "URL",
+    "selectImage": "Select Image",
+    "uploading": "Uploading...",
+    "uploadHandlerNotConfigured": "Please configure imageUploadHandler to enable local upload",
+    "placeholder": "Click the right panel to add an image"
+  },
+  "emailLayout": {
+    "global": "Global",
+    "backdropColor": "Backdrop color",
+    "canvasColor": "Canvas color",
+    "canvasBorderColor": "Canvas border color",
+    "canvasBorderRadius": "Canvas border radius",
+    "pageWidth": "Page width",
+    "fontFamily": "Font family",
+    "textColor": "Text color"
+  }
+}

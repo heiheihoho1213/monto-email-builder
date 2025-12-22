@@ -1,0 +1,34 @@
+# 开发文件
+src/
+node_modules/
+*.log
+.DS_Store
+
+# 构建工具配置
+vite.config.ts
+tsconfig.json
+.eslintrc*
+.prettierrc*
+
+# 开发相关
+index.html
+*.local
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 测试
+coverage/
+.nyc_output/
+
+# 其他
+pnpm-lock.yaml
+package-lock.json
+.git/
+.gitignore
+
