@@ -22,6 +22,8 @@ import ContainerPropsSchema from '../blocks/Container/ContainerPropsSchema';
 import EmailLayoutEditor from '../blocks/EmailLayout/EmailLayoutEditor';
 import EmailLayoutPropsSchema from '../blocks/EmailLayout/EmailLayoutPropsSchema';
 import ImageEditor from '../blocks/Image/ImageEditor';
+import VideoEditor from '../blocks/Video/VideoEditor';
+import VideoPropsSchema from '../blocks/Video/VideoPropsSchema';
 import EditorBlockWrapper from '../blocks/helpers/block-wrappers/EditorBlockWrapper';
 
 const EDITOR_DICTIONARY = buildBlockConfigurationDictionary({
@@ -79,6 +81,16 @@ const EDITOR_DICTIONARY = buildBlockConfigurationDictionary({
       return (
         <EditorBlockWrapper>
           <ImageEditor {...data} />
+        </EditorBlockWrapper>
+      );
+    },
+  },
+  Video: {
+    schema: VideoPropsSchema,
+    Component: (data) => {
+      return (
+        <EditorBlockWrapper>
+          <VideoEditor {...data} />
         </EditorBlockWrapper>
       );
     },

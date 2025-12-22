@@ -161,7 +161,7 @@ const WELCOME: TEditorConfiguration = {
         buttonBackgroundColor: '#0079cc',
         buttonStyle: 'rectangle',
         text: 'Open dashboard',
-        url: 'https://www.usewaypoint.com',
+        url: '',
       },
     },
   },

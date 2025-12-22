@@ -9,40 +9,40 @@ importers:
   .:
     dependencies:
       '@usewaypoint/block-avatar':
-        specifier: ^0.0.3
+        specifier: 0.0.3
         version: 0.0.3(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/block-button':
-        specifier: ^0.0.3
+        specifier: 0.0.3
         version: 0.0.3(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/block-columns-container':
-        specifier: ^0.0.3
+        specifier: 0.0.3
         version: 0.0.3(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/block-container':
-        specifier: ^0.0.2
+        specifier: 0.0.2
         version: 0.0.2(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/block-divider':
-        specifier: ^0.0.4
+        specifier: 0.0.4
         version: 0.0.4(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/block-heading':
-        specifier: ^0.0.3
+        specifier: 0.0.3
         version: 0.0.3(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/block-html':
-        specifier: ^0.0.3
+        specifier: 0.0.3
         version: 0.0.3(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/block-image':
-        specifier: ^0.0.5
+        specifier: 0.0.5
         version: 0.0.5(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/block-spacer':
-        specifier: ^0.0.3
+        specifier: 0.0.3
         version: 0.0.3(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/block-text':
-        specifier: ^0.0.6
+        specifier: 0.0.6
         version: 0.0.6(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/document-core':
-        specifier: ^0.0.6
+        specifier: 0.0.6
         version: 0.0.6(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/email-builder':
-        specifier: ^0.0.8
+        specifier: 0.0.8
         version: 0.0.8(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)
       highlight.js:
         specifier: ^11.9.0

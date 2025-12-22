@@ -52,6 +52,27 @@
     "uploadHandlerNotConfigured": "请配置 imageUploadHandler 以启用本地上传功能",
     "placeholder": "点击右侧面板添加图片"
   },
+  "video": {
+    "title": "视频块",
+    "sourceUrl": "视频地址",
+    "altText": "替代文本",
+    "clickThroughUrl": "点击跳转链接",
+    "width": "宽度",
+    "height": "高度",
+    "alignment": "对齐方式",
+    "backgroundColor": "背景颜色",
+    "upload": "上传",
+    "url": "URL",
+    "selectVideo": "选择视频",
+    "uploading": "上传中...",
+    "uploadHandlerNotConfigured": "请配置 imageUploadHandler 以启用本地上传功能",
+    "placeholder": "点击右侧面板添加视频",
+    "notSupported": "您的浏览器不支持视频标签",
+    "autoplay": "自动播放",
+    "loop": "循环播放",
+    "muted": "静音",
+    "controls": "显示控制条"
+  },
   "emailLayout": {
     "global": "全局",
     "backdropColor": "背景颜色",

@@ -11,6 +11,7 @@ import {
   NotesOutlined,
   SmartButtonOutlined,
   ViewColumnOutlined,
+  VideocamOutlined,
 } from '@mui/icons-material';
 
 import { TEditorBlock } from '../../../../editor/core';
@@ -57,7 +58,7 @@ export const BUTTONS: TButtonProps[] = [
       data: {
         props: {
           text: 'Button',
-          url: 'https://www.usewaypoint.com',
+          url: '',
         },
         style: { padding: { top: 16, bottom: 16, left: 24, right: 24 } },
       },
@@ -74,6 +75,26 @@ export const BUTTONS: TButtonProps[] = [
           alt: 'Sample product',
           contentAlignment: 'middle',
           linkHref: null,
+        },
+        style: { padding: { top: 16, bottom: 16, left: 24, right: 24 } },
+      },
+    }),
+  },
+  {
+    label: 'Video',
+    icon: <VideocamOutlined />,
+    block: () => ({
+      type: 'Video',
+      data: {
+        props: {
+          url: '',
+          alt: 'Sample video',
+          contentAlignment: 'middle',
+          linkHref: null,
+          autoplay: false,
+          loop: false,
+          muted: false,
+          controls: true,
         },
         style: { padding: { top: 16, bottom: 16, left: 24, right: 24 } },
       },
