@@ -11,8 +11,9 @@ type BlocksMenuProps = {
   anchorEl: HTMLElement | null;
   setAnchorEl: (v: HTMLElement | null) => void;
   onSelect: (block: TEditorBlock) => void;
+  disableContainerBlocks?: boolean; // 是否禁用 Container 和 ColumnsContainer
 };
-export default function BlocksMenu({ anchorEl, setAnchorEl, onSelect }: BlocksMenuProps) {
+export default function BlocksMenu({ anchorEl, setAnchorEl, onSelect, disableContainerBlocks = false }: BlocksMenuProps) {
   const onClose = () => {
     setAnchorEl(null);
   };
@@ -35,9 +36,20 @@ export default function BlocksMenu({ anchorEl, setAnchorEl, onSelect }: BlocksMe
       transformOrigin={{ vertical: 'top', horizontal: 'center' }}
     >
       <Box sx={{ p: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr' }}>
-        {BUTTONS.map((k, i) => (
-          <BlockButton key={i} label={k.label} icon={k.icon} onClick={() => onClick(k.block())} />
-        ))}
+        {BUTTONS.map((k, i) => {
+          const block = k.block();
+          const isContainerBlock = block.type === 'Container' || block.type === 'ColumnsContainer';
+          const disabled = disableContainerBlocks && isContainerBlock;
+          return (
+            <BlockButton
+              key={i}
+              label={k.label}
+              icon={k.icon}
+              onClick={() => onClick(block)}
+              disabled={disabled}
+            />
+          );
+        })}
       </Box>
     </Menu>
   );

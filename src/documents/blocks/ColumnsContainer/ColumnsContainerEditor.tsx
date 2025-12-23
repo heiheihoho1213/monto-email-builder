@@ -73,14 +73,6 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
       }
     }
 
-    console.log('updateColumn: 跨列拖拽检测', {
-      blockId,
-      columnIndex,
-      sourceColumnIndex,
-      latestColumns: latestColumns.map((col, idx) => ({ index: idx, childrenIds: col.childrenIds })),
-      childrenIds,
-    });
-
     // 如果是跨列拖拽，需要创建新的block（复制数据），并从源列删除
     let finalBlockId = blockId;
     let finalBlock = block;
@@ -89,7 +81,6 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
       finalBlockId = `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       // 深拷贝block数据
       finalBlock = JSON.parse(JSON.stringify(block));
-      console.log('updateColumn: 跨列拖拽，创建新block', { blockId, finalBlockId });
     }
 
     // 创建新的columns数组，确保有足够的列
@@ -101,21 +92,17 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
           ? childrenIds.map(id => id === blockId ? finalBlockId : id)
           : childrenIds;
         nColumns.push({ childrenIds: updatedChildrenIds });
-        console.log('updateColumn: 更新目标列', { columnIndex: i, updatedChildrenIds });
       } else if (i === sourceColumnIndex) {
         // 从源列删除原block
         const sourceColumn = latestColumns[i];
         const filteredChildrenIds = (sourceColumn?.childrenIds || []).filter((id) => id !== blockId);
         nColumns.push({ childrenIds: filteredChildrenIds });
-        console.log('updateColumn: 从源列删除', { sourceColumnIndex: i, originalChildrenIds: sourceColumn?.childrenIds, filteredChildrenIds });
       } else {
         // 保留其他列的childrenIds，使用最新的数据
         const existingColumn = latestColumns[i];
         nColumns.push(existingColumn ? { childrenIds: existingColumn.childrenIds || [] } : { childrenIds: [] });
       }
     }
-
-    console.log('updateColumn: 最终columns', { nColumns: nColumns.map((col, idx) => ({ index: idx, childrenIds: col.childrenIds })) });
 
     // 准备更新数据
     // 确保 columns 和 columnsCount 正确设置
@@ -139,23 +126,6 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
       updates[currentBlockId].data.props.columnsCount = count;
     }
 
-    console.log('updateColumn: 准备更新', {
-      currentBlockId,
-      updates: {
-        ...updates,
-        [currentBlockId]: {
-          ...updates[currentBlockId],
-          data: {
-            ...updates[currentBlockId].data,
-            props: {
-              ...updates[currentBlockId].data.props,
-              columns: nColumns.map((col, idx) => ({ index: idx, childrenIds: col.childrenIds })),
-            },
-          },
-        },
-      },
-    });
-
     // 如果是拖拽排序（block 没有 type），只更新 childrenIds
     if (!block.type) {
       setDocument(updates);
@@ -164,11 +134,9 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
       if (sourceColumnIndex !== null) {
         // 跨列拖拽：创建新的block（复制），无论blockExists是否为true
         updates[finalBlockId] = finalBlock;
-        console.log('updateColumn: 添加新block（跨列拖拽）', { finalBlockId, finalBlock });
       } else if (!blockExists) {
         // 如果不是跨列拖拽，且block不存在，添加新block
         updates[blockId] = block;
-        console.log('updateColumn: 添加新block（非跨列拖拽）', { blockId, block });
       }
       // 合并更新，确保同时更新columns和block
       setDocument(updates);
@@ -185,12 +153,14 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
   const currentColumns = (currentContainer && currentContainer.type === 'ColumnsContainer' && currentContainer.data.props?.columns) || columnsValue;
 
   const columnComponents = currentColumns.map((col, index) => (
-    <EditorChildrenIds
-      key={index}
-      childrenIds={col?.childrenIds}
-      onChange={(change) => updateColumn(index, change)}
-      containerId={currentBlockId}
-    />
+    <Box key={index} data-column-area="true" sx={{ width: '100%', height: '100%' }}>
+      <EditorChildrenIds
+        childrenIds={col?.childrenIds}
+        onChange={(change) => updateColumn(index, change)}
+        containerId={currentBlockId}
+        allowReplace={true}
+      />
+    </Box>
   ));
 
   // BaseColumnsContainer 只支持 2 或 3 列，对于 1 或 4 列，我们需要自定义渲染
@@ -227,6 +197,7 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
         {columnComponents.map((col, index) => (
           <Box
             key={index}
+            data-column-area="true"
             sx={{
               flex: fixedWidths && fixedWidths[index] !== null && fixedWidths[index] !== undefined ? 'none' : 1,
               width: getColumnWidth(index),

@@ -3,9 +3,36 @@ import React from 'react';
 import { ArrowDownwardOutlined, ArrowUpwardOutlined, DeleteOutlined } from '@mui/icons-material';
 import { IconButton, Paper, Stack, SxProps, Tooltip } from '@mui/material';
 
-import { TEditorBlock } from '../../../editor/core';
+import { TEditorBlock, TEditorConfiguration } from '../../../editor/core';
 import { resetDocument, setSelectedBlockId, useDocument } from '../../../editor/EditorContext';
 import { ColumnsContainerProps } from '../../ColumnsContainer/ColumnsContainerPropsSchema';
+
+// 查找block所在的父容器ID和列索引（如果是ColumnsContainer）
+function findParentContainerId(document: TEditorConfiguration, blockId: string): { containerId: string | null; columnIndex: number | null } {
+  for (const [containerId, container] of Object.entries(document)) {
+    const containerData = container.data;
+    // 检查EmailLayout
+    if (container.type === 'EmailLayout' && containerData.childrenIds?.includes(blockId)) {
+      return { containerId, columnIndex: null };
+    }
+    // 检查Container
+    if (container.type === 'Container' && containerData.props?.childrenIds?.includes(blockId)) {
+      return { containerId, columnIndex: null };
+    }
+    // 检查ColumnsContainer
+    if (container.type === 'ColumnsContainer') {
+      const columns = containerData.props?.columns;
+      if (columns) {
+        for (let i = 0; i < columns.length; i++) {
+          if (columns[i].childrenIds?.includes(blockId)) {
+            return { containerId, columnIndex: i };
+          }
+        }
+      }
+    }
+  }
+  return { containerId: null, columnIndex: null };
+}
 
 const sx: SxProps = {
   position: 'absolute',
@@ -22,6 +49,48 @@ type Props = {
 };
 export default function TuneMenu({ blockId }: Props) {
   const document = useDocument();
+  
+  // 查找当前 block 所在的父容器
+  const parentInfo = findParentContainerId(document, blockId);
+  
+  // 检查是否可以移动（上下箭头是否应该显示）
+  const canMove = React.useMemo(() => {
+    if (!parentInfo.containerId) {
+      return { canMoveUp: false, canMoveDown: false };
+    }
+    
+    const container = document[parentInfo.containerId];
+    if (!container) {
+      return { canMoveUp: false, canMoveDown: false };
+    }
+    
+    let childrenIds: string[] | null | undefined = null;
+    
+    if (container.type === 'EmailLayout') {
+      childrenIds = container.data.childrenIds;
+    } else if (container.type === 'Container') {
+      childrenIds = container.data.props?.childrenIds;
+    } else if (container.type === 'ColumnsContainer' && parentInfo.columnIndex !== null) {
+      const columns = container.data.props?.columns;
+      if (columns && columns[parentInfo.columnIndex]) {
+        childrenIds = columns[parentInfo.columnIndex].childrenIds;
+      }
+    }
+    
+    if (!childrenIds || childrenIds.length <= 1) {
+      return { canMoveUp: false, canMoveDown: false };
+    }
+    
+    const index = childrenIds.indexOf(blockId);
+    if (index < 0) {
+      return { canMoveUp: false, canMoveDown: false };
+    }
+    
+    return {
+      canMoveUp: index > 0,
+      canMoveDown: index < childrenIds.length - 1,
+    };
+  }, [document, blockId, parentInfo]);
 
   const handleDeleteClick = () => {
     const filterChildrenIds = (childrenIds: string[] | null | undefined) => {
@@ -151,16 +220,20 @@ export default function TuneMenu({ blockId }: Props) {
   return (
     <Paper sx={sx} onClick={(ev) => ev.stopPropagation()}>
       <Stack>
-        <Tooltip title="Move up" placement="left-start">
-          <IconButton onClick={() => handleMoveClick('up')} sx={{ color: 'text.primary' }}>
-            <ArrowUpwardOutlined fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Move down" placement="left-start">
-          <IconButton onClick={() => handleMoveClick('down')} sx={{ color: 'text.primary' }}>
-            <ArrowDownwardOutlined fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        {canMove.canMoveUp && (
+          <Tooltip title="Move up" placement="left-start">
+            <IconButton onClick={() => handleMoveClick('up')} sx={{ color: 'text.primary' }}>
+              <ArrowUpwardOutlined fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+        {canMove.canMoveDown && (
+          <Tooltip title="Move down" placement="left-start">
+            <IconButton onClick={() => handleMoveClick('down')} sx={{ color: 'text.primary' }}>
+              <ArrowDownwardOutlined fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
         <Tooltip title="Delete" placement="left-start">
           <IconButton onClick={handleDeleteClick} sx={{ color: 'text.primary' }}>
             <DeleteOutlined fontSize="small" />

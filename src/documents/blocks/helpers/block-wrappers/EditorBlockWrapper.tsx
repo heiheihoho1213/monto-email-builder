@@ -17,10 +17,11 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
   const [isDragging, setIsDragging] = useState(false);
   const blockId = useCurrentBlockId();
 
-  // 获取当前block的类型，如果是 ColumnsContainer，禁用拖拽
+  // 获取当前block的类型
   const document = editorStateStore.getState().document;
   const blockData = document[blockId];
-  const isDraggable = blockData?.type !== 'ColumnsContainer';
+  // ColumnsContainer 也可以拖拽，但需要在 handleDragStart 中检查是否点击的是列区域
+  const isDraggable = true;
 
   let outline: CSSProperties['outline'];
   if (selectedBlockId === blockId) {
@@ -37,11 +38,20 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
   };
 
   const handleDragStart = (e: React.DragEvent) => {
-    // 如果是 ColumnsContainer，禁用拖拽（只允许拖拽列中的元素）
-    // 但是不要阻止事件冒泡，让子元素可以正常拖拽
+    // 如果是 ColumnsContainer，需要检查是否点击的是列区域
+    // 如果点击的是列区域（子元素），不应该拖动整个 ColumnsContainer
     if (blockData?.type === 'ColumnsContainer') {
-      e.preventDefault();
-      return;
+      const target = e.target as HTMLElement;
+      
+      // 检查点击的目标是否是列区域或其子元素
+      // 如果点击的是列内的元素，不应该拖动整个 ColumnsContainer
+      const isColumnArea = target.closest('[data-column-area]') !== null;
+      
+      // 如果点击的是列区域，阻止拖拽整个 ColumnsContainer
+      if (isColumnArea) {
+        e.preventDefault();
+        return;
+      }
     }
     
     // 阻止事件冒泡，避免触发父元素的拖拽
