@@ -18,6 +18,7 @@ export default function ContainerEditor({ style, props }: ContainerProps) {
     <BaseContainer style={style}>
       <EditorChildrenIds
         childrenIds={childrenIds}
+        containerId={currentBlockId}
         onChange={({ block, blockId, childrenIds }) => {
           // 如果是拖拽排序（block 没有 type），只更新 childrenIds
           if (!block.type) {

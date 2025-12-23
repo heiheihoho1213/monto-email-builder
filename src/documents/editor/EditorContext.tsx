@@ -235,3 +235,6 @@ export function setName(name: string) {
 export function setOnNameChange(handler: TValue['onNameChange']) {
   return editorStateStore.setState({ onNameChange: handler });
 }
+
+// 导出 editorStateStore 用于跨容器拖拽
+export { editorStateStore };

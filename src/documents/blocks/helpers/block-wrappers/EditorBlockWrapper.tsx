@@ -3,7 +3,7 @@ import React, { CSSProperties, useState } from 'react';
 import { Box } from '@mui/material';
 
 import { useCurrentBlockId } from '../../../editor/EditorBlock';
-import { setSelectedBlockId, useSelectedBlockId } from '../../../editor/EditorContext';
+import { setSelectedBlockId, useSelectedBlockId, editorStateStore } from '../../../editor/EditorContext';
 
 import TuneMenu from './TuneMenu';
 
@@ -37,11 +37,18 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
     e.dataTransfer.setData('text/plain', blockId);
     // 设置全局变量，以便在 dragOver 事件中使用
     (window as any).__currentDraggedBlockId = blockId;
+    // 保存被拖拽的block数据，用于跨容器拖拽
+    const document = editorStateStore.getState().document;
+    const blockData = document[blockId];
+    if (blockData) {
+      (window as any).__currentDraggedBlock = blockData;
+    }
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
     (window as any).__currentDraggedBlockId = null;
+    (window as any).__currentDraggedBlock = null;
   };
 
   return (
