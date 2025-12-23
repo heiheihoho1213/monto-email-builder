@@ -17,6 +17,11 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
   const [isDragging, setIsDragging] = useState(false);
   const blockId = useCurrentBlockId();
 
+  // 获取当前block的类型，如果是 ColumnsContainer，禁用拖拽
+  const document = editorStateStore.getState().document;
+  const blockData = document[blockId];
+  const isDraggable = blockData?.type !== 'ColumnsContainer';
+
   let outline: CSSProperties['outline'];
   if (selectedBlockId === blockId) {
     outline = '2px solid rgba(0,121,204, 1)';
@@ -32,14 +37,22 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
   };
 
   const handleDragStart = (e: React.DragEvent) => {
+    // 如果是 ColumnsContainer，禁用拖拽（只允许拖拽列中的元素）
+    // 但是不要阻止事件冒泡，让子元素可以正常拖拽
+    if (blockData?.type === 'ColumnsContainer') {
+      e.preventDefault();
+      return;
+    }
+    
+    // 阻止事件冒泡，避免触发父元素的拖拽
+    e.stopPropagation();
+    
     setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', blockId);
     // 设置全局变量，以便在 dragOver 事件中使用
     (window as any).__currentDraggedBlockId = blockId;
     // 保存被拖拽的block数据，用于跨容器拖拽
-    const document = editorStateStore.getState().document;
-    const blockData = document[blockId];
     if (blockData) {
       (window as any).__currentDraggedBlock = blockData;
     }
@@ -53,14 +66,14 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
 
   return (
     <Box
-      draggable
+      draggable={isDraggable}
       sx={{
         position: 'relative',
         maxWidth: '100%',
         outlineOffset: '-1px',
         outline,
         opacity: isDragging ? 0.5 : 1,
-        cursor: isDragging ? 'grabbing' : 'grab',
+        cursor: isDraggable ? (isDragging ? 'grabbing' : 'grab') : 'default',
       }}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}

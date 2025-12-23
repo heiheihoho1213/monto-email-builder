@@ -64,13 +64,50 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
       }
     }
 
+    // 检查是否是跨列拖拽：同一个ColumnsContainer，但blockId在其他列中
+    let sourceColumnIndex: number | null = null;
+    for (let i = 0; i < latestColumns.length; i++) {
+      if (i !== columnIndex && latestColumns[i]?.childrenIds?.includes(blockId)) {
+        sourceColumnIndex = i;
+        break;
+      }
+    }
+
+    console.log('updateColumn: 跨列拖拽检测', {
+      blockId,
+      columnIndex,
+      sourceColumnIndex,
+      latestColumns: latestColumns.map((col, idx) => ({ index: idx, childrenIds: col.childrenIds })),
+      childrenIds,
+    });
+
+    // 如果是跨列拖拽，需要创建新的block（复制数据），并从源列删除
+    let finalBlockId = blockId;
+    let finalBlock = block;
+    if (sourceColumnIndex !== null && block.type) {
+      // 生成新的blockId
+      finalBlockId = `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      // 深拷贝block数据
+      finalBlock = JSON.parse(JSON.stringify(block));
+      console.log('updateColumn: 跨列拖拽，创建新block', { blockId, finalBlockId });
+    }
+
     // 创建新的columns数组，确保有足够的列
-    // 注意：这里直接使用传入的childrenIds来更新指定列，不依赖latestColumns中的旧数据
     const nColumns: Array<{ childrenIds: string[] }> = [];
     for (let i = 0; i < count; i++) {
       if (i === columnIndex) {
-        // 更新指定列的childrenIds - 使用传入的childrenIds，这是最新的数据
-        nColumns.push({ childrenIds });
+        // 更新目标列的childrenIds - 使用传入的childrenIds，但替换blockId为finalBlockId（如果是跨列拖拽）
+        const updatedChildrenIds = sourceColumnIndex !== null
+          ? childrenIds.map(id => id === blockId ? finalBlockId : id)
+          : childrenIds;
+        nColumns.push({ childrenIds: updatedChildrenIds });
+        console.log('updateColumn: 更新目标列', { columnIndex: i, updatedChildrenIds });
+      } else if (i === sourceColumnIndex) {
+        // 从源列删除原block
+        const sourceColumn = latestColumns[i];
+        const filteredChildrenIds = (sourceColumn?.childrenIds || []).filter((id) => id !== blockId);
+        nColumns.push({ childrenIds: filteredChildrenIds });
+        console.log('updateColumn: 从源列删除', { sourceColumnIndex: i, originalChildrenIds: sourceColumn?.childrenIds, filteredChildrenIds });
       } else {
         // 保留其他列的childrenIds，使用最新的数据
         const existingColumn = latestColumns[i];
@@ -78,7 +115,10 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
       }
     }
 
+    console.log('updateColumn: 最终columns', { nColumns: nColumns.map((col, idx) => ({ index: idx, childrenIds: col.childrenIds })) });
+
     // 准备更新数据
+    // 确保 columns 和 columnsCount 正确设置
     const updates: any = {
       [currentBlockId]: {
         type: 'ColumnsContainer',
@@ -93,20 +133,47 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
       },
     };
 
+    // 确保 columns 属性在解析后仍然存在（双重保险）
+    if (updates[currentBlockId].data.props) {
+      updates[currentBlockId].data.props.columns = nColumns;
+      updates[currentBlockId].data.props.columnsCount = count;
+    }
+
+    console.log('updateColumn: 准备更新', {
+      currentBlockId,
+      updates: {
+        ...updates,
+        [currentBlockId]: {
+          ...updates[currentBlockId],
+          data: {
+            ...updates[currentBlockId].data,
+            props: {
+              ...updates[currentBlockId].data.props,
+              columns: nColumns.map((col, idx) => ({ index: idx, childrenIds: col.childrenIds })),
+            },
+          },
+        },
+      },
+    });
+
     // 如果是拖拽排序（block 没有 type），只更新 childrenIds
     if (!block.type) {
       setDocument(updates);
     } else {
-      // 无论是新增块还是跨容器拖拽，都需要确保block在document中
-      // 注意：即使blockExists为true，也可能因为setDocument的时序问题，需要再次确保block存在
-      // 但是，如果block已经在document中（由handleDrop设置），就不需要再次添加
-      if (!blockExists) {
+      // 如果是跨列拖拽，添加新的block（复制）
+      if (sourceColumnIndex !== null) {
+        // 跨列拖拽：创建新的block（复制），无论blockExists是否为true
+        updates[finalBlockId] = finalBlock;
+        console.log('updateColumn: 添加新block（跨列拖拽）', { finalBlockId, finalBlock });
+      } else if (!blockExists) {
+        // 如果不是跨列拖拽，且block不存在，添加新block
         updates[blockId] = block;
+        console.log('updateColumn: 添加新block（非跨列拖拽）', { blockId, block });
       }
       // 合并更新，确保同时更新columns和block
       setDocument(updates);
       if (block.type) {
-        setSelectedBlockId(blockId);
+        setSelectedBlockId(finalBlockId);
       }
     }
   };
@@ -148,6 +215,7 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
           gap: `${columnsGap}px`,
           alignItems: contentAlignment === 'top' ? 'flex-start' : contentAlignment === 'bottom' ? 'flex-end' : 'center',
           width: '100%',
+          color: 'inherit', // 继承父元素的文字颜色
           ...(style?.padding && {
             padding: `${style.padding.top}px ${style.padding.right}px ${style.padding.bottom}px ${style.padding.left}px`,
           }),
@@ -195,10 +263,12 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
   }
 
   return (
-    <BaseColumnsContainer
-      props={baseProps}
-      style={style}
-      columns={columnComponents}
-    />
+    <Box sx={{ color: 'inherit' }}>
+      <BaseColumnsContainer
+        props={baseProps}
+        style={style}
+        columns={columnComponents}
+      />
+    </Box>
   );
 }

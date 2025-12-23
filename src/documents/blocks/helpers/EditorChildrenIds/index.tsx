@@ -160,8 +160,17 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const draggedId = e.dataTransfer.getData('text/plain') || getCurrentDraggedBlockId();
+    console.log('handleDrop: 开始处理拖拽', {
+      draggedId,
+      dataTransfer: e.dataTransfer.getData('text/plain'),
+      currentDraggedBlockId: getCurrentDraggedBlockId(),
+      containerId,
+      childrenIds,
+      dropIndex,
+    });
+
     if (!draggedId || !childrenIds) {
       (window as any).__currentDraggedBlockId = null;
       (window as any).__currentDraggedBlock = null;
@@ -170,8 +179,18 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
       return;
     }
 
+    // 检查 draggedId 是否是当前容器的 ID（ColumnsContainer 的 ID），如果是，说明拖拽的是容器本身，应该忽略
+    if (draggedId === containerId) {
+      console.warn('handleDrop: 拖拽的是容器本身，忽略', { draggedId, containerId });
+      (window as any).__currentDraggedBlockId = null;
+      (window as any).__currentDraggedBlock = null;
+      setDraggedBlockId(null);
+      setDragOverIndex(null);
+      return;
+    }
+
     const sourceIndex = childrenIds.indexOf(draggedId);
-    
+
     // 如果拖拽的block在当前容器中，执行排序操作
     if (sourceIndex !== -1) {
       if (sourceIndex === dropIndex) {
@@ -203,7 +222,14 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
     // 如果拖拽的block不在当前容器中，说明是从外部拖拽过来的
     // 实现移动操作：从原容器中移除，添加到目标容器
     const draggedBlock = getCurrentDraggedBlock();
+    console.log('handleDrop: 外部拖拽', {
+      draggedId,
+      draggedBlock,
+      containerId,
+    });
+
     if (!draggedBlock) {
+      console.warn('handleDrop: 无法获取被拖拽的block数据', { draggedId });
       (window as any).__currentDraggedBlockId = null;
       (window as any).__currentDraggedBlock = null;
       setDraggedBlockId(null);
@@ -213,7 +239,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
 
     // 使用原来的 blockId，实现移动而不是复制
     const blockId = draggedId;
-    
+
     // 添加到目标容器
     const newChildrenIds = [...childrenIds];
     if (dropIndex >= 0 && dropIndex < childrenIds.length) {
@@ -223,22 +249,40 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
       // 插入新元素
       newChildrenIds.splice(dropIndex, 0, blockId);
     }
-    
+
     // 获取当前document
     const document = editorStateStore.getState().document;
-    
-    // 找到原容器并从原容器中移除block
+
+    // 找到原容器
     const parentInfo = findParentContainerId(document, blockId);
-    let newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
-    
-    // 注意：对于ColumnsContainer，我们通过onChange来处理，因为我们需要知道是哪个列
-    // 这里不需要直接更新containerId，因为onChange会触发updateColumn来更新对应的列
-    
-    // 先更新整个document（从原容器中移除block）
-    setDocument(newDocument);
-    
+    console.log('handleDrop: 查找原容器', {
+      blockId,
+      parentInfo,
+      containerId,
+    });
+
+    // 检查是否是跨列拖拽（同一个ColumnsContainer，原block在某个列中）
+    // 如果原block在ColumnsContainer的某个列中，且目标也是同一个ColumnsContainer，则是跨列拖拽
+    const isCrossColumnDrag = parentInfo.containerId === containerId &&
+      parentInfo.columnIndex !== null;
+
+    console.log('handleDrop: 跨列拖拽检测', {
+      isCrossColumnDrag,
+      parentInfo,
+      containerId,
+    });
+
+    let newDocument = document;
+    // 如果不是跨列拖拽，才从原容器中移除block
+    // 跨列拖拽由updateColumn处理（复制到目标列，从源列删除）
+    if (!isCrossColumnDrag) {
+      newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
+      // 先更新整个document（从原容器中移除block）
+      setDocument(newDocument);
+    }
+
     // 然后通过 onChange 通知父组件更新 childrenIds（这会触发updateColumn，updateColumn会更新columns）
-    // 注意：需要延迟一下，确保setDocument已经完成，updateColumn能获取到最新的document
+    // 注意：需要延迟一下，确保setDocument已经完成（如果不是跨列拖拽），updateColumn能获取到最新的document
     setTimeout(() => {
       onChange({
         blockId: blockId,
@@ -297,22 +341,32 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
           // 实现移动操作：从原容器中移除，添加到目标容器
           // 使用原来的 blockId，实现移动而不是复制
           const blockId = draggedId;
-          
+
           // 添加到目标容器（空白区域，直接添加）
           const newChildrenIds = [blockId];
-          
+
           // 获取当前document
           const document = editorStateStore.getState().document;
-          
-          // 找到原容器并从原容器中移除block
+
+          // 找到原容器
           const parentInfo = findParentContainerId(document, blockId);
-          let newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
-          
-          // 先更新整个document（从原容器中移除block）
-          setDocument(newDocument);
-          
+
+          // 检查是否是跨列拖拽（同一个ColumnsContainer，原block在某个列中）
+          // 如果原block在ColumnsContainer的某个列中，且目标也是同一个ColumnsContainer，则是跨列拖拽
+          const isCrossColumnDrag = parentInfo.containerId === containerId &&
+            parentInfo.columnIndex !== null;
+
+          let newDocument = document;
+          // 如果不是跨列拖拽，才从原容器中移除block
+          // 跨列拖拽由updateColumn处理（复制到目标列，从源列删除）
+          if (!isCrossColumnDrag) {
+            newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
+            // 先更新整个document（从原容器中移除block）
+            setDocument(newDocument);
+          }
+
           // 然后通过 onChange 通知父组件更新 childrenIds（这会触发updateColumn，updateColumn会更新columns）
-          // 注意：需要延迟一下，确保setDocument已经完成，updateColumn能获取到最新的document
+          // 注意：需要延迟一下，确保setDocument已经完成（如果不是跨列拖拽），updateColumn能获取到最新的document
           setTimeout(() => {
             onChange({
               blockId: blockId,
@@ -331,25 +385,25 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
           position: 'relative',
           ...(dragOverIndex === 0 && draggedBlockId !== null && !childrenIds?.includes(draggedBlockId)
             ? {
-                outline: '2px solid',
-                outlineColor: 'primary.main',
-                outlineOffset: '-2px',
-              }
+              outline: '2px solid',
+              outlineColor: 'primary.main',
+              outlineOffset: '-2px',
+            }
             : {
-                '&::before': dragOverIndex === 0 && draggedBlockId !== null
-                  ? {
-                      content: '""',
-                      position: 'absolute',
-                      top: -2,
-                      left: 0,
-                      right: 0,
-                      height: 4,
-                      backgroundColor: 'primary.main',
-                      zIndex: 1000,
-                      pointerEvents: 'none',
-                    }
-                  : {},
-              }),
+              '&::before': dragOverIndex === 0 && draggedBlockId !== null
+                ? {
+                  content: '""',
+                  position: 'absolute',
+                  top: -2,
+                  left: 0,
+                  right: 0,
+                  height: 4,
+                  backgroundColor: 'primary.main',
+                  zIndex: 1000,
+                  pointerEvents: 'none',
+                }
+                : {},
+            }),
         }}
       >
         <AddBlockButton placeholder onSelect={appendBlock} />
@@ -365,7 +419,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
         const showTopIndicator = dragOverIndex === i && draggedBlockId !== null && draggedBlockId !== childId && !isExternalDrag;
         const showBottomIndicator = isLastBlock && dragOverIndex === childrenIds.length && draggedBlockId !== null && draggedBlockId !== childId && !isExternalDrag;
         const showFullBorder = dragOverIndex === i && isExternalDrag;
-        
+
         return (
           <Fragment key={childId}>
             <AddBlockButton onSelect={(block) => insertBlock(block, i)} />
@@ -375,10 +429,10 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
                 e.stopPropagation();
                 const draggedId = getCurrentDraggedBlockId();
                 if (!draggedId) return;
-                
+
                 // 检查是否是外部拖拽
                 const isExternal = !childrenIds.includes(draggedId);
-                
+
                 // 如果是最后一个块且不是外部拖拽，检查是否拖拽到块的下方区域
                 if (isLastBlock && !isExternal) {
                   const rect = e.currentTarget.getBoundingClientRect();
@@ -391,14 +445,14 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
                     return;
                   }
                 }
-                
+
                 // 如果是外部拖拽，直接显示在当前块位置
                 if (isExternal) {
                   setDraggedBlockId(draggedId);
                   setDragOverIndex(i);
                   return;
                 }
-                
+
                 handleDragOver(e, i);
               }}
               onDragLeave={handleDragLeave}
@@ -416,7 +470,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
                     return;
                   }
                   const sourceIndex = childrenIds.indexOf(draggedId);
-                  
+
                   // 如果拖拽的block在当前容器中，执行排序操作
                   if (sourceIndex !== -1) {
                     if (sourceIndex === childrenIds.length - 1) {
@@ -440,7 +494,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
                     setDragOverIndex(null);
                     return;
                   }
-                  
+
                   // 如果拖拽的block不在当前容器中，说明是从外部拖拽过来的
                   // 实现移动操作：从原容器中移除，添加到目标容器末尾
                   const draggedBlock = getCurrentDraggedBlock();
@@ -454,22 +508,32 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
 
                   // 使用原来的 blockId，实现移动而不是复制
                   const blockId = draggedId;
-                  
+
                   // 添加到目标容器末尾
                   const newChildrenIds = [...childrenIds, blockId];
-                  
+
                   // 获取当前document
                   const document = editorStateStore.getState().document;
-                  
-                  // 找到原容器并从原容器中移除block
+
+                  // 找到原容器
                   const parentInfo = findParentContainerId(document, blockId);
-                  let newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
-                  
-                  // 先更新整个document（从原容器中移除block）
-                  setDocument(newDocument);
-                  
+
+                  // 检查是否是跨列拖拽（同一个ColumnsContainer，原block在某个列中）
+                  // 如果原block在ColumnsContainer的某个列中，且目标也是同一个ColumnsContainer，则是跨列拖拽
+                  const isCrossColumnDrag = parentInfo.containerId === containerId &&
+                    parentInfo.columnIndex !== null;
+
+                  let newDocument = document;
+                  // 如果不是跨列拖拽，才从原容器中移除block
+                  // 跨列拖拽由updateColumn处理（复制到目标列，从源列删除）
+                  if (!isCrossColumnDrag) {
+                    newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
+                    // 先更新整个document（从原容器中移除block）
+                    setDocument(newDocument);
+                  }
+
                   // 然后通过 onChange 通知父组件更新 childrenIds（这会触发updateColumn，updateColumn会更新columns）
-                  // 注意：需要延迟一下，确保setDocument已经完成，updateColumn能获取到最新的document
+                  // 注意：需要延迟一下，确保setDocument已经完成（如果不是跨列拖拽），updateColumn能获取到最新的document
                   setTimeout(() => {
                     onChange({
                       blockId: blockId,
@@ -496,7 +560,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
                 }
 
                 const sourceIndex = childrenIds.indexOf(draggedId);
-                
+
                 // 如果拖拽的block在当前容器中，执行排序操作
                 if (sourceIndex !== -1) {
                   handleDrop(e, i);
@@ -516,23 +580,33 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
 
                 // 使用原来的 blockId，实现移动而不是复制
                 const blockId = draggedId;
-                
+
                 // 替换当前元素：删除当前元素，插入新元素
                 const newChildrenIds = [...childrenIds];
                 newChildrenIds.splice(i, 1, blockId); // 替换而不是插入
-                
+
                 // 获取当前document
                 const document = editorStateStore.getState().document;
-                
-                // 找到原容器并从原容器中移除block
+
+                // 找到原容器
                 const parentInfo = findParentContainerId(document, blockId);
-                let newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
-                
-                // 先更新整个document（从原容器中移除block）
-                setDocument(newDocument);
-                
+
+                // 检查是否是跨列拖拽（同一个ColumnsContainer，原block在某个列中）
+                // 如果原block在ColumnsContainer的某个列中，且目标也是同一个ColumnsContainer，则是跨列拖拽
+                const isCrossColumnDrag = parentInfo.containerId === containerId &&
+                  parentInfo.columnIndex !== null;
+
+                let newDocument = document;
+                // 如果不是跨列拖拽，才从原容器中移除block
+                // 跨列拖拽由updateColumn处理（复制到目标列，从源列删除）
+                if (!isCrossColumnDrag) {
+                  newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
+                  // 先更新整个document（从原容器中移除block）
+                  setDocument(newDocument);
+                }
+
                 // 然后通过 onChange 通知父组件更新 childrenIds（这会触发updateColumn，updateColumn会更新columns）
-                // 注意：需要延迟一下，确保setDocument已经完成，updateColumn能获取到最新的document
+                // 注意：需要延迟一下，确保setDocument已经完成（如果不是跨列拖拽），updateColumn能获取到最新的document
                 setTimeout(() => {
                   onChange({
                     blockId: blockId,
@@ -551,38 +625,38 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId }
                 position: 'relative',
                 ...(showFullBorder
                   ? {
-                      outline: '2px solid',
-                      outlineColor: 'primary.main',
-                      outlineOffset: '-2px',
-                    }
+                    outline: '2px solid',
+                    outlineColor: 'primary.main',
+                    outlineOffset: '-2px',
+                  }
                   : {
-                      '&::before': showTopIndicator
-                        ? {
-                            content: '""',
-                            position: 'absolute',
-                            top: -2,
-                            left: 0,
-                            right: 0,
-                            height: 4,
-                            backgroundColor: 'primary.main',
-                            zIndex: 1000,
-                            pointerEvents: 'none',
-                          }
-                        : {},
-                      '&::after': showBottomIndicator
-                        ? {
-                            content: '""',
-                            position: 'absolute',
-                            bottom: -2,
-                            left: 0,
-                            right: 0,
-                            height: 4,
-                            backgroundColor: 'primary.main',
-                            zIndex: 1000,
-                            pointerEvents: 'none',
-                          }
-                        : {},
-                    }),
+                    '&::before': showTopIndicator
+                      ? {
+                        content: '""',
+                        position: 'absolute',
+                        top: -2,
+                        left: 0,
+                        right: 0,
+                        height: 4,
+                        backgroundColor: 'primary.main',
+                        zIndex: 1000,
+                        pointerEvents: 'none',
+                      }
+                      : {},
+                    '&::after': showBottomIndicator
+                      ? {
+                        content: '""',
+                        position: 'absolute',
+                        bottom: -2,
+                        left: 0,
+                        right: 0,
+                        height: 4,
+                        backgroundColor: 'primary.main',
+                        zIndex: 1000,
+                        pointerEvents: 'none',
+                      }
+                      : {},
+                  }),
               }}
             >
               <EditorBlock id={childId} />
