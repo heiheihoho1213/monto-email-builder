@@ -166,6 +166,11 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
   const containerType = containerId ? document[containerId]?.type : null;
   const isContainerOrColumnsContainer = containerType === 'Container' || containerType === 'ColumnsContainer';
 
+  // 调试日志（开发环境）
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[EditorChildrenIds] containerId:', containerId, 'containerType:', containerType, 'isContainerOrColumnsContainer:', isContainerOrColumnsContainer);
+  }
+
   const appendBlock = (block: TEditorBlock) => {
     const blockId = generateId();
     return onChange({
@@ -245,7 +250,21 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
     // 如果拖拽的block在当前容器中，执行排序操作
     if (sourceIndex !== -1) {
+      // 如果拖拽到自己的位置，不执行任何操作
       if (sourceIndex === dropIndex) {
+        (window as any).__currentDraggedBlockId = null;
+        (window as any).__currentDraggedBlock = null;
+        setDraggedBlockId(null);
+        setDragOverIndex(null);
+        return;
+      }
+
+      // 如果源元素在目标位置之前，且拖拽线显示在紧邻的下一个元素上方，
+      // 那么插入到该位置之前实际上就是保持原状，不需要移动
+      // 例如：[A, B, C]，A(0) 拖到 B(1) 上方，dropIndex=1
+      // 如果插入到位置 1 之前，就是位置 0，但 A 已经在位置 0 了，所以应该保持原状
+      if (sourceIndex < dropIndex && dropIndex - sourceIndex === 1) {
+        // 拖到紧邻的下一个元素上方，保持原状
         (window as any).__currentDraggedBlockId = null;
         (window as any).__currentDraggedBlock = null;
         setDraggedBlockId(null);
@@ -255,7 +274,12 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
       const newChildrenIds = [...childrenIds];
       const [removed] = newChildrenIds.splice(sourceIndex, 1);
-      newChildrenIds.splice(dropIndex, 0, removed);
+
+      // 计算插入位置：
+      // - 如果源位置在目标位置之前，插入位置需要减 1（因为已经移除了源元素）
+      // - 如果源位置在目标位置之后，插入位置不变
+      const insertIndex = sourceIndex < dropIndex ? dropIndex - 1 : dropIndex;
+      newChildrenIds.splice(insertIndex, 0, removed);
 
       // 通过 onChange 通知父组件更新 childrenIds
       onChange({
@@ -499,7 +523,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
             }),
         }}
       >
-        <AddBlockButton placeholder onSelect={appendBlock} />
+        <AddBlockButton placeholder onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} />
       </Box>
     );
   }
