@@ -153,7 +153,17 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
   const currentColumns = (currentContainer && currentContainer.type === 'ColumnsContainer' && currentContainer.data.props?.columns) || columnsValue;
 
   const columnComponents = currentColumns.map((col, index) => (
-    <Box key={index} data-column-area="true" sx={{ width: '100%', height: '100%' }}>
+    <Box
+      key={index}
+      data-column-area="true"
+      sx={{
+        width: '100%',
+        height: '100%',
+        minWidth: 0, // 确保flex布局中文本可以换行
+        overflowWrap: 'break-word', // 允许长单词换行
+        wordBreak: 'break-word', // 确保文本换行
+      }}
+    >
       <EditorChildrenIds
         childrenIds={col?.childrenIds}
         onChange={(change) => updateColumn(index, change)}
