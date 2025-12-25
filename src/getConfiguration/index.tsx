@@ -31,8 +31,7 @@ export default function getConfiguration(template: string): any {
     try {
       const configurationString = decodeURIComponent(atob(encodedString));
       return JSON.parse(configurationString);
-    } catch (error) {
-      console.error(`Couldn't load configuration from hash (code format):`, error);
+    } catch {
       return EMPTY_EMAIL_MESSAGE;
     }
   }
@@ -43,8 +42,7 @@ export default function getConfiguration(template: string): any {
     try {
       const configurationString = decodeURIComponent(encodedString);
       return JSON.parse(configurationString);
-    } catch (error) {
-      console.error(`Couldn't load configuration from hash (json format):`, error);
+    } catch {
       return EMPTY_EMAIL_MESSAGE;
     }
   }

@@ -214,8 +214,8 @@ export function saveAndExitDocument(onExit: (document: TEditorConfiguration) => 
   const document = editorStateStore.getState().document;
   if (onExit) {
     // 异步调用退出回调，不等待其完成，避免组件销毁时的内存问题
-    Promise.resolve(onExit(document)).catch((error) => {
-      console.error('Error in exit handler:', error);
+    Promise.resolve(onExit(document)).catch(() => {
+      // Error handled silently
     });
   }
 }

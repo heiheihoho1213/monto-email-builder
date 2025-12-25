@@ -49,7 +49,6 @@ export default function VideoSidebarPanel({ data, setData }: VideoSidebarPanelPr
     if (!file) return;
 
     if (!imageUploadHandler) {
-      console.warn('Video upload handler is not configured. Please set imageUploadHandler in EditorContext.');
       return;
     }
 
@@ -59,8 +58,8 @@ export default function VideoSidebarPanel({ data, setData }: VideoSidebarPanelPr
       updateData({ ...data, props: { ...data.props, url } });
       // 上传成功后切换到URL模式，显示上传后的URL
       setUploadMode('url');
-    } catch (error) {
-      console.error('Failed to upload video:', error);
+    } catch {
+      // Error handled silently
     } finally {
       setUploading(false);
       // 重置文件输入，以便可以再次选择同一个文件

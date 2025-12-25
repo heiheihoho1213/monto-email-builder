@@ -39,23 +39,7 @@ export default defineConfig(({ mode }) => {
               '@mui/icons-material',
               '@emotion/react',
               '@emotion/styled',
-              'zustand',
-              'zod',
-              'react-colorful',
-              'highlight.js',
-              'prettier', // prettier 及其所有子路径（包括 prettier/standalone, prettier/plugins/*）
-              '@usewaypoint/block-avatar',
-              '@usewaypoint/block-button',
-              '@usewaypoint/block-columns-container',
-              '@usewaypoint/block-container',
-              '@usewaypoint/block-divider',
-              '@usewaypoint/block-heading',
-              '@usewaypoint/block-html',
-              '@usewaypoint/block-image',
-              '@usewaypoint/block-spacer',
-              '@usewaypoint/block-text',
-              '@usewaypoint/document-core',
-              '@usewaypoint/email-builder',
+              'react-syntax-highlighter',
             ];
 
             // 检查是否匹配明确列出的依赖

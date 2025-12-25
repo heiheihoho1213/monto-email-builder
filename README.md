@@ -61,14 +61,9 @@ npm install @usewaypoint/block-avatar @usewaypoint/block-button \
   @usewaypoint/document-core @usewaypoint/email-builder
 
 # 可选依赖（用于代码高亮功能，HTML/JSON 输出预览）
-# 如果使用代码高亮功能，必须安装 prettier（推荐使用 v3.0.0+）
-npm install highlight.js prettier
-# 注意：
-# - prettier v2.7.1+ 和 v3.0.0+ 都支持，库会自动检测并使用相应的导入方式
-# - prettier v3 需要安装对应的 parser（如 prettier/parser-html），这些通常会自动安装
-# - 如果使用 prettier v2，某些构建工具可能会在静态分析时尝试解析 prettier v3 的插件路径
-#   如果遇到 "Can't resolve 'prettier/plugins/*'" 或 "Couldn't resolve parser" 错误，
-#   请确保安装了完整的 prettier 包（包括所有 parser），或升级到 prettier v3
+# 如果使用代码高亮功能，需要安装 react-syntax-highlighter
+npm install react-syntax-highlighter
+# 注意：代码格式化使用纯 JavaScript 实现，无需额外依赖
 ```
 
 或者使用 yarn/pnpm：

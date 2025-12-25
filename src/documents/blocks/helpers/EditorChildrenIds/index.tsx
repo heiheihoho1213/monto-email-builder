@@ -169,11 +169,6 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
   const containerType = containerId ? document[containerId]?.type : null;
   const isContainerOrColumnsContainer = containerType === 'Container' || containerType === 'ColumnsContainer';
 
-  // 调试日志（开发环境）
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[EditorChildrenIds] containerId:', containerId, 'containerType:', containerType, 'isContainerOrColumnsContainer:', isContainerOrColumnsContainer);
-  }
-
   const appendBlock = (block: TEditorBlock) => {
     const blockId = generateId();
     return onChange({

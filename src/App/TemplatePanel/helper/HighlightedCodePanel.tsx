@@ -7,7 +7,7 @@ type TextEditorPanelProps = {
   value: string;
 };
 export default function HighlightedCodePanel({ type, value }: TextEditorPanelProps) {
-  const [code, setCode] = useState<string | null>(null);
+  const [code, setCode] = useState<React.ReactElement | null>(null);
 
   useEffect(() => {
     switch (type) {
@@ -18,16 +18,14 @@ export default function HighlightedCodePanel({ type, value }: TextEditorPanelPro
         json(value).then(setCode);
         return;
     }
-  }, [setCode, value, type]);
+  }, [value, type]);
 
   if (code === null) {
     return null;
   }
 
   return (
-    <pre
-      style={{ margin: 0, padding: 16 }}
-      dangerouslySetInnerHTML={{ __html: code }}
+    <div
       onClick={(ev) => {
         const s = window.getSelection();
         if (s === null) {
@@ -35,6 +33,8 @@ export default function HighlightedCodePanel({ type, value }: TextEditorPanelPro
         }
         s.selectAllChildren(ev.currentTarget);
       }}
-    />
+    >
+      {code}
+    </div>
   );
 }

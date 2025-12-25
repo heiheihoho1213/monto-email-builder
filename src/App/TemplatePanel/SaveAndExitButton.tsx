@@ -14,7 +14,6 @@ export default function SaveAndExitButton() {
 
   const handleSaveAndExit = async () => {
     if (!saveAndExitHandler) {
-      console.warn('Save and exit handler is not configured.');
       return;
     }
 
@@ -26,8 +25,8 @@ export default function SaveAndExitButton() {
       }
       // 然后异步调用退出回调，不等待其完成，避免组件销毁时的内存问题
       saveAndExitDocument(saveAndExitHandler);
-    } catch (error) {
-      console.error('Failed to save and exit:', error);
+    } catch {
+      // Failed to save and exit
     } finally {
       setSaving(false);
     }

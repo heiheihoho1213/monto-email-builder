@@ -89,7 +89,7 @@ export interface EmailBuilderProps {
  * 
  * function MyApp() {
  *   const handleChange = (document) => {
- *     console.log('Document changed:', document);
+ *     // Handle document changes
  *   };
  * 
  *   const handleImageUpload = async (file: File) => {

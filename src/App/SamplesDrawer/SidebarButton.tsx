@@ -13,8 +13,8 @@ export default function SidebarButton({ sampleName, children }: { sampleName: st
     try {
       const template = await loadSampleTemplate(sampleName);
       resetDocument(template);
-    } catch (error) {
-      console.error('Failed to load template:', error);
+    } catch {
+      // Failed to load template
     } finally {
       setLoading(false);
     }

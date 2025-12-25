@@ -13,15 +13,14 @@ export default function SaveButton() {
 
   const handleSave = async () => {
     if (!saveHandler) {
-      console.warn('Save handler is not configured. Please set saveHandler in EmailBuilder props.');
       return;
     }
 
     setSaving(true);
     try {
       await saveDocument();
-    } catch (error) {
-      console.error('Failed to save document:', error);
+    } catch {
+      // Failed to save document
     } finally {
       setSaving(false);
     }

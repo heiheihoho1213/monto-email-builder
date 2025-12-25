@@ -27,29 +27,17 @@ export default function BlocksMenu({ anchorEl, setAnchorEl, onSelect, disableCon
     return null;
   }
 
-  // 调试日志
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[BlocksMenu] disableContainerBlocks:', disableContainerBlocks);
-  }
-
   // 过滤按钮列表
   const filteredButtons = BUTTONS.filter((k) => {
     const block = k.block();
     const isContainerBlock = block.type === 'Container' || block.type === 'ColumnsContainer';
     // 如果 disableContainerBlocks 为 true，过滤掉 Container 和 ColumnsContainer
     if (disableContainerBlocks && isContainerBlock) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[BlocksMenu] Filtering out:', block.type);
-      }
       return false;
     }
     // 否则显示所有选项
     return true;
   });
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[BlocksMenu] Filtered buttons count:', filteredButtons.length, 'Total buttons:', BUTTONS.length);
-  }
 
   return (
     <Menu

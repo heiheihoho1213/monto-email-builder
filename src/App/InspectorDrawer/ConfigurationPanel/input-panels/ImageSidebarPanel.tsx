@@ -47,7 +47,6 @@ export default function ImageSidebarPanel({ data, setData }: ImageSidebarPanelPr
     if (!file) return;
 
     if (!imageUploadHandler) {
-      console.warn('Image upload handler is not configured. Please set imageUploadHandler in EditorContext.');
       return;
     }
 
@@ -57,8 +56,8 @@ export default function ImageSidebarPanel({ data, setData }: ImageSidebarPanelPr
       updateData({ ...data, props: { ...data.props, url } });
       // 上传成功后切换到URL模式，显示上传后的URL
       setUploadMode('url');
-    } catch (error) {
-      console.error('Failed to upload image:', error);
+    } catch {
+      // Error handled silently
     } finally {
       setUploading(false);
       // 重置文件输入，以便可以再次选择同一个文件
