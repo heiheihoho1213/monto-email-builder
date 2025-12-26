@@ -18,6 +18,9 @@ type TValue = {
   // 图片上传函数配置
   imageUploadHandler?: (file: File) => Promise<string>;
 
+  // 视频上传函数配置
+  videoUploadHandler?: (file: File) => Promise<string>;
+
   // 语言设置
   language: Language;
 
@@ -175,6 +178,14 @@ export function useImageUploadHandler() {
 
 export function setImageUploadHandler(handler: TValue['imageUploadHandler']) {
   return editorStateStore.setState({ imageUploadHandler: handler });
+}
+
+export function useVideoUploadHandler() {
+  return editorStateStore((s) => s.videoUploadHandler);
+}
+
+export function setVideoUploadHandler(handler: TValue['videoUploadHandler']) {
+  return editorStateStore.setState({ videoUploadHandler: handler });
 }
 
 export function useLanguage() {

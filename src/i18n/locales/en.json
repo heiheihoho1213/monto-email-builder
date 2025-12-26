@@ -65,7 +65,7 @@
     "url": "URL",
     "selectVideo": "Select Video",
     "uploading": "Uploading...",
-    "uploadHandlerNotConfigured": "Please configure imageUploadHandler to enable local upload",
+    "uploadHandlerNotConfigured": "Please configure videoUploadHandler to enable local upload",
     "placeholder": "Click the right panel to add a video",
     "notSupported": "Your browser does not support the video tag",
     "autoplay": "Autoplay",

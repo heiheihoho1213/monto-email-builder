@@ -10,7 +10,7 @@ import {
 import { Button, CircularProgress, Stack, ToggleButton, Typography } from '@mui/material';
 import { ZodError } from 'zod';
 
-import { useImageUploadHandler } from '../../../../documents/editor/EditorContext';
+import { useVideoUploadHandler } from '../../../../documents/editor/EditorContext';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import VideoPropsSchema, { VideoProps } from '../../../../documents/blocks/Video/VideoPropsSchema';
 
@@ -32,7 +32,7 @@ export default function VideoSidebarPanel({ data, setData }: VideoSidebarPanelPr
   const [uploadMode, setUploadMode] = useState<'url' | 'upload'>('url');
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageUploadHandler = useImageUploadHandler();
+  const videoUploadHandler = useVideoUploadHandler();
 
   const updateData = (d: unknown) => {
     const res = VideoPropsSchema.safeParse(d);
@@ -48,13 +48,13 @@ export default function VideoSidebarPanel({ data, setData }: VideoSidebarPanelPr
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!imageUploadHandler) {
+    if (!videoUploadHandler) {
       return;
     }
 
     setUploading(true);
     try {
-      const url = await imageUploadHandler(file);
+      const url = await videoUploadHandler(file);
       updateData({ ...data, props: { ...data.props, url } });
       // 上传成功后切换到URL模式，显示上传后的URL
       setUploadMode('url');
@@ -93,7 +93,7 @@ export default function VideoSidebarPanel({ data, setData }: VideoSidebarPanelPr
             onChange={() => setUploadMode('upload')}
             size="small"
             fullWidth
-            disabled={!imageUploadHandler}
+            disabled={!videoUploadHandler}
           >
             <CloudUploadOutlined fontSize="small" sx={{ mr: 0.5 }} />
             {t('video.upload')}
@@ -122,12 +122,12 @@ export default function VideoSidebarPanel({ data, setData }: VideoSidebarPanelPr
               variant="outlined"
               startIcon={uploading ? <CircularProgress size={16} /> : <CloudUploadOutlined />}
               onClick={handleUploadClick}
-              disabled={uploading || !imageUploadHandler}
+              disabled={uploading || !videoUploadHandler}
               fullWidth
             >
               {uploading ? t('video.uploading') : t('video.selectVideo')}
             </Button>
-            {!imageUploadHandler && (
+            {!videoUploadHandler && (
               <Typography variant="caption" color="text.secondary">
                 {t('video.uploadHandlerNotConfigured')}
               </Typography>
@@ -152,13 +152,33 @@ export default function VideoSidebarPanel({ data, setData }: VideoSidebarPanelPr
       <Stack direction="row" spacing={2}>
         <TextDimensionInput
           label={t('video.width')}
-          defaultValue={data.props?.width}
-          onChange={(width) => updateData({ ...data, props: { ...data.props, width } })}
+          defaultValue={
+            data.props?.width
+              ? (() => {
+                const num = parseInt(data.props.width);
+                return isNaN(num) ? undefined : num;
+              })()
+              : undefined
+          }
+          onChange={(width) => {
+            const widthStr = width !== null ? `${width}px` : null;
+            updateData({ ...data, props: { ...data.props, width: widthStr } });
+          }}
         />
         <TextDimensionInput
           label={t('video.height')}
-          defaultValue={data.props?.height}
-          onChange={(height) => updateData({ ...data, props: { ...data.props, height } })}
+          defaultValue={
+            data.props?.height
+              ? (() => {
+                const num = parseInt(data.props.height);
+                return isNaN(num) ? undefined : num;
+              })()
+              : undefined
+          }
+          onChange={(height) => {
+            const heightStr = height !== null ? `${height}px` : null;
+            updateData({ ...data, props: { ...data.props, height: heightStr } });
+          }}
         />
       </Stack>
 

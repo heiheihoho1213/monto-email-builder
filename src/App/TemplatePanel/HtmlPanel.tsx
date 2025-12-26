@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { renderToStaticMarkup } from '@usewaypoint/email-builder';
+import { renderToStaticMarkup } from 'monto-email-core';
 
 import { useDocument } from '../../documents/editor/EditorContext';
 

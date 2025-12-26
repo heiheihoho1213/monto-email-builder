@@ -42,10 +42,11 @@ export default function SamplesDrawer() {
           height: '100%',
           width: '100%',
           zIndex: 0,
+          overflowX: 'hidden',
         },
       }}
     >
-      <Stack spacing={3} py={1} px={2} width={SAMPLES_DRAWER_WIDTH}>
+      <Stack spacing={3} py={1} px={2} width={SAMPLES_DRAWER_WIDTH} sx={{ overflowY: 'auto', overflowX: 'hidden', height: '100%' }}>
         <Stack spacing={2} sx={{ '& .MuiButtonBase-root': { width: '100%', justifyContent: 'flex-start' } }}>
           <Typography variant="h6" component="h1" sx={{ p: 0.75 }}>
             {t('common.emailBuilder')}

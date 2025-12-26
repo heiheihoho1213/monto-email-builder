@@ -5,6 +5,7 @@ import { Box, CssBaseline, ThemeProvider } from '@mui/material';
 import {
   resetDocument,
   setImageUploadHandler,
+  setVideoUploadHandler,
   setLanguage,
   setName,
   setOnChange,
@@ -37,6 +38,12 @@ export interface EmailBuilderProps {
    * 接收 File 对象，返回 Promise<string>，返回图片的 URL
    */
   imageUploadHandler?: (file: File) => Promise<string>;
+
+  /**
+   * 视频上传回调函数
+   * 接收 File 对象，返回 Promise<string>，返回视频的 URL
+   */
+  videoUploadHandler?: (file: File) => Promise<string>;
 
   /**
    * 文档变化时的回调函数
@@ -108,6 +115,7 @@ export interface EmailBuilderProps {
  *     <EmailBuilder
  *       initialLanguage="zh"
  *       imageUploadHandler={handleImageUpload}
+ *       videoUploadHandler={handleVideoUpload}
  *       onChange={handleChange}
  *     />
  *   );
@@ -118,6 +126,7 @@ export default function EmailBuilder({
   initialDocument,
   initialLanguage = 'en',
   imageUploadHandler,
+  videoUploadHandler,
   onChange,
   saveHandler,
   saveAndExitHandler,
@@ -145,6 +154,11 @@ export default function EmailBuilder({
   useEffect(() => {
     setImageUploadHandler(imageUploadHandler);
   }, [imageUploadHandler]);
+
+  // 当 videoUploadHandler 变化时，更新处理器
+  useEffect(() => {
+    setVideoUploadHandler(videoUploadHandler);
+  }, [videoUploadHandler]);
 
   // 当 onChange 变化时，更新回调
   useEffect(() => {
