@@ -62,8 +62,8 @@ export default function EmailLayoutSidebarFields({ data, setData }: EmailLayoutS
         units="px"
         step={20}
         marks
-        min={400}
-        max={1200}
+        min={600}
+        max={660}
         label="Page width"
         defaultValue={data.width ?? 600}
         onChange={(width) => updateData({ ...data, width })}

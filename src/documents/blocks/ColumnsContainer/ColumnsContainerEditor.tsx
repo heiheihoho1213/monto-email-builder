@@ -152,26 +152,33 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
   const currentContainer = currentDocument[currentBlockId];
   const currentColumns = (currentContainer && currentContainer.type === 'ColumnsContainer' && currentContainer.data.props?.columns) || columnsValue;
 
-  const columnComponents = currentColumns.map((col, index) => (
-    <Box
-      key={index}
-      data-column-area="true"
-      sx={{
-        width: '100%',
-        height: '100%',
-        minWidth: 0, // 确保flex布局中文本可以换行
-        overflowWrap: 'break-word', // 允许长单词换行
-        wordBreak: 'break-word', // 确保文本换行
-      }}
-    >
-      <EditorChildrenIds
-        childrenIds={col?.childrenIds}
-        onChange={(change) => updateColumn(index, change)}
-        containerId={currentBlockId}
-        allowReplace={true}
-      />
-    </Box>
-  ));
+  const columnComponents = currentColumns.map((col, index) => {
+    // 如果列是空白的（没有元素），允许替换（覆盖）
+    // 如果列中有元素，不允许替换，只允许插入
+    const isColumnEmpty = !col?.childrenIds || col.childrenIds.length === 0;
+    const allowReplace = isColumnEmpty;
+    
+    return (
+      <Box
+        key={index}
+        data-column-area="true"
+        sx={{
+          width: '100%',
+          height: '100%',
+          minWidth: 0, // 确保flex布局中文本可以换行
+          overflowWrap: 'break-word', // 允许长单词换行
+          wordBreak: 'break-word', // 确保文本换行
+        }}
+      >
+        <EditorChildrenIds
+          childrenIds={col?.childrenIds}
+          onChange={(change) => updateColumn(index, change)}
+          containerId={currentBlockId}
+          allowReplace={allowReplace}
+        />
+      </Box>
+    );
+  });
 
   // BaseColumnsContainer 只支持 2 或 3 列，对于 1 或 4 列，我们需要自定义渲染
   if (count === 1 || count === 4) {

@@ -24,9 +24,12 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
   const isDraggable = true;
 
   let outline: CSSProperties['outline'];
-  if (selectedBlockId === blockId) {
+  if (isDragging) {
+    // 拖拽时显示虚线边框
+    outline = '2px dashed rgba(0,121,204, 0.8)';
+  } else if (selectedBlockId === blockId) {
     outline = '2px solid rgba(0,121,204, 1)';
-  } else if (mouseInside && !isDragging) {
+  } else if (mouseInside) {
     outline = '2px solid rgba(0,121,204, 0.3)';
   }
 
