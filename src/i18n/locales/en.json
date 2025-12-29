@@ -81,7 +81,11 @@
     "custom": "Custom",
     "column": "Column {{number}}",
     "gap": "Columns gap",
-    "alignment": "Alignment"
+    "alignment": "Alignment",
+    "confirmChangeTitle": "Confirm Layout Change",
+    "confirmChangeMessage": "Changing the column layout will delete data in some columns. This action cannot be undone. Are you sure you want to continue?",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
   },
   "emailLayout": {
     "global": "Global",
@@ -92,5 +96,71 @@
     "pageWidth": "Page width",
     "fontFamily": "Font family",
     "textColor": "Text color"
+  },
+  "text": {
+    "title": "Text block",
+    "content": "Content",
+    "markdown": "Markdown"
+  },
+  "button": {
+    "title": "Button block",
+    "text": "Text",
+    "url": "URL",
+    "width": "Width",
+    "widthFull": "Full",
+    "widthAuto": "Auto",
+    "size": "Size",
+    "sizeXSmall": "X-Small",
+    "sizeSmall": "Small",
+    "sizeMedium": "Medium",
+    "sizeLarge": "Large",
+    "style": "Style",
+    "styleRectangle": "Rectangle",
+    "styleRounded": "Rounded",
+    "stylePill": "Pill",
+    "textColor": "Text color",
+    "buttonColor": "Button color"
+  },
+  "heading": {
+    "title": "Heading block",
+    "content": "Content",
+    "level": "Level"
+  },
+  "avatar": {
+    "title": "Avatar block",
+    "size": "Size",
+    "shape": "Shape",
+    "shapeCircle": "Circle",
+    "shapeSquare": "Square",
+    "shapeRounded": "Rounded",
+    "imageUrl": "Image URL",
+    "altText": "Alt text"
+  },
+  "divider": {
+    "title": "Divider block",
+    "color": "Color",
+    "height": "Height"
+  },
+  "container": {
+    "title": "Container block"
+  },
+  "spacer": {
+    "title": "Spacer block",
+    "height": "Height"
+  },
+  "html": {
+    "title": "HTML block",
+    "content": "Content"
+  },
+  "style": {
+    "backgroundColor": "Background color",
+    "borderColor": "Border color",
+    "borderRadius": "Border radius",
+    "textColor": "Text color",
+    "fontFamily": "Font family",
+    "fontSize": "Font size",
+    "fontWeight": "Font weight",
+    "alignment": "Alignment",
+    "padding": "Padding"
   }
 }

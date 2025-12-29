@@ -3,6 +3,7 @@ import React from 'react';
 import { RoundedCornerOutlined } from '@mui/icons-material';
 
 import { TStyle } from '../../../../../../documents/blocks/helpers/TStyle';
+import { useTranslation } from '../../../../../../i18n/useTranslation';
 import { NullableColorInput } from '../inputs/ColorInput';
 import { NullableFontFamily } from '../inputs/FontFamily';
 import FontSizeInput from '../inputs/FontSizeInput';
@@ -17,6 +18,7 @@ type StylePropertyPanelProps = {
   onChange: (style: TStyle) => void;
 };
 export default function SingleStylePropertyPanel({ name, value, onChange }: StylePropertyPanelProps) {
+  const { t } = useTranslation();
   const defaultValue = value[name] ?? null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleChange = (v: any) => {
@@ -25,9 +27,9 @@ export default function SingleStylePropertyPanel({ name, value, onChange }: Styl
 
   switch (name) {
     case 'backgroundColor':
-      return <NullableColorInput label="Background color" defaultValue={defaultValue} onChange={handleChange} />;
+      return <NullableColorInput label={t('style.backgroundColor')} defaultValue={defaultValue} onChange={handleChange} />;
     case 'borderColor':
-      return <NullableColorInput label="Border color" defaultValue={defaultValue} onChange={handleChange} />;
+      return <NullableColorInput label={t('style.borderColor')} defaultValue={defaultValue} onChange={handleChange} />;
     case 'borderRadius':
       return (
         <SliderInput
@@ -37,22 +39,22 @@ export default function SingleStylePropertyPanel({ name, value, onChange }: Styl
           marks
           min={0}
           max={48}
-          label="Border radius"
+          label={t('style.borderRadius')}
           defaultValue={defaultValue}
           onChange={handleChange}
         />
       );
     case 'color':
-      return <NullableColorInput label="Text color" defaultValue={defaultValue} onChange={handleChange} />;
+      return <NullableColorInput label={t('style.textColor')} defaultValue={defaultValue} onChange={handleChange} />;
     case 'fontFamily':
-      return <NullableFontFamily label="Font family" defaultValue={defaultValue} onChange={handleChange} />;
+      return <NullableFontFamily label={t('style.fontFamily')} defaultValue={defaultValue} onChange={handleChange} />;
     case 'fontSize':
-      return <FontSizeInput label="Font size" defaultValue={defaultValue} onChange={handleChange} />;
+      return <FontSizeInput label={t('style.fontSize')} defaultValue={defaultValue} onChange={handleChange} />;
     case 'fontWeight':
-      return <FontWeightInput label="Font weight" defaultValue={defaultValue} onChange={handleChange} />;
+      return <FontWeightInput label={t('style.fontWeight')} defaultValue={defaultValue} onChange={handleChange} />;
     case 'textAlign':
-      return <TextAlignInput label="Alignment" defaultValue={defaultValue} onChange={handleChange} />;
+      return <TextAlignInput label={t('style.alignment')} defaultValue={defaultValue} onChange={handleChange} />;
     case 'padding':
-      return <PaddingInput label="Padding" defaultValue={defaultValue} onChange={handleChange} />;
+      return <PaddingInput label={t('style.padding')} defaultValue={defaultValue} onChange={handleChange} />;
   }
 }

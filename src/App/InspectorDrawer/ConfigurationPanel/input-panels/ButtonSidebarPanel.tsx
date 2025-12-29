@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { ToggleButton } from '@mui/material';
 import { ButtonProps, ButtonPropsDefaults, ButtonPropsSchema } from '@usewaypoint/block-button';
 import { ZodError } from 'zod';
+import { useTranslation } from '../../../../i18n/useTranslation';
 
 import BaseSidebarPanel from './helpers/BaseSidebarPanel';
 import ColorInput from './helpers/inputs/ColorInput';
@@ -15,6 +16,7 @@ type ButtonSidebarPanelProps = {
   setData: (v: ButtonProps) => void;
 };
 export default function ButtonSidebarPanel({ data, setData }: ButtonSidebarPanelProps) {
+  const { t } = useTranslation();
   const [, setErrors] = useState<ZodError | null>(null);
 
   const updateData = (d: unknown) => {
@@ -36,51 +38,51 @@ export default function ButtonSidebarPanel({ data, setData }: ButtonSidebarPanel
   const buttonBackgroundColor = data.props?.buttonBackgroundColor ?? ButtonPropsDefaults.buttonBackgroundColor;
 
   return (
-    <BaseSidebarPanel title="Button block">
+    <BaseSidebarPanel title={t('button.title')}>
       <TextInput
-        label="Text"
+        label={t('button.text')}
         defaultValue={text}
         onChange={(text) => updateData({ ...data, props: { ...data.props, text } })}
       />
       <TextInput
-        label="Url"
+        label={t('button.url')}
         defaultValue={url}
         onChange={(url) => updateData({ ...data, props: { ...data.props, url } })}
       />
       <RadioGroupInput
-        label="Width"
+        label={t('button.width')}
         defaultValue={fullWidth ? 'FULL_WIDTH' : 'AUTO'}
         onChange={(v) => updateData({ ...data, props: { ...data.props, fullWidth: v === 'FULL_WIDTH' } })}
       >
-        <ToggleButton value="FULL_WIDTH">Full</ToggleButton>
-        <ToggleButton value="AUTO">Auto</ToggleButton>
+        <ToggleButton value="FULL_WIDTH">{t('button.widthFull')}</ToggleButton>
+        <ToggleButton value="AUTO">{t('button.widthAuto')}</ToggleButton>
       </RadioGroupInput>
       <RadioGroupInput
-        label="Size"
+        label={t('button.size')}
         defaultValue={size}
         onChange={(size) => updateData({ ...data, props: { ...data.props, size } })}
       >
-        <ToggleButton value="x-small">Xs</ToggleButton>
-        <ToggleButton value="small">Sm</ToggleButton>
-        <ToggleButton value="medium">Md</ToggleButton>
-        <ToggleButton value="large">Lg</ToggleButton>
+        <ToggleButton value="x-small">{t('button.sizeXSmall')}</ToggleButton>
+        <ToggleButton value="small">{t('button.sizeSmall')}</ToggleButton>
+        <ToggleButton value="medium">{t('button.sizeMedium')}</ToggleButton>
+        <ToggleButton value="large">{t('button.sizeLarge')}</ToggleButton>
       </RadioGroupInput>
       <RadioGroupInput
-        label="Style"
+        label={t('button.style')}
         defaultValue={buttonStyle}
         onChange={(buttonStyle) => updateData({ ...data, props: { ...data.props, buttonStyle } })}
       >
-        <ToggleButton value="rectangle">Rectangle</ToggleButton>
-        <ToggleButton value="rounded">Rounded</ToggleButton>
-        <ToggleButton value="pill">Pill</ToggleButton>
+        <ToggleButton value="rectangle">{t('button.styleRectangle')}</ToggleButton>
+        <ToggleButton value="rounded">{t('button.styleRounded')}</ToggleButton>
+        <ToggleButton value="pill">{t('button.stylePill')}</ToggleButton>
       </RadioGroupInput>
       <ColorInput
-        label="Text color"
+        label={t('button.textColor')}
         defaultValue={buttonTextColor}
         onChange={(buttonTextColor) => updateData({ ...data, props: { ...data.props, buttonTextColor } })}
       />
       <ColorInput
-        label="Button color"
+        label={t('button.buttonColor')}
         defaultValue={buttonBackgroundColor}
         onChange={(buttonBackgroundColor) => updateData({ ...data, props: { ...data.props, buttonBackgroundColor } })}
       />

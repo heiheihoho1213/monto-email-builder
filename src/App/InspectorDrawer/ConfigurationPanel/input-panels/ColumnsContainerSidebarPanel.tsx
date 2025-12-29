@@ -6,13 +6,23 @@ import {
   VerticalAlignCenterOutlined,
   VerticalAlignTopOutlined,
 } from '@mui/icons-material';
-import { Box, ToggleButton } from '@mui/material';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  ToggleButton,
+  Typography,
+} from '@mui/material';
 
 import ColumnsContainerPropsSchema, {
   ColumnsContainerProps,
 } from '../../../../documents/blocks/ColumnsContainer/ColumnsContainerPropsSchema';
 import { ZodError } from 'zod';
 import { useTranslation } from '../../../../i18n/useTranslation';
+import { useDocument, useSelectedBlockId } from '../../../../documents/editor/EditorContext';
 
 import BaseSidebarPanel from './helpers/BaseSidebarPanel';
 import RadioGroupInput from './helpers/inputs/RadioGroupInput';
@@ -25,6 +35,8 @@ type ColumnsContainerPanelProps = {
 };
 export default function ColumnsContainerPanel({ data, setData }: ColumnsContainerPanelProps) {
   const { t } = useTranslation();
+  const document = useDocument();
+  const selectedBlockId = useSelectedBlockId();
   const [, setErrors] = useState<ZodError | null>(null);
   const updateData = (d: unknown) => {
     const res = ColumnsContainerPropsSchema.safeParse(d);
@@ -36,9 +48,14 @@ export default function ColumnsContainerPanel({ data, setData }: ColumnsContaine
     }
   };
 
-  const currentColumnsCount = data.props?.columnsCount ?? 3;
-  const currentFixedWidths = data.props?.fixedWidths;
-  const currentColumns = data.props?.columns ?? (currentColumnsCount === 1 ? [{ childrenIds: [] }] : currentColumnsCount === 2 ? [{ childrenIds: [] }, { childrenIds: [] }] : currentColumnsCount === 4 ? [{ childrenIds: [] }, { childrenIds: [] }, { childrenIds: [] }, { childrenIds: [] }] : [{ childrenIds: [] }, { childrenIds: [] }, { childrenIds: [] }]);
+  // 从 document 中获取最新的列数据，而不是依赖传入的 data prop
+  const latestBlock = selectedBlockId ? document[selectedBlockId] : null;
+  const latestData = latestBlock && latestBlock.type === 'ColumnsContainer' ? latestBlock.data : data;
+
+  const currentColumnsCount = latestData.props?.columnsCount ?? 3;
+  const currentFixedWidths = latestData.props?.fixedWidths;
+  // 优先使用实际的 columns 数据，如果不存在则使用默认值
+  const currentColumns = latestData.props?.columns || (currentColumnsCount === 1 ? [{ childrenIds: [] }] : currentColumnsCount === 2 ? [{ childrenIds: [] }, { childrenIds: [] }] : currentColumnsCount === 4 ? [{ childrenIds: [] }, { childrenIds: [] }, { childrenIds: [] }, { childrenIds: [] }] : [{ childrenIds: [] }, { childrenIds: [] }, { childrenIds: [] }]);
 
   // 根据当前配置确定分栏类型
   const getCurrentLayout = React.useCallback((): string => {
@@ -62,6 +79,80 @@ export default function ColumnsContainerPanel({ data, setData }: ColumnsContaine
   }, [currentColumnsCount, currentFixedWidths]);
 
   const handleLayoutChange = (layout: string) => {
+    // 计算新布局的列数
+    let newColumnsCount: number;
+    switch (layout) {
+      case '1':
+        newColumnsCount = 1;
+        break;
+      case '2':
+      case '2:1':
+      case '1:2':
+      case '1:3':
+      case '3:1':
+        newColumnsCount = 2;
+        break;
+      case '3':
+        newColumnsCount = 3;
+        break;
+      case '4':
+        newColumnsCount = 4;
+        break;
+      default:
+        newColumnsCount = 3;
+    }
+
+    // 检查是否会丢失数据
+    const willLoseData = checkDataLoss(newColumnsCount);
+    if (willLoseData) {
+      // 会丢失数据，显示确认对话框
+      setPendingLayout(layout);
+      setConfirmDialogOpen(true);
+    } else {
+      // 不会丢失数据，直接切换
+      setLayoutValue(layout);
+      executeLayoutChange(layout);
+    }
+  };
+
+  const handleConfirmDialogClose = (confirmed: boolean) => {
+    setConfirmDialogOpen(false);
+    if (confirmed && pendingLayout) {
+      setLayoutValue(pendingLayout);
+      executeLayoutChange(pendingLayout);
+    }
+    setPendingLayout(null);
+  };
+
+  const [layoutValue, setLayoutValue] = useState(() => getCurrentLayout());
+  const [pendingLayout, setPendingLayout] = useState<string | null>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+
+  // 当数据变化时更新 layoutValue
+  useEffect(() => {
+    setLayoutValue(getCurrentLayout());
+  }, [getCurrentLayout]);
+
+  // 检查切换布局是否会丢失数据
+  const checkDataLoss = React.useCallback((newColumnsCount: number): boolean => {
+    if (newColumnsCount >= currentColumnsCount) {
+      // 列数增加或不变，不会丢失数据
+      return false;
+    }
+    // 列数减少，检查被删除的列是否有内容
+    // 确保使用实际的列数组长度，而不是 currentColumnsCount
+    const actualColumnsLength = currentColumns.length;
+    for (let i = newColumnsCount; i < actualColumnsLength; i++) {
+      const column = currentColumns[i];
+      if (column && column.childrenIds && column.childrenIds.length > 0) {
+        return true; // 有数据会丢失
+      }
+    }
+    return false; // 没有数据会丢失
+  }, [currentColumnsCount, currentColumns]);
+
+  // 执行布局切换
+  const executeLayoutChange = (layout: string) => {
     let newColumnsCount: number;
     let newFixedWidths: [number | null | undefined, number | null | undefined, number | null | undefined, number | null | undefined] = [null, null, null, null];
     let newColumns: Array<{ childrenIds: string[] }>;
@@ -144,28 +235,17 @@ export default function ColumnsContainerPanel({ data, setData }: ColumnsContaine
     });
   };
 
-  const [layoutValue, setLayoutValue] = useState(() => getCurrentLayout());
-
-  // 当数据变化时更新 layoutValue
-  useEffect(() => {
-    setLayoutValue(getCurrentLayout());
-  }, [getCurrentLayout]);
-
   return (
     <BaseSidebarPanel title={t('columns.title')}>
       <Box sx={{ mb: 2 }}>
-        <Box sx={{ mb: 1, fontSize: '0.875rem', color: 'text.secondary' }}>
+        <Box sx={{ mb: 1, fontSize: '12px', fontWeight: 500, color: 'text.secondary' }}>
           {t('columns.layout')}
         </Box>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0.5 }}>
           <ToggleButton
             value="1"
             selected={layoutValue === '1'}
-            onChange={() => {
-              const newValue = '1';
-              setLayoutValue(newValue);
-              handleLayoutChange(newValue);
-            }}
+            onChange={() => handleLayoutChange('1')}
             size="small"
             sx={{ minWidth: 'unset' }}
           >
@@ -174,11 +254,7 @@ export default function ColumnsContainerPanel({ data, setData }: ColumnsContaine
           <ToggleButton
             value="2"
             selected={layoutValue === '2'}
-            onChange={() => {
-              const newValue = '2';
-              setLayoutValue(newValue);
-              handleLayoutChange(newValue);
-            }}
+            onChange={() => handleLayoutChange('2')}
             size="small"
             sx={{ minWidth: 'unset' }}
           >
@@ -187,11 +263,7 @@ export default function ColumnsContainerPanel({ data, setData }: ColumnsContaine
           <ToggleButton
             value="2:1"
             selected={layoutValue === '2:1'}
-            onChange={() => {
-              const newValue = '2:1';
-              setLayoutValue(newValue);
-              handleLayoutChange(newValue);
-            }}
+            onChange={() => handleLayoutChange('2:1')}
             size="small"
             sx={{ minWidth: 'unset' }}
           >
@@ -200,11 +272,7 @@ export default function ColumnsContainerPanel({ data, setData }: ColumnsContaine
           <ToggleButton
             value="1:2"
             selected={layoutValue === '1:2'}
-            onChange={() => {
-              const newValue = '1:2';
-              setLayoutValue(newValue);
-              handleLayoutChange(newValue);
-            }}
+            onChange={() => handleLayoutChange('1:2')}
             size="small"
             sx={{ minWidth: 'unset' }}
           >
@@ -213,11 +281,7 @@ export default function ColumnsContainerPanel({ data, setData }: ColumnsContaine
           <ToggleButton
             value="3"
             selected={layoutValue === '3'}
-            onChange={() => {
-              const newValue = '3';
-              setLayoutValue(newValue);
-              handleLayoutChange(newValue);
-            }}
+            onChange={() => handleLayoutChange('3')}
             size="small"
             sx={{ minWidth: 'unset' }}
           >
@@ -226,11 +290,7 @@ export default function ColumnsContainerPanel({ data, setData }: ColumnsContaine
           <ToggleButton
             value="1:3"
             selected={layoutValue === '1:3'}
-            onChange={() => {
-              const newValue = '1:3';
-              setLayoutValue(newValue);
-              handleLayoutChange(newValue);
-            }}
+            onChange={() => handleLayoutChange('1:3')}
             size="small"
             sx={{ minWidth: 'unset' }}
           >
@@ -239,11 +299,7 @@ export default function ColumnsContainerPanel({ data, setData }: ColumnsContaine
           <ToggleButton
             value="3:1"
             selected={layoutValue === '3:1'}
-            onChange={() => {
-              const newValue = '3:1';
-              setLayoutValue(newValue);
-              handleLayoutChange(newValue);
-            }}
+            onChange={() => handleLayoutChange('3:1')}
             size="small"
             sx={{ minWidth: 'unset' }}
           >
@@ -252,11 +308,7 @@ export default function ColumnsContainerPanel({ data, setData }: ColumnsContaine
           <ToggleButton
             value="4"
             selected={layoutValue === '4'}
-            onChange={() => {
-              const newValue = '4';
-              setLayoutValue(newValue);
-              handleLayoutChange(newValue);
-            }}
+            onChange={() => handleLayoutChange('4')}
             size="small"
             sx={{ minWidth: 'unset' }}
           >
@@ -298,6 +350,19 @@ export default function ColumnsContainerPanel({ data, setData }: ColumnsContaine
         value={data.style}
         onChange={(style) => updateData({ ...data, style })}
       />
+
+      <Dialog open={confirmDialogOpen} onClose={() => handleConfirmDialogClose(false)}>
+        <DialogTitle>{t('columns.confirmChangeTitle')}</DialogTitle>
+        <DialogContent>
+          <Typography>{t('columns.confirmChangeMessage')}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" color="primary" onClick={() => handleConfirmDialogClose(false)}>{t('columns.cancel')}</Button>
+          <Button variant="contained" color="error" onClick={() => handleConfirmDialogClose(true)}>
+            {t('columns.confirm')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </BaseSidebarPanel>
   );
 }

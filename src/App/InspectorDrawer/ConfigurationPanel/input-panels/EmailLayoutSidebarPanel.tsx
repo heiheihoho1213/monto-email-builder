@@ -6,6 +6,7 @@ import EmailLayoutPropsSchema, {
   EmailLayoutProps,
 } from '../../../../documents/blocks/EmailLayout/EmailLayoutPropsSchema';
 import { ZodError } from 'zod';
+import { useTranslation } from '../../../../i18n/useTranslation';
 
 import BaseSidebarPanel from './helpers/BaseSidebarPanel';
 import ColorInput, { NullableColorInput } from './helpers/inputs/ColorInput';
@@ -17,6 +18,7 @@ type EmailLayoutSidebarFieldsProps = {
   setData: (v: EmailLayoutProps) => void;
 };
 export default function EmailLayoutSidebarFields({ data, setData }: EmailLayoutSidebarFieldsProps) {
+  const { t } = useTranslation();
   const [, setErrors] = useState<ZodError | null>(null);
 
   const updateData = (d: unknown) => {
@@ -30,19 +32,19 @@ export default function EmailLayoutSidebarFields({ data, setData }: EmailLayoutS
   };
 
   return (
-    <BaseSidebarPanel title="Global">
+    <BaseSidebarPanel title={t('emailLayout.global')}>
       <ColorInput
-        label="Backdrop color"
+        label={t('emailLayout.backdropColor')}
         defaultValue={data.backdropColor ?? '#F5F5F5'}
         onChange={(backdropColor) => updateData({ ...data, backdropColor })}
       />
       <ColorInput
-        label="Canvas color"
+        label={t('emailLayout.canvasColor')}
         defaultValue={data.canvasColor ?? '#FFFFFF'}
         onChange={(canvasColor) => updateData({ ...data, canvasColor })}
       />
       <NullableColorInput
-        label="Canvas border color"
+        label={t('emailLayout.canvasBorderColor')}
         defaultValue={data.borderColor ?? null}
         onChange={(borderColor) => updateData({ ...data, borderColor })}
       />
@@ -53,7 +55,7 @@ export default function EmailLayoutSidebarFields({ data, setData }: EmailLayoutS
         marks
         min={0}
         max={48}
-        label="Canvas border radius"
+        label={t('emailLayout.canvasBorderRadius')}
         defaultValue={data.borderRadius ?? 0}
         onChange={(borderRadius) => updateData({ ...data, borderRadius })}
       />
@@ -64,17 +66,17 @@ export default function EmailLayoutSidebarFields({ data, setData }: EmailLayoutS
         marks
         min={600}
         max={660}
-        label="Page width"
+        label={t('emailLayout.pageWidth')}
         defaultValue={data.width ?? 600}
         onChange={(width) => updateData({ ...data, width })}
       />
       <NullableFontFamily
-        label="Font family"
+        label={t('emailLayout.fontFamily')}
         defaultValue="MODERN_SANS"
         onChange={(fontFamily) => updateData({ ...data, fontFamily })}
       />
       <ColorInput
-        label="Text color"
+        label={t('emailLayout.textColor')}
         defaultValue={data.textColor ?? '#262626'}
         onChange={(textColor) => updateData({ ...data, textColor })}
       />

@@ -81,7 +81,11 @@
     "custom": "自定义",
     "column": "列 {{number}}",
     "gap": "列间距",
-    "alignment": "对齐方式"
+    "alignment": "对齐方式",
+    "confirmChangeTitle": "确认切换分栏布局",
+    "confirmChangeMessage": "切换分栏布局将删除部分列中的数据，此操作不可撤销。确定要继续吗？",
+    "cancel": "取消",
+    "confirm": "确定"
   },
   "emailLayout": {
     "global": "全局",
@@ -92,5 +96,71 @@
     "pageWidth": "页面宽度",
     "fontFamily": "字体",
     "textColor": "文字颜色"
+  },
+  "text": {
+    "title": "文本块",
+    "content": "内容",
+    "markdown": "Markdown"
+  },
+  "button": {
+    "title": "按钮块",
+    "text": "文本",
+    "url": "链接",
+    "width": "宽度",
+    "widthFull": "全宽",
+    "widthAuto": "自动",
+    "size": "尺寸",
+    "sizeXSmall": "超小",
+    "sizeSmall": "小",
+    "sizeMedium": "中",
+    "sizeLarge": "大",
+    "style": "样式",
+    "styleRectangle": "矩形",
+    "styleRounded": "圆角",
+    "stylePill": "胶囊",
+    "textColor": "文字颜色",
+    "buttonColor": "按钮颜色"
+  },
+  "heading": {
+    "title": "标题块",
+    "content": "内容",
+    "level": "级别"
+  },
+  "avatar": {
+    "title": "头像块",
+    "size": "尺寸",
+    "shape": "形状",
+    "shapeCircle": "圆形",
+    "shapeSquare": "方形",
+    "shapeRounded": "圆角",
+    "imageUrl": "图片地址",
+    "altText": "替代文本"
+  },
+  "divider": {
+    "title": "分割线块",
+    "color": "颜色",
+    "height": "高度"
+  },
+  "container": {
+    "title": "容器块"
+  },
+  "spacer": {
+    "title": "间距块",
+    "height": "高度"
+  },
+  "html": {
+    "title": "HTML块",
+    "content": "内容"
+  },
+  "style": {
+    "backgroundColor": "背景颜色",
+    "borderColor": "边框颜色",
+    "borderRadius": "圆角",
+    "textColor": "文字颜色",
+    "fontFamily": "字体",
+    "fontSize": "字号",
+    "fontWeight": "字重",
+    "alignment": "对齐方式",
+    "padding": "内边距"
   }
 }

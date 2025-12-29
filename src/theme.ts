@@ -111,6 +111,11 @@ const THEME = createTheme(BASE_THEME, {
       defaultProps: {
         fullWidth: true,
       },
+      styleOverrides: {
+        paper: {
+          borderRadius: BASE_THEME.spacing(1),
+        },
+      },
     },
     MuiDialogContent: {
       styleOverrides: {
@@ -251,7 +256,7 @@ const THEME = createTheme(BASE_THEME, {
     },
     MuiButtonBase: {
       defaultProps: {
-        disableTouchRipple: true,
+        // disableTouchRipple: true,
         focusRipple: true,
       },
       styleOverrides: {
@@ -282,6 +287,9 @@ const THEME = createTheme(BASE_THEME, {
         disableElevation: true,
       },
       styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
         textPrimary: {
           color: BASE_THEME.palette.text.primary,
         },
@@ -289,12 +297,12 @@ const THEME = createTheme(BASE_THEME, {
           color: BASE_THEME.palette.text.secondary,
         },
         outlinedPrimary: {
-          borderColor: BASE_THEME.palette.grey[300],
-          color: BASE_THEME.palette.text.primary,
-          '&:hover, &:active, &:focus': {
-            borderColor: BASE_THEME.palette.grey[500],
-            color: BASE_THEME.palette.text.primary,
-          },
+          // borderColor: BASE_THEME.palette.grey[300],
+          // color: BASE_THEME.palette.text.primary,
+          // '&:hover, &:active, &:focus': {
+          //   borderColor: BASE_THEME.palette.grey[500],
+          //   color: BASE_THEME.palette.text.primary,
+          // },
         },
         containedSecondary: {
           backgroundColor: BASE_THEME.palette.common.white,
@@ -430,7 +438,7 @@ const THEME = createTheme(BASE_THEME, {
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 0,
+          borderRadius: 8,
         },
       },
     },

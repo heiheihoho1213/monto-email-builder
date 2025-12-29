@@ -550,14 +550,22 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
           draggedParentInfoForRender.containerId === targetParentInfoForRender.containerId &&
           draggedParentInfoForRender.columnIndex !== targetParentInfoForRender.columnIndex;
 
+        // 检查是否是外部元素拖入列中（列有元素），需要禁止上下插入
+        const isExternalDragIntoColumn = isExternalDrag &&
+          draggedParentInfoForRender &&
+          draggedParentInfoForRender.columnIndex === null && // 外部元素不在列中
+          targetParentInfoForRender.columnIndex !== null && // 目标在列中
+          !allowReplace; // 列有元素
+
         // 外部拖拽时的指示线：
         // - 如果 allowReplace 为 true（ColumnsContainer 的列），显示全边框（表示可以替换）
         // - 如果 allowReplace 为 false（其他容器），显示顶部指示线（表示可以插入到当前元素之前）
         // - 如果是分栏间交换，显示蓝色全边框（表示可以交换）
+        // - 如果是外部元素拖入列中（列有元素），禁止显示上下插入指示线
         const showFullBorder = (allowReplace && dragOverIndex === i && isExternalDrag) ||
           (isCrossColumnSwapForRender && dragOverIndex === i);
-        const showTopIndicatorForExternal = !allowReplace && dragOverIndex === i && isExternalDrag && !isCrossColumnSwapForRender;
-        const showBottomIndicatorForExternal = !allowReplace && isLastBlock && dragOverIndex === childrenIds.length && isExternalDrag;
+        const showTopIndicatorForExternal = !allowReplace && dragOverIndex === i && isExternalDrag && !isCrossColumnSwapForRender && !isExternalDragIntoColumn;
+        const showBottomIndicatorForExternal = !allowReplace && isLastBlock && dragOverIndex === childrenIds.length && isExternalDrag && !isExternalDragIntoColumn;
         // 水平拖拽指示线：显示在左侧或右侧
         const showLeftIndicator = horizontalDragSide === 'left' && horizontalDragTargetIndex === i;
         const showRightIndicator = horizontalDragSide === 'right' && horizontalDragTargetIndex === i;
@@ -669,7 +677,59 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
                 // 如果是最后一个块，检查是否拖拽到块的下方区域
                 // 对于外部拖拽，只有在非替换模式（!allowReplace）时才显示底部指示线
+                // 但禁止外部元素拖入列中做上下插入（如果列数 >= 4）
                 if (isLastBlock && (!isExternal || !allowReplace)) {
+                  // 检查是否是外部元素拖入列中
+                  const targetParentInfo = findParentContainerId(document, childId);
+                  const isTargetInColumn = allowReplace || targetParentInfo.columnIndex !== null;
+                  const draggedParentInfo = findParentContainerId(document, draggedId);
+                  const isDraggedInColumn = draggedParentInfo.columnIndex !== null;
+
+                  // 如果是外部元素拖入列中（列中有元素），检查是否可以扩列插入
+                  if (isExternal && isTargetInColumn && !isDraggedInColumn && !allowReplace) {
+                    // 检查当前 ColumnsContainer 的列数
+                    const columnsContainerId = targetParentInfo.containerId;
+                    if (columnsContainerId) {
+                      const columnsContainer = document[columnsContainerId];
+                      if (columnsContainer && columnsContainer.type === 'ColumnsContainer') {
+                        const currentColumnsCount = columnsContainer.data.props?.columnsCount ||
+                          columnsContainer.data.props?.columns?.length || 0;
+
+                        // 如果列数 >= 4，禁止插入
+                        if (currentColumnsCount >= 4) {
+                          setIsDragNotAllowed(true);
+                          e.dataTransfer.effectAllowed = 'none';
+                          e.dataTransfer.dropEffect = 'none';
+                          setHorizontalDragSide(null);
+                          setHorizontalDragTargetIndex(null);
+                          return;
+                        }
+                        // 如果列数 < 4，允许插入（会扩列），禁止显示底部插入指示线
+                        // 只允许左右插入（扩列），不允许上下插入
+                        // 根据鼠标位置决定显示左侧还是右侧指示线
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const mouseY = e.clientY;
+                        const mouseX = e.clientX;
+                        const blockBottom = rect.bottom;
+                        const blockCenter = rect.left + rect.width / 2;
+
+                        setDraggedBlockId(draggedId);
+                        setDragOverIndex(null); // 不显示上下插入指示线
+
+                        // 根据鼠标位置决定显示左侧还是右侧指示线
+                        if (mouseX < blockCenter) {
+                          // 鼠标在左侧，显示左侧插入指示线（在目标元素之前新增一列）
+                          setHorizontalDragSide('left');
+                        } else {
+                          // 鼠标在右侧，显示右侧插入指示线（在目标元素之后新增一列）
+                          setHorizontalDragSide('right');
+                        }
+                        setHorizontalDragTargetIndex(i);
+                        return;
+                      }
+                    }
+                  }
+
                   const rect = e.currentTarget.getBoundingClientRect();
                   const mouseY = e.clientY;
                   const blockBottom = rect.bottom;
@@ -685,6 +745,55 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
                 // 如果是外部拖拽，根据 allowReplace 决定显示方式
                 if (isExternal) {
+                  // 检查目标是否在列中（通过 allowReplace 或 findParentContainerId 检测）
+                  const targetParentInfo = findParentContainerId(document, childId);
+                  const isTargetInColumn = allowReplace || targetParentInfo.columnIndex !== null;
+
+                  // 检查被拖拽的元素是否不在列中
+                  const draggedParentInfo = findParentContainerId(document, draggedId);
+                  const isDraggedInColumn = draggedParentInfo.columnIndex !== null;
+
+                  // 如果列中有元素（allowReplace 为 false），检查是否可以扩列插入
+                  if (isTargetInColumn && !isDraggedInColumn && !allowReplace) {
+                    // 检查当前 ColumnsContainer 的列数
+                    const columnsContainerId = targetParentInfo.containerId;
+                    if (columnsContainerId) {
+                      const columnsContainer = document[columnsContainerId];
+                      if (columnsContainer && columnsContainer.type === 'ColumnsContainer') {
+                        const currentColumnsCount = columnsContainer.data.props?.columnsCount ||
+                          columnsContainer.data.props?.columns?.length || 0;
+
+                        // 如果列数 >= 4，禁止插入
+                        if (currentColumnsCount >= 4) {
+                          setIsDragNotAllowed(true);
+                          e.dataTransfer.effectAllowed = 'none';
+                          e.dataTransfer.dropEffect = 'none';
+                          setHorizontalDragSide(null);
+                          setHorizontalDragTargetIndex(null);
+                          return;
+                        }
+                        // 如果列数 < 4，允许插入（会扩列，左右插入，新增一列）
+                        // 根据鼠标位置决定显示左侧还是右侧指示线
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const mouseX = e.clientX;
+                        const blockCenter = rect.left + rect.width / 2;
+
+                        setDraggedBlockId(draggedId);
+                        setDragOverIndex(null); // 不显示上下插入指示线
+
+                        if (mouseX < blockCenter) {
+                          // 鼠标在左侧，显示左侧插入指示线（在目标元素之前新增一列）
+                          setHorizontalDragSide('left');
+                        } else {
+                          // 鼠标在右侧，显示右侧插入指示线（在目标元素之后新增一列）
+                          setHorizontalDragSide('right');
+                        }
+                        setHorizontalDragTargetIndex(i);
+                        return;
+                      }
+                    }
+                  }
+
                   setDraggedBlockId(draggedId);
                   // 如果 allowReplace 为 true，显示在当前块位置（可以替换）
                   // 如果 allowReplace 为 false，显示在当前块之前（可以插入）
@@ -984,6 +1093,112 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   }
 
                   // 如果拖拽的block不在当前容器中，说明是从外部拖拽过来的
+                  // 检查是否是外部元素拖入列中做上下插入（需要检查列数）
+                  const targetParentInfoForAppend = findParentContainerId(document, containerId || '');
+                  const isTargetInColumnForAppend = allowReplace || targetParentInfoForAppend.columnIndex !== null;
+                  const draggedParentInfoForAppend = findParentContainerId(document, draggedId);
+                  const isDraggedInColumnForAppend = draggedParentInfoForAppend.columnIndex !== null;
+
+                  // 如果是外部元素拖入列中（列中有元素），检查是否可以扩列插入
+                  if (isTargetInColumnForAppend && !isDraggedInColumnForAppend && !allowReplace) {
+                    const columnsContainerId = targetParentInfoForAppend.containerId;
+                    if (columnsContainerId) {
+                      const columnsContainer = document[columnsContainerId];
+                      if (columnsContainer && columnsContainer.type === 'ColumnsContainer') {
+                        const currentColumnsCount = columnsContainer.data.props?.columnsCount ||
+                          columnsContainer.data.props?.columns?.length || 0;
+
+                        // 如果列数 >= 4，禁止插入
+                        if (currentColumnsCount >= 4) {
+                          (window as any).__currentDraggedBlockId = null;
+                          (window as any).__currentDraggedBlock = null;
+                          setDraggedBlockId(null);
+                          setDragOverIndex(null);
+                          setIsDragNotAllowed(false);
+                          return;
+                        }
+
+                        // 如果列数 < 4，扩列并插入到末尾
+                        const currentColumns = columnsContainer.data.props?.columns || [];
+                        const targetColumnIndex = targetParentInfoForAppend.columnIndex!;
+
+                        // 如果当前是2列或4列，插入后改为3列均分
+                        let newColumnsCount: number;
+                        let newFixedWidths: [number | null | undefined, number | null | undefined, number | null | undefined, number | null | undefined] | undefined = undefined;
+
+                        if (currentColumnsCount === 2 || currentColumnsCount === 4) {
+                          // 改为3列均分
+                          newColumnsCount = 3;
+                          newFixedWidths = [null, null, null, null]; // 均分，不使用固定宽度
+                        } else {
+                          // 正常扩列
+                          newColumnsCount = currentColumnsCount + 1;
+                        }
+
+                        // 创建新的columns数组，在目标列之后插入新列
+                        const newColumns: Array<{ childrenIds: string[] }> = [];
+                        for (let colIndex = 0; colIndex < currentColumnsCount; colIndex++) {
+                          if (colIndex === targetColumnIndex) {
+                            // 保留目标列
+                            newColumns.push({ childrenIds: currentColumns[colIndex]?.childrenIds || [] });
+                            // 在目标列之后插入新列，包含被拖拽的元素
+                            newColumns.push({ childrenIds: [draggedId] });
+                          } else {
+                            // 保留其他列
+                            newColumns.push({ childrenIds: currentColumns[colIndex]?.childrenIds || [] });
+                          }
+                        }
+
+                        // 如果改为3列，需要调整columns数组长度
+                        if (currentColumnsCount === 2 || currentColumnsCount === 4) {
+                          // 如果当前是2列，插入后变为3列，newColumns已经有3个元素了
+                          // 如果当前是4列，插入后变为3列，需要只保留前3列
+                          if (currentColumnsCount === 4) {
+                            // 只保留前3列
+                            newColumns.splice(3);
+                          }
+                        }
+
+                        // 找到原容器并移除block
+                        const parentInfo = findParentContainerId(document, draggedId);
+                        let newDocument = document;
+                        if (parentInfo.containerId) {
+                          newDocument = removeBlockFromParentContainer(document, draggedId, parentInfo);
+                        }
+
+                        // 更新ColumnsContainer，扩列并添加新block
+                        const updatedColumnsContainer = {
+                          ...columnsContainer,
+                          data: {
+                            ...columnsContainer.data,
+                            props: {
+                              ...columnsContainer.data.props,
+                              columnsCount: newColumnsCount,
+                              columns: newColumns,
+                              ...(newFixedWidths !== undefined && { fixedWidths: newFixedWidths }),
+                            },
+                          },
+                        };
+
+                        // 更新document
+                        setDocument({
+                          ...newDocument,
+                          [columnsContainerId]: updatedColumnsContainer,
+                          [draggedId]: draggedBlock,
+                        });
+
+                        // 清除拖拽状态
+                        (window as any).__currentDraggedBlockId = null;
+                        (window as any).__currentDraggedBlock = null;
+                        setDraggedBlockId(null);
+                        setDragOverIndex(null);
+                        setHorizontalDragSide(null);
+                        setHorizontalDragTargetIndex(null);
+                        return;
+                      }
+                    }
+                  }
+
                   // 实现移动操作：从原容器中移除，添加到目标容器末尾
                   if (!draggedBlock) {
                     (window as any).__currentDraggedBlockId = null;
@@ -1013,6 +1228,25 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                     setDragOverIndex(null);
                     setIsDragNotAllowed(false);
                     return;
+                  }
+
+                  // 检查是否是外部元素拖入列中（列有元素），禁止底部插入
+                  if (containerId) {
+                    const targetParentInfoForBottom = findParentContainerId(document, containerId);
+                    const isTargetInColumnForBottom = allowReplace || targetParentInfoForBottom.columnIndex !== null;
+                    const draggedParentInfoForBottom = findParentContainerId(document, blockId);
+                    const isDraggedInColumnForBottom = draggedParentInfoForBottom.columnIndex !== null;
+
+                    // 如果是外部元素拖入列中（列有元素），禁止底部插入
+                    if (isTargetInColumnForBottom && !isDraggedInColumnForBottom && !allowReplace) {
+                      // 已经处理过扩列逻辑，如果到这里说明列数 >= 4，禁止插入
+                      (window as any).__currentDraggedBlockId = null;
+                      (window as any).__currentDraggedBlock = null;
+                      setDraggedBlockId(null);
+                      setDragOverIndex(null);
+                      setIsDragNotAllowed(false);
+                      return;
+                    }
                   }
 
                   // 添加到目标容器末尾
@@ -1084,6 +1318,142 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
                 // 检查是否允许将 block 拖入目标容器（防止 Container 和 ColumnsContainer 相互嵌套）
                 if (!canDropBlockIntoContainer(draggedBlock, containerId, document)) {
+                  (window as any).__currentDraggedBlockId = null;
+                  (window as any).__currentDraggedBlock = null;
+                  setDraggedBlockId(null);
+                  setDragOverIndex(null);
+                  setIsDragNotAllowed(false);
+                  return;
+                }
+
+                // 检查是否是外部元素拖入列中（列中有元素），需要扩列插入（左右插入，新增一列）
+                const targetParentInfoForInsert = findParentContainerId(document, childId);
+                const isTargetInColumnForInsert = allowReplace || targetParentInfoForInsert.columnIndex !== null;
+                const draggedParentInfoForInsert = findParentContainerId(document, blockId);
+                const isDraggedInColumnForInsert = draggedParentInfoForInsert.columnIndex !== null;
+
+                // 检查是否是水平拖拽指示线（外部元素拖入列中，需要扩列）
+                const isHorizontalDragForExpand = (horizontalDragSide === 'left' || horizontalDragSide === 'right') &&
+                  horizontalDragTargetIndex === i &&
+                  isTargetInColumnForInsert &&
+                  !isDraggedInColumnForInsert &&
+                  !allowReplace;
+
+                // 如果是外部元素拖入列中（列中有元素），检查是否需要扩列
+                if ((isTargetInColumnForInsert && !isDraggedInColumnForInsert && !allowReplace) || isHorizontalDragForExpand) {
+                  const columnsContainerId = targetParentInfoForInsert.containerId;
+                  if (columnsContainerId) {
+                    const columnsContainer = document[columnsContainerId];
+                    if (columnsContainer && columnsContainer.type === 'ColumnsContainer') {
+                      const currentColumnsCount = columnsContainer.data.props?.columnsCount ||
+                        columnsContainer.data.props?.columns?.length || 0;
+
+                      // 如果列数 >= 4，禁止插入
+                      if (currentColumnsCount >= 4) {
+                        (window as any).__currentDraggedBlockId = null;
+                        (window as any).__currentDraggedBlock = null;
+                        setDraggedBlockId(null);
+                        setDragOverIndex(null);
+                        setIsDragNotAllowed(false);
+                        return;
+                      }
+
+                      // 如果列数 < 4，扩列并插入
+                      const currentColumns = columnsContainer.data.props?.columns || [];
+                      const targetColumnIndex = targetParentInfoForInsert.columnIndex!;
+
+                      // 如果当前是2列或4列，插入后改为3列均分
+                      let newColumnsCount: number;
+                      let newFixedWidths: [number | null | undefined, number | null | undefined, number | null | undefined, number | null | undefined] | undefined = undefined;
+
+                      if (currentColumnsCount === 2 || currentColumnsCount === 4) {
+                        // 改为3列均分
+                        newColumnsCount = 3;
+                        newFixedWidths = [null, null, null, null]; // 均分，不使用固定宽度
+                      } else {
+                        // 正常扩列
+                        newColumnsCount = currentColumnsCount + 1;
+                      }
+
+                      // 检查是否是左侧插入
+                      const isLeftInsert = horizontalDragSide === 'left' && horizontalDragTargetIndex === i;
+
+                      // 创建新的columns数组，根据指示线位置插入新列
+                      const newColumns: Array<{ childrenIds: string[] }> = [];
+                      for (let colIndex = 0; colIndex < currentColumnsCount; colIndex++) {
+                        if (isLeftInsert && colIndex === targetColumnIndex) {
+                          // 左侧插入：在目标列之前插入新列
+                          newColumns.push({ childrenIds: [blockId] });
+                          newColumns.push({ childrenIds: currentColumns[colIndex]?.childrenIds || [] });
+                        } else if (!isLeftInsert && colIndex === targetColumnIndex) {
+                          // 右侧插入：在目标列之后插入新列
+                          newColumns.push({ childrenIds: currentColumns[colIndex]?.childrenIds || [] });
+                          newColumns.push({ childrenIds: [blockId] });
+                        } else {
+                          // 保留其他列
+                          newColumns.push({ childrenIds: currentColumns[colIndex]?.childrenIds || [] });
+                        }
+                      }
+
+                      // 如果改为3列，需要调整columns数组长度
+                      if (currentColumnsCount === 2 || currentColumnsCount === 4) {
+                        // 如果当前是2列，插入后变为3列，newColumns已经有3个元素了
+                        // 如果当前是4列，插入后变为3列，需要只保留前3列
+                        if (currentColumnsCount === 4) {
+                          // 只保留前3列
+                          newColumns.splice(3);
+                        }
+                      }
+
+                      // 找到原容器并移除block
+                      const parentInfo = findParentContainerId(document, blockId);
+                      let newDocument = document;
+                      if (parentInfo.containerId) {
+                        newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
+                      }
+
+                      // 更新ColumnsContainer，扩列并添加新block
+                      const updatedColumnsContainer = {
+                        ...columnsContainer,
+                        data: {
+                          ...columnsContainer.data,
+                          props: {
+                            ...columnsContainer.data.props,
+                            columnsCount: newColumnsCount,
+                            columns: newColumns,
+                            ...(newFixedWidths !== undefined && { fixedWidths: newFixedWidths }),
+                          },
+                        },
+                      };
+
+                      // 更新document
+                      setDocument({
+                        ...newDocument,
+                        [columnsContainerId]: updatedColumnsContainer,
+                        [blockId]: draggedBlock,
+                      });
+
+                      // 清除拖拽状态
+                      (window as any).__currentDraggedBlockId = null;
+                      (window as any).__currentDraggedBlock = null;
+                      setDraggedBlockId(null);
+                      setDragOverIndex(null);
+                      setHorizontalDragSide(null);
+                      setHorizontalDragTargetIndex(null);
+                      return;
+                    }
+                  }
+                }
+
+                // 检查是否是外部元素拖入列中（列有元素），禁止上下插入
+                const targetParentInfoForCheck = findParentContainerId(document, childId);
+                const isTargetInColumnForCheck = allowReplace || targetParentInfoForCheck.columnIndex !== null;
+                const draggedParentInfoForCheck = findParentContainerId(document, blockId);
+                const isDraggedInColumnForCheck = draggedParentInfoForCheck.columnIndex !== null;
+
+                // 如果是外部元素拖入列中（列有元素），禁止上下插入
+                if (isTargetInColumnForCheck && !isDraggedInColumnForCheck && !allowReplace) {
+                  // 已经处理过扩列逻辑，如果到这里说明列数 >= 4，禁止插入
                   (window as any).__currentDraggedBlockId = null;
                   (window as any).__currentDraggedBlock = null;
                   setDraggedBlockId(null);
