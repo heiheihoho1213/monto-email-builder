@@ -41,6 +41,7 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
   };
 
   const handleDragStart = (e: React.DragEvent) => {
+    const dragSource = e.target as HTMLElement;
     // 如果是 ColumnsContainer，需要检查是否点击的是列区域
     // 如果点击的是列区域（子元素），不应该拖动整个 ColumnsContainer
     if (blockData?.type === 'ColumnsContainer') {
@@ -80,7 +81,6 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
   return (
     <Box
       draggable={isDraggable}
-      className={isDragging ? 'dragging' : ''}
       sx={{
         position: 'relative',
         maxWidth: '100%',
@@ -91,7 +91,7 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
         opacity: isDragging ? 0.5 : 1,
         cursor: isDraggable ? (isDragging ? 'grabbing' : 'grab') : 'default',
         overflowWrap: 'break-word', // 允许长单词换行
-        wordBreak: 'break-word', // 确保文本换行
+        wordBreak: 'break-word', // 确保文本换行。
       }}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}

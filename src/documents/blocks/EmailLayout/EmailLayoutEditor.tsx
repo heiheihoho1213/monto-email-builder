@@ -86,7 +86,7 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
                   if (blockId === currentBlockId) {
                     return;
                   }
-                  
+
                   // 如果是拖拽排序（block 没有 type），只更新 childrenIds
                   if (!block.type) {
                     setDocument({
@@ -103,7 +103,7 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
                     const latestDocument = editorStateStore.getState().document;
                     // 检查 block 是否已经在 document 中（可能是从其他容器拖拽过来的）
                     const blockExists = latestDocument[blockId] && latestDocument[blockId].type;
-                    
+
                     const updates: any = {
                       [currentBlockId]: {
                         type: 'EmailLayout',

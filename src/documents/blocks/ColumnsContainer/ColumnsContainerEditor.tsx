@@ -157,7 +157,7 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
     // 如果列中有元素，不允许替换，只允许插入
     const isColumnEmpty = !col?.childrenIds || col.childrenIds.length === 0;
     const allowReplace = isColumnEmpty;
-    
+
     return (
       <Box
         key={index}
