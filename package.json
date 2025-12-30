@@ -37,6 +37,12 @@
     "README.md",
     "LICENSE"
   ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:lib": "vite build --mode library && tsc --emitDeclarationOnly",
+    "preview": "vite preview"
+  },
   "peerDependencies": {
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
@@ -45,12 +51,6 @@
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-syntax-highlighter": "^16.1.0"
-  },
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "build:lib": "vite build --mode library && tsc --emitDeclarationOnly",
-    "preview": "vite preview"
   },
   "dependencies": {
     "@usewaypoint/block-avatar": "0.0.3",

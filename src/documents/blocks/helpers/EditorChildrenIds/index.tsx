@@ -655,9 +655,20 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 const isDraggedContainer = draggedBlock?.type === 'Container' || draggedBlock?.type === 'ColumnsContainer';
                 const isTargetContainer = targetBlock?.type === 'Container' || targetBlock?.type === 'ColumnsContainer';
 
-                // 优先处理跨列拖拽扩列（从另一个列拖入当前列，用于扩列）
+                // 优先处理分栏间交换（同一个ColumnsContainer的不同列之间），不受列数限制
+                // 如果是分栏间交换，显示全边框（蓝色），不显示水平指示线
+                if (isCrossColumnSwap && !isDraggedContainer && !isTargetContainer && draggedId !== childId) {
+                  setDraggedBlockId(draggedId);
+                  setDragOverIndex(i); // 显示全边框
+                  setHorizontalDragSide(null); // 清除水平拖拽指示
+                  setHorizontalDragTargetIndex(null);
+                  return;
+                }
+
+                // 处理跨列拖拽扩列（从另一个列拖入当前列，用于扩列）
                 // 检查目标是否在列中且列有元素（allowReplace 为 false）
-                if (isCrossColumnDragForExpand && !allowReplace && !isDraggedContainer && !isTargetContainer && draggedId !== childId) {
+                // 注意：分栏间交换已经在上面处理了，这里只处理扩列的情况
+                if (isCrossColumnDragForExpand && !allowReplace && !isDraggedContainer && !isTargetContainer && draggedId !== childId && !isCrossColumnSwap) {
                   // 检查当前 ColumnsContainer 的列数
                   const columnsContainerId = targetParentInfo.containerId;
                   if (columnsContainerId) {
@@ -696,15 +707,6 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                       return;
                     }
                   }
-                }
-
-                // 如果是分栏间交换，显示全边框（蓝色），不显示水平指示线
-                if (isCrossColumnSwap && !isDraggedContainer && !isTargetContainer && draggedId !== childId) {
-                  setDraggedBlockId(draggedId);
-                  setDragOverIndex(i); // 显示全边框
-                  setHorizontalDragSide(null); // 清除水平拖拽指示
-                  setHorizontalDragTargetIndex(null);
-                  return;
                 }
 
                 // 禁止同一个列内部的分栏间拖拽（左右或上下）

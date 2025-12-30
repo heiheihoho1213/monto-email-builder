@@ -12,6 +12,9 @@
     "mobileView": "Mobile view",
     "downloadJson": "Download JSON file",
     "importJson": "Import JSON",
+    "importJsonHelperText": "This will override your current template.",
+    "import": "Import",
+    "cancel": "Cancel",
     "addContentBlocks": "Add Content Blocks"
   },
   "samples": {

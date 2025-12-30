@@ -12,6 +12,9 @@
     "mobileView": "移动视图",
     "downloadJson": "下载 JSON 文件",
     "importJson": "导入 JSON",
+    "importJsonHelperText": "这将覆盖您当前的模板。",
+    "import": "导入",
+    "cancel": "取消",
     "addContentBlocks": "添加内容块"
   },
   "samples": {
