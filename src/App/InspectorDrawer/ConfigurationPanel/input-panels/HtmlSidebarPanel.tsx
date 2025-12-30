@@ -5,7 +5,7 @@ import { ZodError } from 'zod';
 import { useTranslation } from '../../../../i18n/useTranslation';
 
 import BaseSidebarPanel from './helpers/BaseSidebarPanel';
-import TextInput from './helpers/inputs/TextInput';
+import CodeMirrorInput from './helpers/inputs/CodeMirrorInput';
 import MultiStylePropertyPanel from './helpers/style-inputs/MultiStylePropertyPanel';
 
 type HtmlSidebarPanelProps = {
@@ -28,14 +28,15 @@ export default function HtmlSidebarPanel({ data, setData }: HtmlSidebarPanelProp
 
   return (
     <BaseSidebarPanel title={t('html.title')}>
-      <TextInput
+      <CodeMirrorInput
         label={t('html.content')}
-        rows={5}
-        defaultValue={data.props?.contents ?? ''}
+        value={data.props?.contents ?? ''}
         onChange={(contents) => updateData({ ...data, props: { ...data.props, contents } })}
+        height="400px"
       />
       <MultiStylePropertyPanel
-        names={['color', 'backgroundColor', 'fontFamily', 'fontSize', 'textAlign', 'padding']}
+        // names={['color', 'backgroundColor', 'fontFamily', 'fontSize', 'textAlign', 'padding']}
+        names={['padding']}
         value={data.style}
         onChange={(style) => updateData({ ...data, style })}
       />

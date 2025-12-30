@@ -26,8 +26,6 @@ import VideoEditor from '../blocks/Video/VideoEditor';
 import VideoPropsSchema from '../blocks/Video/VideoPropsSchema';
 import SocialsEditor from '../blocks/Socials/SocialsEditor';
 import SocialsPropsSchema from '../blocks/Socials/SocialsPropsSchema';
-import CodeEditor from '../blocks/Code/CodeEditor';
-import CodePropsSchema from '../blocks/Code/CodePropsSchema';
 import EditorBlockWrapper from '../blocks/helpers/block-wrappers/EditorBlockWrapper';
 
 const EDITOR_DICTIONARY = buildBlockConfigurationDictionary({
@@ -133,16 +131,6 @@ const EDITOR_DICTIONARY = buildBlockConfigurationDictionary({
       return (
         <EditorBlockWrapper>
           <SocialsEditor {...data} />
-        </EditorBlockWrapper>
-      );
-    },
-  },
-  Code: {
-    schema: CodePropsSchema,
-    Component: (data) => {
-      return (
-        <EditorBlockWrapper>
-          <CodeEditor {...data} />
         </EditorBlockWrapper>
       );
     },

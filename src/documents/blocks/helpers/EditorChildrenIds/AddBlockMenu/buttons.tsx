@@ -2,7 +2,6 @@ import React from 'react';
 
 import {
   AccountCircleOutlined,
-  CodeOutlined,
   Crop32Outlined,
   HMobiledataOutlined,
   HorizontalRuleOutlined,
@@ -102,20 +101,20 @@ export const BUTTONS: TButtonProps[] = [
       },
     }),
   },
-  {
-    label: 'Avatar',
-    icon: <AccountCircleOutlined />,
-    block: () => ({
-      type: 'Avatar',
-      data: {
-        props: {
-          imageUrl: 'https://ui-avatars.com/api/?size=128',
-          shape: 'circle',
-        },
-        style: { padding: { top: 16, bottom: 16, left: 24, right: 24 } },
-      },
-    }),
-  },
+  // {
+  //   label: 'Avatar',
+  //   icon: <AccountCircleOutlined />,
+  //   block: () => ({
+  //     type: 'Avatar',
+  //     data: {
+  //       props: {
+  //         imageUrl: 'https://ui-avatars.com/api/?size=128',
+  //         shape: 'circle',
+  //       },
+  //       style: { padding: { top: 16, bottom: 16, left: 24, right: 24 } },
+  //     },
+  //   }),
+  // },
   {
     label: 'Divider',
     icon: <HorizontalRuleOutlined />,
@@ -151,26 +150,12 @@ export const BUTTONS: TButtonProps[] = [
     }),
   },
   {
-    label: 'Code',
-    icon: <CodeOutlined />,
-    block: () => ({
-      type: 'Code',
-      data: {
-        props: {
-          language: 'html',
-          code: '',
-        },
-        style: { padding: { top: 16, bottom: 16, left: 24, right: 24 } },
-      },
-    }),
-  },
-  {
-    label: 'Html',
+    label: 'HTML',
     icon: <HtmlOutlined />,
     block: () => ({
       type: 'Html',
       data: {
-        props: { contents: '<strong>Hello world</strong>' },
+        props: { contents: '<p>My new HTML block</p>' },
         style: {
           fontSize: 16,
           textAlign: null,

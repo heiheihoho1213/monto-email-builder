@@ -82,7 +82,6 @@ export default defineConfig(({ mode }) => {
         // 使用本地源码进行调试
         'monto-email-core': resolve(__dirname, 'email-builder/src'),
         'monto-email-block-socials': resolve(__dirname, 'monto-email-block-socials/src'),
-        'monto-email-block-code': resolve(__dirname, 'monto-email-block-code/src'),
       },
     },
     build: {

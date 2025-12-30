@@ -3,8 +3,24 @@ import React from 'react';
 import { useCurrentBlockId } from '../../editor/EditorBlock';
 import { setDocument, setSelectedBlockId, useDocument, editorStateStore } from '../../editor/EditorContext';
 import EditorChildrenIds from '../helpers/EditorChildrenIds';
+import { TEditorBlock } from '../../editor/core';
 
 import { EmailLayoutProps } from './EmailLayoutPropsSchema';
+
+let idCounter = 0;
+function generateId() {
+  return `block-${Date.now()}-${++idCounter}`;
+}
+
+// 从 window 对象获取当前拖拽的 blockId（因为在 dragOver 事件中无法读取 dataTransfer）
+const getCurrentDraggedBlockId = (): string | null => {
+  return (window as any).__currentDraggedBlockId || null;
+};
+
+// 获取被拖拽的block数据
+const getCurrentDraggedBlock = (): TEditorBlock | null => {
+  return (window as any).__currentDraggedBlock || null;
+};
 
 function getFontFamily(fontFamily: EmailLayoutProps['fontFamily']) {
   const f = fontFamily ?? 'MODERN_SANS';
@@ -35,11 +51,188 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
   const document = useDocument();
   const currentBlockId = useCurrentBlockId();
 
+  const handleDropOnEmptyArea = (e: React.DragEvent) => {
+    // 检查是否点击的是插入点区域（EditorChildrenIds 内部）
+    const target = e.target as HTMLElement;
+    const isInsideEditorChildrenIds = target.closest('[data-column-content="true"]') !== null;
+    
+    // 如果是在 EditorChildrenIds 内部，不处理（由 EditorChildrenIds 自己处理）
+    if (isInsideEditorChildrenIds) {
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const draggedId = e.dataTransfer.getData('text/plain') || getCurrentDraggedBlockId();
+    if (!draggedId) {
+      (window as any).__currentDraggedBlockId = null;
+      (window as any).__currentDraggedBlock = null;
+      (window as any).__isSidebarBlock = false;
+      return;
+    }
+
+    // 检查是否是从侧边栏拖拽的新块
+    const isSidebarBlock = (window as any).__isSidebarBlock === true;
+    const draggedBlock = getCurrentDraggedBlock();
+    
+    if (!draggedBlock) {
+      (window as any).__currentDraggedBlockId = null;
+      (window as any).__currentDraggedBlock = null;
+      (window as any).__isSidebarBlock = false;
+      return;
+    }
+
+    // 如果是侧边栏块，生成新的 blockId；否则使用原来的 blockId（实现移动而不是复制）
+    const blockId = isSidebarBlock ? generateId() : draggedId;
+
+    // 检查是否试图将容器自身添加到自己的 childrenIds 中（防止循环引用）
+    if (blockId === currentBlockId) {
+      (window as any).__currentDraggedBlockId = null;
+      (window as any).__currentDraggedBlock = null;
+      (window as any).__isSidebarBlock = false;
+      return;
+    }
+
+    // 获取最新的 document
+    const latestDocument = editorStateStore.getState().document;
+    
+    // 如果不是侧边栏块，需要从原容器中移除
+    if (!isSidebarBlock) {
+      // 查找原容器
+      let parentInfo = { containerId: null as string | null, columnIndex: null as number | null };
+      for (const [containerId, container] of Object.entries(latestDocument)) {
+        const containerData = container.data;
+        if (container.type === 'EmailLayout' && containerData.childrenIds?.includes(draggedId)) {
+          parentInfo = { containerId, columnIndex: null };
+          break;
+        }
+        if (container.type === 'Container' && containerData.props?.childrenIds?.includes(draggedId)) {
+          parentInfo = { containerId, columnIndex: null };
+          break;
+        }
+        if (container.type === 'ColumnsContainer') {
+          const columns = containerData.props?.columns;
+          if (columns) {
+            for (let i = 0; i < columns.length; i++) {
+              if (columns[i].childrenIds?.includes(draggedId)) {
+                parentInfo = { containerId, columnIndex: i };
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      // 从原容器中移除
+      if (parentInfo.containerId) {
+        const parentContainer = latestDocument[parentInfo.containerId];
+        const newDocument = { ...latestDocument };
+        
+        if (parentInfo.columnIndex !== null) {
+          // 从 ColumnsContainer 的列中移除
+          const columns = [...(parentContainer.data.props?.columns || [])];
+          columns[parentInfo.columnIndex] = {
+            ...columns[parentInfo.columnIndex],
+            childrenIds: columns[parentInfo.columnIndex].childrenIds?.filter((id) => id !== draggedId) || [],
+          };
+          newDocument[parentInfo.containerId] = {
+            ...parentContainer,
+            data: {
+              ...parentContainer.data,
+              props: {
+                ...parentContainer.data.props,
+                columns,
+              },
+            },
+          };
+        } else {
+          // 从 Container 或 EmailLayout 中移除
+          const currentChildrenIds = parentContainer.type === 'Container'
+            ? parentContainer.data.props?.childrenIds || []
+            : parentContainer.data.childrenIds || [];
+          const newChildrenIds = currentChildrenIds.filter((id) => id !== draggedId);
+          
+          if (parentContainer.type === 'Container') {
+            newDocument[parentInfo.containerId] = {
+              ...parentContainer,
+              data: {
+                ...parentContainer.data,
+                props: {
+                  ...parentContainer.data.props,
+                  childrenIds: newChildrenIds,
+                },
+              },
+            };
+          } else {
+            newDocument[parentInfo.containerId] = {
+              ...parentContainer,
+              data: {
+                ...parentContainer.data,
+                childrenIds: newChildrenIds,
+              },
+            };
+          }
+        }
+        
+        setDocument(newDocument);
+      }
+    }
+
+    // 追加到最下方
+    const newChildrenIds = [...childrenIds, blockId];
+    const latestDocumentAfterRemove = editorStateStore.getState().document;
+    const blockExists = latestDocumentAfterRemove[blockId] && latestDocumentAfterRemove[blockId].type;
+
+    const updates: any = {
+      [currentBlockId]: {
+        type: 'EmailLayout',
+        data: {
+          ...latestDocumentAfterRemove[currentBlockId].data,
+          childrenIds: newChildrenIds,
+        },
+      },
+    };
+    
+    // 只有当 block 不存在时，才创建新块
+    if (!blockExists) {
+      updates[blockId] = draggedBlock;
+    }
+    
+    setDocument(updates);
+    setSelectedBlockId(blockId);
+
+    (window as any).__currentDraggedBlockId = null;
+    (window as any).__currentDraggedBlock = null;
+    (window as any).__isSidebarBlock = false;
+  };
+
+  const handleDragOverOnEmptyArea = (e: React.DragEvent) => {
+    // 检查是否点击的是插入点区域（EditorChildrenIds 内部）
+    const target = e.target as HTMLElement;
+    const isInsideEditorChildrenIds = target.closest('[data-column-content="true"]') !== null;
+    
+    // 如果是在 EditorChildrenIds 内部，不处理（由 EditorChildrenIds 自己处理）
+    if (isInsideEditorChildrenIds) {
+      return;
+    }
+
+    const draggedId = getCurrentDraggedBlockId();
+    if (draggedId) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.dropEffect = 'move';
+    }
+  };
+
   return (
     <div
       onClick={() => {
         setSelectedBlockId(null);
       }}
+      onDragOver={handleDragOverOnEmptyArea}
+      onDrop={handleDropOnEmptyArea}
       style={{
         backgroundColor: props.backdropColor ?? '#F5F5F5',
         color: props.textColor ?? '#262626',
