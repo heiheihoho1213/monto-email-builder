@@ -7,3 +7,7 @@ docs-dist
 .env.test.local
 .env.production.local
 .vscode
+
+email-builder
+monto-email-block-socials
+monto-email-block-code

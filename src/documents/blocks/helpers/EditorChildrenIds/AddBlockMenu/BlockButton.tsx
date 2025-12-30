@@ -62,12 +62,12 @@ export default function BlockTypeButton({ label, icon, onClick, disabled = false
         // cursor: disabled ? 'default' : 'move',
         outline: isDragging ? '2px dashed rgba(0,121,204, 0.8)' : 'none',
         outlineOffset: isDragging ? '-2px' : '0',
-        '&:hover': {
-          cursor: disabled ? 'default' : 'grab',
-        },
-        '&:active': {
-          cursor: disabled ? 'default' : 'grabbing',
-        },
+        // '&:hover': {
+        //   cursor: disabled ? 'default' : 'grab',
+        // },
+        // '&:active': {
+        //   cursor: disabled ? 'default' : 'grabbing',
+        // },
       }}
       disabled={disabled}
       draggable={!disabled && !!block}

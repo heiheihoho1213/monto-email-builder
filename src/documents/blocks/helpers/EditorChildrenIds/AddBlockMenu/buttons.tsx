@@ -2,6 +2,7 @@ import React from 'react';
 
 import {
   AccountCircleOutlined,
+  CodeOutlined,
   Crop32Outlined,
   HMobiledataOutlined,
   HorizontalRuleOutlined,
@@ -9,6 +10,7 @@ import {
   ImageOutlined,
   LibraryAddOutlined,
   NotesOutlined,
+  ShareOutlined,
   SmartButtonOutlined,
   ViewColumnOutlined,
   VideocamOutlined,
@@ -28,7 +30,7 @@ export const BUTTONS: TButtonProps[] = [
     block: () => ({
       type: 'Heading',
       data: {
-        props: { text: 'Hello friend' },
+        props: { text: 'My new heading block' },
         style: {
           padding: { top: 16, bottom: 16, left: 24, right: 24 },
         },
@@ -133,6 +135,33 @@ export const BUTTONS: TButtonProps[] = [
     block: () => ({
       type: 'Spacer',
       data: {},
+    }),
+  },
+  {
+    label: 'Socials',
+    icon: <ShareOutlined />,
+    block: () => ({
+      type: 'Socials',
+      data: {
+        props: {
+          socials: [],
+        },
+        style: { padding: { top: 16, bottom: 16, left: 24, right: 24 } },
+      },
+    }),
+  },
+  {
+    label: 'Code',
+    icon: <CodeOutlined />,
+    block: () => ({
+      type: 'Code',
+      data: {
+        props: {
+          language: 'html',
+          code: '',
+        },
+        style: { padding: { top: 16, bottom: 16, left: 24, right: 24 } },
+      },
     }),
   },
   {

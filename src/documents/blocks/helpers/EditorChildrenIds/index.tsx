@@ -171,6 +171,8 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
   const document = editorStateStore.getState().document;
   const containerType = containerId ? document[containerId]?.type : null;
   const isContainerOrColumnsContainer = containerType === 'ColumnsContainer';
+  // 检查是否在 column 内部（如果 containerType 是 ColumnsContainer，说明当前在 column 内部）
+  const isInsideColumn = containerType === 'ColumnsContainer';
 
   const appendBlock = (block: TEditorBlock) => {
     const blockId = generateId();
@@ -536,10 +538,14 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
             }),
         }}
       >
+        {/* 空列表时，即使在 column 内部也显示占位符按钮，让用户可以添加第一个元素 */}
         <AddBlockButton placeholder onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} />
       </Box>
     );
   }
+
+  // 检查是否有子元素
+  const hasChildren = childrenIds && childrenIds.length > 0;
 
   return (
     <>
@@ -590,7 +596,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
         return (
           <Fragment key={childId}>
-            <AddBlockButton onSelect={(block) => insertBlock(block, i)} disableContainerBlocks={isContainerOrColumnsContainer} />
+            {!isInsideColumn && <AddBlockButton onSelect={(block) => insertBlock(block, i)} disableContainerBlocks={isContainerOrColumnsContainer} />}
             <Box
               onDragOver={(e) => {
                 e.preventDefault();
@@ -1729,7 +1735,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
           </Fragment>
         );
       })}
-      <AddBlockButton onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} />
+      {!isInsideColumn && <AddBlockButton onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} />}
     </>
   );
 }

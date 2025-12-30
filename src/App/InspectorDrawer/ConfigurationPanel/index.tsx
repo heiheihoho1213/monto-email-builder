@@ -18,6 +18,8 @@ import ImageSidebarPanel from './input-panels/ImageSidebarPanel';
 import VideoSidebarPanel from './input-panels/VideoSidebarPanel';
 import SpacerSidebarPanel from './input-panels/SpacerSidebarPanel';
 import TextSidebarPanel from './input-panels/TextSidebarPanel';
+import SocialsSidebarPanel from './input-panels/SocialsSidebarPanel';
+import CodeSidebarPanel from './input-panels/CodeSidebarPanel';
 
 function renderMessage(val: string) {
   return (
@@ -69,6 +71,10 @@ export default function ConfigurationPanel() {
       return <SpacerSidebarPanel key={selectedBlockId} data={data} setData={(data) => setBlock({ type, data })} />;
     case 'Text':
       return <TextSidebarPanel key={selectedBlockId} data={data} setData={(data) => setBlock({ type, data })} />;
+    case 'Socials':
+      return <SocialsSidebarPanel key={selectedBlockId} data={data} setData={(data) => setBlock({ type, data })} />;
+    case 'Code':
+      return <CodeSidebarPanel key={selectedBlockId} data={data} setData={(data) => setBlock({ type, data })} />;
     default:
       return <pre>{JSON.stringify(block, null, '  ')}</pre>;
   }
