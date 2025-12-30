@@ -3,7 +3,7 @@ import React, { Fragment, useState, useEffect } from 'react';
 import { Box } from '@mui/material';
 
 import { TEditorBlock, TEditorConfiguration } from '../../../editor/core';
-import { editorStateStore, setDocument } from '../../../editor/EditorContext';
+import { editorStateStore, setDocument, setSelectedBlockId } from '../../../editor/EditorContext';
 import EditorBlock from '../../../editor/EditorBlock';
 import ColumnsContainerPropsSchema from '../../ColumnsContainer/ColumnsContainerPropsSchema';
 
@@ -15,8 +15,9 @@ export type EditorChildrenChange = {
   childrenIds: string[];
 };
 
+let idCounter = 0;
 function generateId() {
-  return `block-${Date.now()}`;
+  return `block-${Date.now()}-${++idCounter}`;
 }
 
 export type EditorChildrenIdsProps = {
@@ -304,13 +305,16 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
     if (!draggedBlock) {
       (window as any).__currentDraggedBlockId = null;
       (window as any).__currentDraggedBlock = null;
+      (window as any).__isSidebarBlock = false;
       setDraggedBlockId(null);
       setDragOverIndex(null);
       return;
     }
 
-    // 使用原来的 blockId，实现移动而不是复制
-    const blockId = draggedId;
+    // 检查是否是从侧边栏拖拽的新块
+    const isSidebarBlock = (window as any).__isSidebarBlock === true;
+    // 如果是侧边栏块，生成新的 blockId；否则使用原来的 blockId（实现移动而不是复制）
+    const blockId = isSidebarBlock ? generateId() : draggedId;
 
     // 检查是否试图将容器自身添加到自己的 childrenIds 中（防止循环引用）
     // 如果 containerId 存在且 blockId 等于 containerId，说明是拖拽容器到自身，应该忽略
@@ -347,19 +351,19 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
       newChildrenIds.splice(dropIndex, 0, blockId);
     }
 
-    // 找到原容器
-    const parentInfo = findParentContainerId(document, blockId);
+    // 找到原容器（侧边栏块没有原容器）
+    const parentInfo = isSidebarBlock ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
 
     // 检查是否是跨列拖拽（同一个ColumnsContainer，原block在某个列中）
     // 如果原block在ColumnsContainer的某个列中，且目标也是同一个ColumnsContainer，则是跨列拖拽
-    const isCrossColumnDrag = parentInfo.containerId === containerId &&
+    const isCrossColumnDrag = !isSidebarBlock && parentInfo.containerId === containerId &&
       parentInfo.columnIndex !== null;
 
     let newDocument = document;
-    // 如果不是跨列拖拽，才从原容器中移除block
+    // 如果不是侧边栏块且不是跨列拖拽，才从原容器中移除block
     // 跨列拖拽由updateColumn处理（复制到目标列，从源列删除）
-    if (!isCrossColumnDrag) {
-      newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
+    if (!isSidebarBlock && !isCrossColumnDrag) {
+      newDocument = removeBlockFromParentContainer(document, draggedId, parentInfo);
       // 先更新整个document（从原容器中移除block）
       setDocument(newDocument);
     }
@@ -376,6 +380,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
     (window as any).__currentDraggedBlockId = null;
     (window as any).__currentDraggedBlock = null;
+    (window as any).__isSidebarBlock = false;
     setDraggedBlockId(null);
     setDragOverIndex(null);
   };
@@ -383,6 +388,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
   const handleDragEnd = () => {
     (window as any).__currentDraggedBlockId = null;
     (window as any).__currentDraggedBlock = null;
+    (window as any).__isSidebarBlock = false;
     setDraggedBlockId(null);
     setDragOverIndex(null);
     setIsDragNotAllowed(false);
@@ -436,14 +442,16 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
           if (!draggedBlock) {
             (window as any).__currentDraggedBlockId = null;
             (window as any).__currentDraggedBlock = null;
+            (window as any).__isSidebarBlock = false;
             setDraggedBlockId(null);
             setDragOverIndex(null);
             return;
           }
 
-          // 实现移动操作：从原容器中移除，添加到目标容器
-          // 使用原来的 blockId，实现移动而不是复制
-          const blockId = draggedId;
+          // 检查是否是从侧边栏拖拽的新块
+          const isSidebarBlock = (window as any).__isSidebarBlock === true;
+          // 如果是侧边栏块，生成新的 blockId；否则使用原来的 blockId（实现移动而不是复制）
+          const blockId = isSidebarBlock ? generateId() : draggedId;
 
           // 检查是否试图将容器自身添加到自己的 childrenIds 中（防止循环引用）
           if (containerId && blockId === containerId) {
@@ -468,19 +476,19 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
           // 添加到目标容器（空白区域，直接添加）
           const newChildrenIds = [blockId];
 
-          // 找到原容器
-          const parentInfo = findParentContainerId(document, blockId);
+          // 找到原容器（侧边栏块没有原容器）
+          const parentInfo = isSidebarBlock ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
 
           // 检查是否是跨列拖拽（同一个ColumnsContainer，原block在某个列中）
           // 如果原block在ColumnsContainer的某个列中，且目标也是同一个ColumnsContainer，则是跨列拖拽
-          const isCrossColumnDrag = parentInfo.containerId === containerId &&
+          const isCrossColumnDrag = !isSidebarBlock && parentInfo.containerId === containerId &&
             parentInfo.columnIndex !== null;
 
           let newDocument = document;
-          // 如果不是跨列拖拽，才从原容器中移除block
+          // 如果不是侧边栏块且不是跨列拖拽，才从原容器中移除block
           // 跨列拖拽由updateColumn处理（复制到目标列，从源列删除）
-          if (!isCrossColumnDrag) {
-            newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
+          if (!isSidebarBlock && !isCrossColumnDrag) {
+            newDocument = removeBlockFromParentContainer(document, draggedId, parentInfo);
             // 先更新整个document（从原容器中移除block）
             setDocument(newDocument);
           }
@@ -497,6 +505,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
           (window as any).__currentDraggedBlockId = null;
           (window as any).__currentDraggedBlock = null;
+          (window as any).__isSidebarBlock = false;
           setDraggedBlockId(null);
           setDragOverIndex(null);
         }}
@@ -550,22 +559,31 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
           draggedParentInfoForRender.containerId === targetParentInfoForRender.containerId &&
           draggedParentInfoForRender.columnIndex !== targetParentInfoForRender.columnIndex;
 
+        // 检查是否是跨列拖拽（从另一个列拖入当前列）
+        const isCrossColumnDragForRender = draggedParentInfoForRender &&
+          draggedParentInfoForRender.columnIndex !== null &&
+          targetParentInfoForRender.columnIndex !== null &&
+          draggedParentInfoForRender.containerId === targetParentInfoForRender.containerId &&
+          draggedParentInfoForRender.columnIndex !== targetParentInfoForRender.columnIndex;
+
         // 检查是否是外部元素拖入列中（列有元素），需要禁止上下插入
         const isExternalDragIntoColumn = isExternalDrag &&
           draggedParentInfoForRender &&
           draggedParentInfoForRender.columnIndex === null && // 外部元素不在列中
           targetParentInfoForRender.columnIndex !== null && // 目标在列中
-          !allowReplace; // 列有元素
+          !allowReplace && // 列有元素
+          !isCrossColumnDragForRender; // 不是跨列拖拽
 
         // 外部拖拽时的指示线：
         // - 如果 allowReplace 为 true（ColumnsContainer 的列），显示全边框（表示可以替换）
         // - 如果 allowReplace 为 false（其他容器），显示顶部指示线（表示可以插入到当前元素之前）
         // - 如果是分栏间交换，显示蓝色全边框（表示可以交换）
         // - 如果是外部元素拖入列中（列有元素），禁止显示上下插入指示线
+        // - 如果是跨列拖拽，禁止显示上下插入指示线（应该显示水平插入指示线）
         const showFullBorder = (allowReplace && dragOverIndex === i && isExternalDrag) ||
           (isCrossColumnSwapForRender && dragOverIndex === i);
-        const showTopIndicatorForExternal = !allowReplace && dragOverIndex === i && isExternalDrag && !isCrossColumnSwapForRender && !isExternalDragIntoColumn;
-        const showBottomIndicatorForExternal = !allowReplace && isLastBlock && dragOverIndex === childrenIds.length && isExternalDrag && !isExternalDragIntoColumn;
+        const showTopIndicatorForExternal = !allowReplace && dragOverIndex === i && isExternalDrag && !isCrossColumnSwapForRender && !isExternalDragIntoColumn && !isCrossColumnDragForRender;
+        const showBottomIndicatorForExternal = !allowReplace && isLastBlock && dragOverIndex === childrenIds.length && isExternalDrag && !isExternalDragIntoColumn && !isCrossColumnDragForRender;
         // 水平拖拽指示线：显示在左侧或右侧
         const showLeftIndicator = horizontalDragSide === 'left' && horizontalDragTargetIndex === i;
         const showRightIndicator = horizontalDragSide === 'right' && horizontalDragTargetIndex === i;
@@ -598,17 +616,27 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 // 检查是否是外部拖拽
                 const isExternal = !childrenIds.includes(draggedId);
 
-                // 检查水平拖拽：只有当被拖拽的block和目标block都不是Container或ColumnsContainer时才允许
-                // 并且它们都不在ColumnsContainer的列中（禁止column内部元素之间的水平拖拽）
-                const targetBlock = document[childId];
-                const isDraggedContainer = draggedBlock?.type === 'Container' || draggedBlock?.type === 'ColumnsContainer';
-                const isTargetContainer = targetBlock?.type === 'Container' || targetBlock?.type === 'ColumnsContainer';
+                // 检查是否是从侧边栏拖拽的新块
+                const isSidebarBlockForDragOver = (window as any).__isSidebarBlock === true;
 
-                // 检查被拖拽的block和目标block是否在ColumnsContainer的列中
-                const draggedParentInfo = findParentContainerId(document, draggedId);
+                // 检查被拖拽的block和目标block是否在ColumnsContainer的列中（侧边栏块不在列中）
+                const draggedParentInfo = isSidebarBlockForDragOver ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
                 const targetParentInfo = findParentContainerId(document, childId);
                 const isDraggedInColumn = draggedParentInfo.columnIndex !== null;
                 const isTargetInColumn = targetParentInfo.columnIndex !== null;
+
+
+                // 检查是否是跨列拖拽（从另一个列拖入当前列，用于扩列）
+                // 允许：1. 同一个 ColumnsContainer 的不同列之间
+                //       2. 不同的 ColumnsContainer 的列之间（从列中拖到另一个列中）
+                // 只要被拖拽的元素在列中，目标也在列中，且目标列有元素（!allowReplace），就允许扩列
+                const isCrossColumnDragForExpand = isDraggedInColumn && isTargetInColumn &&
+                  targetParentInfo.containerId !== null &&
+                  // 如果是同一个容器，需要是不同的列（避免同一列内部拖拽）
+                  // 如果是不同的容器，只要都在列中即可（允许跨容器拖拽）
+                  (draggedParentInfo.containerId === targetParentInfo.containerId
+                    ? draggedParentInfo.columnIndex !== targetParentInfo.columnIndex
+                    : true);
 
                 // 检查是否在同一个ColumnsContainer的不同列中（分栏间交换）
                 const isCrossColumnSwap = isDraggedInColumn && isTargetInColumn &&
@@ -620,6 +648,55 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 const isSameColumn = isDraggedInColumn && isTargetInColumn &&
                   draggedParentInfo.containerId === targetParentInfo.containerId &&
                   draggedParentInfo.columnIndex === targetParentInfo.columnIndex;
+
+                // 检查水平拖拽：只有当被拖拽的block和目标block都不是Container或ColumnsContainer时才允许
+                // 并且它们都不在ColumnsContainer的列中（禁止column内部元素之间的水平拖拽）
+                const targetBlock = document[childId];
+                const isDraggedContainer = draggedBlock?.type === 'Container' || draggedBlock?.type === 'ColumnsContainer';
+                const isTargetContainer = targetBlock?.type === 'Container' || targetBlock?.type === 'ColumnsContainer';
+
+                // 优先处理跨列拖拽扩列（从另一个列拖入当前列，用于扩列）
+                // 检查目标是否在列中且列有元素（allowReplace 为 false）
+                if (isCrossColumnDragForExpand && !allowReplace && !isDraggedContainer && !isTargetContainer && draggedId !== childId) {
+                  // 检查当前 ColumnsContainer 的列数
+                  const columnsContainerId = targetParentInfo.containerId;
+                  if (columnsContainerId) {
+                    const columnsContainer = document[columnsContainerId];
+                    if (columnsContainer && columnsContainer.type === 'ColumnsContainer') {
+                      const currentColumnsCount = columnsContainer.data.props?.columnsCount ||
+                        columnsContainer.data.props?.columns?.length || 0;
+
+                      // 如果列数 >= 4，禁止插入
+                      if (currentColumnsCount >= 4) {
+                        setIsDragNotAllowed(true);
+                        e.dataTransfer.effectAllowed = 'none';
+                        e.dataTransfer.dropEffect = 'none';
+                        setHorizontalDragSide(null);
+                        setHorizontalDragTargetIndex(null);
+                        setDragOverIndex(null);
+                        return;
+                      }
+                      // 如果列数 < 4，允许插入（会扩列，左右插入，新增一列）
+                      // 根据鼠标位置决定显示左侧还是右侧指示线
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const mouseX = e.clientX;
+                      const blockCenter = rect.left + rect.width / 2;
+
+                      setDraggedBlockId(draggedId);
+                      setDragOverIndex(null); // 不显示上下插入指示线
+
+                      if (mouseX < blockCenter) {
+                        // 鼠标在左侧，显示左侧插入指示线（在目标元素之前新增一列）
+                        setHorizontalDragSide('left');
+                      } else {
+                        // 鼠标在右侧，显示右侧插入指示线（在目标元素之后新增一列）
+                        setHorizontalDragSide('right');
+                      }
+                      setHorizontalDragTargetIndex(i);
+                      return;
+                    }
+                  }
+                }
 
                 // 如果是分栏间交换，显示全边框（蓝色），不显示水平指示线
                 if (isCrossColumnSwap && !isDraggedContainer && !isTargetContainer && draggedId !== childId) {
@@ -685,8 +762,13 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   const draggedParentInfo = findParentContainerId(document, draggedId);
                   const isDraggedInColumn = draggedParentInfo.columnIndex !== null;
 
-                  // 如果是外部元素拖入列中（列中有元素），检查是否可以扩列插入
-                  if (isExternal && isTargetInColumn && !isDraggedInColumn && !allowReplace) {
+                  // 检查是否是跨列拖拽（从另一个列拖入当前列）
+                  const isCrossColumnDragForBottom = isDraggedInColumn && isTargetInColumn &&
+                    draggedParentInfo.containerId === targetParentInfo.containerId &&
+                    draggedParentInfo.columnIndex !== targetParentInfo.columnIndex;
+
+                  // 如果是外部元素或跨列拖拽拖入列中（列中有元素），检查是否可以扩列插入
+                  if (isExternal && isTargetInColumn && (!isDraggedInColumn || isCrossColumnDragForBottom) && !allowReplace) {
                     // 检查当前 ColumnsContainer 的列数
                     const columnsContainerId = targetParentInfo.containerId;
                     if (columnsContainerId) {
@@ -746,17 +828,24 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 // 如果是外部拖拽，根据 allowReplace 决定显示方式
                 if (isExternal) {
                   // 检查目标是否在列中（通过 allowReplace 或 findParentContainerId 检测）
-                  const targetParentInfo = findParentContainerId(document, childId);
-                  const isTargetInColumn = allowReplace || targetParentInfo.columnIndex !== null;
+                  const targetParentInfoForExternal = findParentContainerId(document, childId);
+                  const isTargetInColumnForExternal = allowReplace || targetParentInfoForExternal.columnIndex !== null;
 
-                  // 检查被拖拽的元素是否不在列中
-                  const draggedParentInfo = findParentContainerId(document, draggedId);
-                  const isDraggedInColumn = draggedParentInfo.columnIndex !== null;
+                  // 检查被拖拽的元素是否在列中
+                  const draggedParentInfoForExternal = findParentContainerId(document, draggedId);
+                  const isDraggedInColumnForExternal = draggedParentInfoForExternal.columnIndex !== null;
+
+                  // 检查是否是跨列拖拽（从另一个列拖入当前列）
+                  const isCrossColumnDragForExternal = isDraggedInColumnForExternal && isTargetInColumnForExternal &&
+                    draggedParentInfoForExternal.containerId === targetParentInfoForExternal.containerId &&
+                    draggedParentInfoForExternal.columnIndex !== targetParentInfoForExternal.columnIndex;
 
                   // 如果列中有元素（allowReplace 为 false），检查是否可以扩列插入
-                  if (isTargetInColumn && !isDraggedInColumn && !allowReplace) {
+                  // 允许：1. 外部元素（不在列中）拖入列中扩列
+                  //       2. 已经在某个列中的元素拖入另一个列中扩列（跨列拖拽）
+                  if (isTargetInColumnForExternal && !allowReplace && (!isDraggedInColumnForExternal || isCrossColumnDragForExternal)) {
                     // 检查当前 ColumnsContainer 的列数
-                    const columnsContainerId = targetParentInfo.containerId;
+                    const columnsContainerId = targetParentInfoForExternal.containerId;
                     if (columnsContainerId) {
                       const columnsContainer = document[columnsContainerId];
                       if (columnsContainer && columnsContainer.type === 'ColumnsContainer') {
@@ -833,12 +922,16 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 if (!draggedBlock) {
                   (window as any).__currentDraggedBlockId = null;
                   (window as any).__currentDraggedBlock = null;
+                  (window as any).__isSidebarBlock = false;
                   setDraggedBlockId(null);
                   setDragOverIndex(null);
                   setHorizontalDragSide(null);
                   setHorizontalDragTargetIndex(null);
                   return;
                 }
+
+                // 检查是否是从侧边栏拖拽的新块
+                const isSidebarBlock = (window as any).__isSidebarBlock === true;
 
                 // 检查被拖拽的block和目标block都不是Container或ColumnsContainer
                 const targetBlockId = childId;
@@ -847,8 +940,8 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 const isDraggedContainer = draggedBlock?.type === 'Container' || draggedBlock?.type === 'ColumnsContainer';
                 const isTargetContainer = targetBlock?.type === 'Container' || targetBlock?.type === 'ColumnsContainer';
 
-                // 检查被拖拽的block和目标block是否在ColumnsContainer的列中
-                const draggedParentInfoForDrop = findParentContainerId(document, draggedId);
+                // 检查被拖拽的block和目标block是否在ColumnsContainer的列中（侧边栏块不在列中）
+                const draggedParentInfoForDrop = isSidebarBlock ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
                 const targetParentInfoForDrop = findParentContainerId(document, targetBlockId);
                 const isDraggedInColumnForDrop = draggedParentInfoForDrop.columnIndex !== null;
                 const isTargetInColumnForDrop = targetParentInfoForDrop.columnIndex !== null;
@@ -920,6 +1013,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                     // 清除拖拽状态
                     (window as any).__currentDraggedBlockId = null;
                     (window as any).__currentDraggedBlock = null;
+                    (window as any).__isSidebarBlock = false;
                     setDraggedBlockId(null);
                     setDragOverIndex(null);
                     setHorizontalDragSide(null);
@@ -932,6 +1026,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 if (isSameColumn) {
                   (window as any).__currentDraggedBlockId = null;
                   (window as any).__currentDraggedBlock = null;
+                  (window as any).__isSidebarBlock = false;
                   setDraggedBlockId(null);
                   setDragOverIndex(null);
                   setHorizontalDragSide(null);
@@ -952,17 +1047,24 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 const detectedHorizontalSide = mouseX < rect.left + edgeThreshold ? 'left' :
                   (mouseX > rect.right - edgeThreshold ? 'right' : null);
 
+
                 // 处理外部水平拖拽：创建2列的ColumnsContainer
                 if (isHorizontalDrag && detectedHorizontalSide) {
 
                   // 创建2列的ColumnsContainer
                   const columnsContainerId = generateId();
 
+                  // 检查是否是从侧边栏拖拽的新块
+                  const isSidebarBlockForHorizontal = (window as any).__isSidebarBlock === true;
+                  // 如果是侧边栏块，生成新的 blockId；否则使用原来的 blockId
+                  const newBlockId = isSidebarBlockForHorizontal ? generateId() : draggedId;
+
+
                   // 根据拖拽方向决定两个block的位置
                   // 如果拖到左侧：新block在左列，目标block在右列
                   // 如果拖到右侧：目标block在左列，新block在右列
-                  const leftColumnBlockId = detectedHorizontalSide === 'left' ? draggedId : targetBlockId;
-                  const rightColumnBlockId = detectedHorizontalSide === 'left' ? targetBlockId : draggedId;
+                  const leftColumnBlockId = detectedHorizontalSide === 'left' ? newBlockId : targetBlockId;
+                  const rightColumnBlockId = detectedHorizontalSide === 'left' ? targetBlockId : newBlockId;
 
                   // 创建ColumnsContainer
                   const columnsContainerData = ColumnsContainerPropsSchema.parse({
@@ -983,8 +1085,8 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                     data: columnsContainerData,
                   };
 
-                  // 找到被拖拽block的原容器
-                  const draggedParentInfo = findParentContainerId(document, draggedId);
+                  // 找到被拖拽block的原容器（侧边栏块没有原容器）
+                  const draggedParentInfo = isSidebarBlockForHorizontal ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
 
                   // 找到目标block的原容器
                   const targetParentInfo = findParentContainerId(document, targetBlockId);
@@ -997,9 +1099,9 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
                   let newDocument = document;
 
-                  // 如果被拖拽的block和目标block不在同一个容器中，需要从原容器中移除被拖拽的block
+                  // 如果被拖拽的block和目标block不在同一个容器中，且不是侧边栏块，需要从原容器中移除被拖拽的block
                   // 如果在同一个容器中，我们会在childrenIds中直接处理，不需要调用removeBlockFromParentContainer
-                  if (!isSameContainer && draggedParentInfo.containerId) {
+                  if (!isSidebarBlockForHorizontal && !isSameContainer && draggedParentInfo.containerId) {
                     newDocument = removeBlockFromParentContainer(newDocument, draggedId, draggedParentInfo);
                   }
 
@@ -1032,31 +1134,33 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                     }
                   }
 
-                  // 确保两个block都在document中（如果不在，添加它们）
+                  // 确保两个block和ColumnsContainer都在document中
                   // 注意：即使block已经在document中，我们也要确保它们存在，因为可能被之前的操作移除了
-                  // 但是，我们不在document中添加ColumnsContainer，让ContainerEditor的onChange来处理
                   newDocument = {
                     ...newDocument,
-                    [draggedId]: draggedBlock,
+                    [newBlockId]: draggedBlock,
                     [targetBlockId]: targetBlock,
+                    [columnsContainerId]: columnsContainer, // 同时添加ColumnsContainer
                   };
 
-                  // 先更新document，确保button和text都在document中
-                  // 这样当ContainerEditor的onChange检查blockExists时，button和text已经存在了
+                  // 先更新document，确保所有block都在document中
                   setDocument(newDocument);
 
                   // 然后通过onChange通知父组件更新childrenIds
-                  // ContainerEditor的onChange会添加ColumnsContainer（因为它不存在）并更新childrenIds
+                  // EmailLayoutEditor的onChange会检查blockExists，由于columnsContainer已经存在，只会更新childrenIds
+                  // 使用setTimeout确保setDocument完成后再调用onChange，避免死循环
                   setTimeout(() => {
                     onChange({
                       blockId: columnsContainerId,
                       block: columnsContainer,
                       childrenIds: newChildrenIds,
                     });
+                    setSelectedBlockId(columnsContainerId);
                   }, 0);
 
                   (window as any).__currentDraggedBlockId = null;
                   (window as any).__currentDraggedBlock = null;
+                  (window as any).__isSidebarBlock = false;
                   setDraggedBlockId(null);
                   setDragOverIndex(null);
                   setHorizontalDragSide(null);
@@ -1066,13 +1170,15 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
                 // 如果是最后一个块且拖拽到底部
                 if (isLastBlock && dragOverIndex === childrenIds.length) {
-                  const sourceIndex = childrenIds.indexOf(draggedId);
+                  const isSidebarBlockForAppend = (window as any).__isSidebarBlock === true;
+                  const sourceIndex = isSidebarBlockForAppend ? -1 : childrenIds.indexOf(draggedId);
 
                   // 如果拖拽的block在当前容器中，执行排序操作
                   if (sourceIndex !== -1) {
                     if (sourceIndex === childrenIds.length - 1) {
                       (window as any).__currentDraggedBlockId = null;
                       (window as any).__currentDraggedBlock = null;
+                      (window as any).__isSidebarBlock = false;
                       setDraggedBlockId(null);
                       setDragOverIndex(null);
                       return;
@@ -1087,6 +1193,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                     });
                     (window as any).__currentDraggedBlockId = null;
                     (window as any).__currentDraggedBlock = null;
+                    (window as any).__isSidebarBlock = false;
                     setDraggedBlockId(null);
                     setDragOverIndex(null);
                     return;
@@ -1096,11 +1203,16 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   // 检查是否是外部元素拖入列中做上下插入（需要检查列数）
                   const targetParentInfoForAppend = findParentContainerId(document, containerId || '');
                   const isTargetInColumnForAppend = allowReplace || targetParentInfoForAppend.columnIndex !== null;
-                  const draggedParentInfoForAppend = findParentContainerId(document, draggedId);
+                  const draggedParentInfoForAppend = isSidebarBlockForAppend ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
                   const isDraggedInColumnForAppend = draggedParentInfoForAppend.columnIndex !== null;
 
-                  // 如果是外部元素拖入列中（列中有元素），检查是否可以扩列插入
-                  if (isTargetInColumnForAppend && !isDraggedInColumnForAppend && !allowReplace) {
+                  // 检查是否是跨列拖拽（从另一个列拖入当前列）
+                  const isCrossColumnDragForAppend = isDraggedInColumnForAppend && isTargetInColumnForAppend &&
+                    draggedParentInfoForAppend.containerId === targetParentInfoForAppend.containerId &&
+                    draggedParentInfoForAppend.columnIndex !== targetParentInfoForAppend.columnIndex;
+
+                  // 如果是外部元素或跨列拖拽拖入列中（列中有元素），检查是否可以扩列插入
+                  if (isTargetInColumnForAppend && !allowReplace && (!isDraggedInColumnForAppend || isCrossColumnDragForAppend)) {
                     const columnsContainerId = targetParentInfoForAppend.containerId;
                     if (columnsContainerId) {
                       const columnsContainer = document[columnsContainerId];
@@ -1112,11 +1224,15 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                         if (currentColumnsCount >= 4) {
                           (window as any).__currentDraggedBlockId = null;
                           (window as any).__currentDraggedBlock = null;
+                          (window as any).__isSidebarBlock = false;
                           setDraggedBlockId(null);
                           setDragOverIndex(null);
                           setIsDragNotAllowed(false);
                           return;
                         }
+
+                        // 如果是侧边栏块，生成新的 blockId；否则使用原来的 blockId
+                        const newBlockIdForAppend = isSidebarBlockForAppend ? generateId() : draggedId;
 
                         // 如果列数 < 4，扩列并插入到末尾
                         const currentColumns = columnsContainer.data.props?.columns || [];
@@ -1142,7 +1258,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                             // 保留目标列
                             newColumns.push({ childrenIds: currentColumns[colIndex]?.childrenIds || [] });
                             // 在目标列之后插入新列，包含被拖拽的元素
-                            newColumns.push({ childrenIds: [draggedId] });
+                            newColumns.push({ childrenIds: [newBlockIdForAppend] });
                           } else {
                             // 保留其他列
                             newColumns.push({ childrenIds: currentColumns[colIndex]?.childrenIds || [] });
@@ -1159,10 +1275,10 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                           }
                         }
 
-                        // 找到原容器并移除block
-                        const parentInfo = findParentContainerId(document, draggedId);
+                        // 找到原容器并移除block（侧边栏块没有原容器）
+                        const parentInfo = isSidebarBlockForAppend ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
                         let newDocument = document;
-                        if (parentInfo.containerId) {
+                        if (!isSidebarBlockForAppend && parentInfo.containerId) {
                           newDocument = removeBlockFromParentContainer(document, draggedId, parentInfo);
                         }
 
@@ -1184,12 +1300,13 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                         setDocument({
                           ...newDocument,
                           [columnsContainerId]: updatedColumnsContainer,
-                          [draggedId]: draggedBlock,
+                          [newBlockIdForAppend]: draggedBlock,
                         });
 
                         // 清除拖拽状态
                         (window as any).__currentDraggedBlockId = null;
                         (window as any).__currentDraggedBlock = null;
+                        (window as any).__isSidebarBlock = false;
                         setDraggedBlockId(null);
                         setDragOverIndex(null);
                         setHorizontalDragSide(null);
@@ -1203,18 +1320,22 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   if (!draggedBlock) {
                     (window as any).__currentDraggedBlockId = null;
                     (window as any).__currentDraggedBlock = null;
+                    (window as any).__isSidebarBlock = false;
                     setDraggedBlockId(null);
                     setDragOverIndex(null);
                     return;
                   }
 
-                  // 使用原来的 blockId，实现移动而不是复制
-                  const blockId = draggedId;
+                  // 检查是否是从侧边栏拖拽的新块
+                  const isSidebarBlockForMove = (window as any).__isSidebarBlock === true;
+                  // 如果是侧边栏块，生成新的 blockId；否则使用原来的 blockId（实现移动而不是复制）
+                  const blockId = isSidebarBlockForMove ? generateId() : draggedId;
 
                   // 检查是否试图将容器自身添加到自己的 childrenIds 中（防止循环引用）
                   if (containerId && blockId === containerId) {
                     (window as any).__currentDraggedBlockId = null;
                     (window as any).__currentDraggedBlock = null;
+                    (window as any).__isSidebarBlock = false;
                     setDraggedBlockId(null);
                     setDragOverIndex(null);
                     return;
@@ -1224,6 +1345,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   if (!canDropBlockIntoContainer(draggedBlock, containerId, document)) {
                     (window as any).__currentDraggedBlockId = null;
                     (window as any).__currentDraggedBlock = null;
+                    (window as any).__isSidebarBlock = false;
                     setDraggedBlockId(null);
                     setDragOverIndex(null);
                     setIsDragNotAllowed(false);
@@ -1234,14 +1356,20 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   if (containerId) {
                     const targetParentInfoForBottom = findParentContainerId(document, containerId);
                     const isTargetInColumnForBottom = allowReplace || targetParentInfoForBottom.columnIndex !== null;
-                    const draggedParentInfoForBottom = findParentContainerId(document, blockId);
+                    const draggedParentInfoForBottom = isSidebarBlockForMove ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
                     const isDraggedInColumnForBottom = draggedParentInfoForBottom.columnIndex !== null;
 
-                    // 如果是外部元素拖入列中（列有元素），禁止底部插入
-                    if (isTargetInColumnForBottom && !isDraggedInColumnForBottom && !allowReplace) {
+                    // 检查是否是跨列拖拽（从另一个列拖入当前列）
+                    const isCrossColumnDragForBottomCheck = isDraggedInColumnForBottom && isTargetInColumnForBottom &&
+                      draggedParentInfoForBottom.containerId === targetParentInfoForBottom.containerId &&
+                      draggedParentInfoForBottom.columnIndex !== targetParentInfoForBottom.columnIndex;
+
+                    // 如果是外部元素或跨列拖拽拖入列中（列有元素），禁止底部插入
+                    if (isTargetInColumnForBottom && !allowReplace && (!isDraggedInColumnForBottom || isCrossColumnDragForBottomCheck)) {
                       // 已经处理过扩列逻辑，如果到这里说明列数 >= 4，禁止插入
                       (window as any).__currentDraggedBlockId = null;
                       (window as any).__currentDraggedBlock = null;
+                      (window as any).__isSidebarBlock = false;
                       setDraggedBlockId(null);
                       setDragOverIndex(null);
                       setIsDragNotAllowed(false);
@@ -1252,19 +1380,19 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   // 添加到目标容器末尾
                   const newChildrenIds = [...childrenIds, blockId];
 
-                  // 找到原容器
-                  const parentInfo = findParentContainerId(document, blockId);
+                  // 找到原容器（侧边栏块没有原容器）
+                  const parentInfo = isSidebarBlockForMove ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
 
                   // 检查是否是跨列拖拽（同一个ColumnsContainer，原block在某个列中）
                   // 如果原block在ColumnsContainer的某个列中，且目标也是同一个ColumnsContainer，则是跨列拖拽
-                  const isCrossColumnDrag = parentInfo.containerId === containerId &&
+                  const isCrossColumnDrag = !isSidebarBlockForMove && parentInfo.containerId === containerId &&
                     parentInfo.columnIndex !== null;
 
                   let newDocumentForBottom = document;
-                  // 如果不是跨列拖拽，才从原容器中移除block
+                  // 如果不是侧边栏块且不是跨列拖拽，才从原容器中移除block
                   // 跨列拖拽由updateColumn处理（复制到目标列，从源列删除）
-                  if (!isCrossColumnDrag) {
-                    newDocumentForBottom = removeBlockFromParentContainer(document, blockId, parentInfo);
+                  if (!isSidebarBlockForMove && !isCrossColumnDrag) {
+                    newDocumentForBottom = removeBlockFromParentContainer(document, draggedId, parentInfo);
                     // 先更新整个document（从原容器中移除block）
                     setDocument(newDocumentForBottom);
                   }
@@ -1281,12 +1409,14 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
                   (window as any).__currentDraggedBlockId = null;
                   (window as any).__currentDraggedBlock = null;
+                  (window as any).__isSidebarBlock = false;
                   setDraggedBlockId(null);
                   setDragOverIndex(null);
                   return;
                 }
                 // 处理拖拽到已有元素上的情况
-                const sourceIndex = childrenIds.indexOf(draggedId);
+                const isSidebarBlockForElement = (window as any).__isSidebarBlock === true;
+                const sourceIndex = isSidebarBlockForElement ? -1 : childrenIds.indexOf(draggedId);
 
                 // 如果拖拽的block在当前容器中，执行排序操作
                 if (sourceIndex !== -1) {
@@ -1304,13 +1434,16 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   return;
                 }
 
-                // 使用原来的 blockId，实现移动而不是复制
-                const blockId = draggedId;
+                // 检查是否是从侧边栏拖拽的新块
+                const isSidebarBlockForMove = (window as any).__isSidebarBlock === true;
+                // 如果是侧边栏块，生成新的 blockId；否则使用原来的 blockId（实现移动而不是复制）
+                const blockId = isSidebarBlockForMove ? generateId() : draggedId;
 
                 // 检查是否试图将容器自身添加到自己的 childrenIds 中（防止循环引用）
                 if (containerId && blockId === containerId) {
                   (window as any).__currentDraggedBlockId = null;
                   (window as any).__currentDraggedBlock = null;
+                  (window as any).__isSidebarBlock = false;
                   setDraggedBlockId(null);
                   setDragOverIndex(null);
                   return;
@@ -1320,6 +1453,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 if (!canDropBlockIntoContainer(draggedBlock, containerId, document)) {
                   (window as any).__currentDraggedBlockId = null;
                   (window as any).__currentDraggedBlock = null;
+                  (window as any).__isSidebarBlock = false;
                   setDraggedBlockId(null);
                   setDragOverIndex(null);
                   setIsDragNotAllowed(false);
@@ -1329,18 +1463,29 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 // 检查是否是外部元素拖入列中（列中有元素），需要扩列插入（左右插入，新增一列）
                 const targetParentInfoForInsert = findParentContainerId(document, childId);
                 const isTargetInColumnForInsert = allowReplace || targetParentInfoForInsert.columnIndex !== null;
-                const draggedParentInfoForInsert = findParentContainerId(document, blockId);
+                const draggedParentInfoForInsert = isSidebarBlockForMove ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
                 const isDraggedInColumnForInsert = draggedParentInfoForInsert.columnIndex !== null;
 
-                // 检查是否是水平拖拽指示线（外部元素拖入列中，需要扩列）
+                // 检查是否是跨列拖拽（从另一个列拖入当前列，用于扩列）
+                // 允许：1. 同一个 ColumnsContainer 的不同列之间
+                //       2. 不同的 ColumnsContainer 的列之间（从列中拖到另一个列中）
+                const isCrossColumnDragForInsert = isDraggedInColumnForInsert && isTargetInColumnForInsert &&
+                  targetParentInfoForInsert.containerId !== null &&
+                  // 如果是同一个容器，需要是不同的列（避免同一列内部拖拽）
+                  // 如果是不同的容器，只要都在列中即可（允许跨容器拖拽）
+                  (draggedParentInfoForInsert.containerId === targetParentInfoForInsert.containerId
+                    ? draggedParentInfoForInsert.columnIndex !== targetParentInfoForInsert.columnIndex
+                    : true);
+
+                // 检查是否是水平拖拽指示线（外部元素或跨列拖拽拖入列中，需要扩列）
                 const isHorizontalDragForExpand = (horizontalDragSide === 'left' || horizontalDragSide === 'right') &&
                   horizontalDragTargetIndex === i &&
                   isTargetInColumnForInsert &&
-                  !isDraggedInColumnForInsert &&
+                  (!isDraggedInColumnForInsert || isCrossColumnDragForInsert) &&
                   !allowReplace;
 
-                // 如果是外部元素拖入列中（列中有元素），检查是否需要扩列
-                if ((isTargetInColumnForInsert && !isDraggedInColumnForInsert && !allowReplace) || isHorizontalDragForExpand) {
+                // 如果是外部元素或跨列拖拽拖入列中（列中有元素），检查是否需要扩列
+                if ((isTargetInColumnForInsert && (!isDraggedInColumnForInsert || isCrossColumnDragForInsert) && !allowReplace) || isHorizontalDragForExpand) {
                   const columnsContainerId = targetParentInfoForInsert.containerId;
                   if (columnsContainerId) {
                     const columnsContainer = document[columnsContainerId];
@@ -1405,11 +1550,11 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                         }
                       }
 
-                      // 找到原容器并移除block
-                      const parentInfo = findParentContainerId(document, blockId);
+                      // 找到原容器并移除block（侧边栏块没有原容器）
+                      const parentInfo = isSidebarBlockForMove ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
                       let newDocument = document;
-                      if (parentInfo.containerId) {
-                        newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
+                      if (!isSidebarBlockForMove && parentInfo.containerId) {
+                        newDocument = removeBlockFromParentContainer(document, draggedId, parentInfo);
                       }
 
                       // 更新ColumnsContainer，扩列并添加新block
@@ -1436,6 +1581,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                       // 清除拖拽状态
                       (window as any).__currentDraggedBlockId = null;
                       (window as any).__currentDraggedBlock = null;
+                      (window as any).__isSidebarBlock = false;
                       setDraggedBlockId(null);
                       setDragOverIndex(null);
                       setHorizontalDragSide(null);
@@ -1448,14 +1594,20 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 // 检查是否是外部元素拖入列中（列有元素），禁止上下插入
                 const targetParentInfoForCheck = findParentContainerId(document, childId);
                 const isTargetInColumnForCheck = allowReplace || targetParentInfoForCheck.columnIndex !== null;
-                const draggedParentInfoForCheck = findParentContainerId(document, blockId);
+                const draggedParentInfoForCheck = isSidebarBlockForMove ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
                 const isDraggedInColumnForCheck = draggedParentInfoForCheck.columnIndex !== null;
 
-                // 如果是外部元素拖入列中（列有元素），禁止上下插入
-                if (isTargetInColumnForCheck && !isDraggedInColumnForCheck && !allowReplace) {
+                // 检查是否是跨列拖拽（从另一个列拖入当前列）
+                const isCrossColumnDragForCheck = isDraggedInColumnForCheck && isTargetInColumnForCheck &&
+                  draggedParentInfoForCheck.containerId === targetParentInfoForCheck.containerId &&
+                  draggedParentInfoForCheck.columnIndex !== targetParentInfoForCheck.columnIndex;
+
+                // 如果是外部元素或跨列拖拽拖入列中（列有元素），禁止上下插入
+                if (isTargetInColumnForCheck && !allowReplace && (!isDraggedInColumnForCheck || isCrossColumnDragForCheck)) {
                   // 已经处理过扩列逻辑，如果到这里说明列数 >= 4，禁止插入
                   (window as any).__currentDraggedBlockId = null;
                   (window as any).__currentDraggedBlock = null;
+                  (window as any).__isSidebarBlock = false;
                   setDraggedBlockId(null);
                   setDragOverIndex(null);
                   setIsDragNotAllowed(false);
@@ -1473,19 +1625,19 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   newChildrenIds.splice(i, 0, blockId);
                 }
 
-                // 找到原容器
-                const parentInfo = findParentContainerId(document, blockId);
+                // 找到原容器（侧边栏块没有原容器）
+                const parentInfo = isSidebarBlockForMove ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
 
                 // 检查是否是跨列拖拽（同一个ColumnsContainer，原block在某个列中）
                 // 如果原block在ColumnsContainer的某个列中，且目标也是同一个ColumnsContainer，则是跨列拖拽
-                const isCrossColumnDrag = parentInfo.containerId === containerId &&
+                const isCrossColumnDrag = !isSidebarBlockForMove && parentInfo.containerId === containerId &&
                   parentInfo.columnIndex !== null;
 
                 let newDocument = document;
-                // 如果不是跨列拖拽，才从原容器中移除block
+                // 如果不是侧边栏块且不是跨列拖拽，才从原容器中移除block
                 // 跨列拖拽由updateColumn处理（复制到目标列，从源列删除）
-                if (!isCrossColumnDrag) {
-                  newDocument = removeBlockFromParentContainer(document, blockId, parentInfo);
+                if (!isSidebarBlockForMove && !isCrossColumnDrag) {
+                  newDocument = removeBlockFromParentContainer(document, draggedId, parentInfo);
                   // 先更新整个document（从原容器中移除block）
                   setDocument(newDocument);
                 }

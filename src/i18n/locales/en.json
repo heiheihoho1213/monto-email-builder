@@ -11,7 +11,8 @@
     "desktopView": "Desktop view",
     "mobileView": "Mobile view",
     "downloadJson": "Download JSON file",
-    "importJson": "Import JSON"
+    "importJson": "Import JSON",
+    "addContentBlocks": "Add Content Blocks"
   },
   "samples": {
     "welcomeEmail": "Marketing Template",

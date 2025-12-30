@@ -11,7 +11,8 @@
     "desktopView": "桌面视图",
     "mobileView": "移动视图",
     "downloadJson": "下载 JSON 文件",
-    "importJson": "导入 JSON"
+    "importJson": "导入 JSON",
+    "addContentBlocks": "添加内容块"
   },
   "samples": {
     "welcomeEmail": "营销模板",

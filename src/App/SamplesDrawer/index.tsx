@@ -2,20 +2,66 @@ import React from 'react';
 
 import { Button, Divider, Drawer, Stack, Typography } from '@mui/material';
 
-import { resetDocument, useSamplesDrawerOpen } from '../../documents/editor/EditorContext';
+import { resetDocument, useSamplesDrawerOpen, setDocument, setSelectedBlockId, useDocument, editorStateStore } from '../../documents/editor/EditorContext';
 import { useTranslation } from '../../i18n/useTranslation';
+import { TEditorBlock } from '../../documents/editor/core';
 import EMPTY_EMAIL_MESSAGE from '../../getConfiguration/sample/empty-email-message';
 
 import SidebarButton from './SidebarButton';
+import BlocksGrid from '../../documents/blocks/helpers/EditorChildrenIds/AddBlockMenu/BlocksGrid';
 
 export const SAMPLES_DRAWER_WIDTH = 240;
+
+function generateId() {
+  return `block-${Date.now()}`;
+}
 
 export default function SamplesDrawer() {
   const { t } = useTranslation();
   const samplesDrawerOpen = useSamplesDrawerOpen();
+  const document = useDocument();
 
   const handleNewDocumentClick = () => {
     resetDocument(EMPTY_EMAIL_MESSAGE);
+  };
+
+  // 查找根 EmailLayout 节点
+  const findRootEmailLayoutId = (): string | null => {
+    for (const [blockId, block] of Object.entries(document)) {
+      if (block.type === 'EmailLayout') {
+        return blockId;
+      }
+    }
+    return null;
+  };
+
+  // 处理从侧边栏添加块
+  const handleBlockSelect = (block: TEditorBlock) => {
+    const rootId = findRootEmailLayoutId();
+    if (!rootId) {
+      return;
+    }
+
+    const blockId = generateId();
+    const rootBlock = document[rootId];
+    if (!rootBlock || rootBlock.type !== 'EmailLayout') {
+      return;
+    }
+
+    const currentChildrenIds = rootBlock.data.childrenIds || [];
+    const newChildrenIds = [...currentChildrenIds, blockId];
+
+    setDocument({
+      [rootId]: {
+        type: 'EmailLayout',
+        data: {
+          ...rootBlock.data,
+          childrenIds: newChildrenIds,
+        },
+      },
+      [blockId]: block,
+    });
+    setSelectedBlockId(blockId);
   };
 
   return (
@@ -79,6 +125,15 @@ export default function SamplesDrawer() {
               <SidebarButton sampleName="welcome">{t('samples.welcomeEmail')}</SidebarButton>
               <SidebarButton sampleName="reservation-reminder">{t('samples.reservationReminder')}</SidebarButton>
             </Stack>
+          </Stack>
+
+          <Divider />
+
+          <Stack spacing={1}>
+            <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, fontWeight: 500 }}>
+              {t('common.addContentBlocks')}
+            </Typography>
+            <BlocksGrid onSelect={handleBlockSelect} disableContainerBlocks={false} />
           </Stack>
 
           {/* <Divider /> */}
