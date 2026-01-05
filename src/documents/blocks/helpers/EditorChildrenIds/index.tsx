@@ -559,10 +559,14 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
         // 检查是否是分栏间交换（同一个ColumnsContainer的不同列之间）
         const draggedParentInfoForRender = draggedBlockId ? findParentContainerId(document, draggedBlockId) : null;
         const targetParentInfoForRender = findParentContainerId(document, childId);
-        const isCrossColumnSwapForRender = draggedParentInfoForRender &&
+        // 确保 draggedBlockId 存在且不是当前元素，并且两个元素都在同一个 ColumnsContainer 的不同列中
+        const isCrossColumnSwapForRender = draggedBlockId &&
+          draggedBlockId !== childId &&
+          draggedParentInfoForRender &&
           draggedParentInfoForRender.columnIndex !== null &&
           targetParentInfoForRender.columnIndex !== null &&
           draggedParentInfoForRender.containerId === targetParentInfoForRender.containerId &&
+          draggedParentInfoForRender.containerId !== null &&
           draggedParentInfoForRender.columnIndex !== targetParentInfoForRender.columnIndex;
 
         // 检查是否是跨列拖拽（从另一个列拖入当前列）
@@ -658,17 +662,23 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 // 检查水平拖拽：只有当被拖拽的block和目标block都不是Container或ColumnsContainer时才允许
                 // 并且它们都不在ColumnsContainer的列中（禁止column内部元素之间的水平拖拽）
                 const targetBlock = document[childId];
-                const isDraggedContainer = draggedBlock?.type === 'Container' || draggedBlock?.type === 'ColumnsContainer';
+                // 如果 draggedBlock 为 null，尝试从 document 中获取
+                const actualDraggedBlock = draggedBlock || (draggedId ? document[draggedId] : null);
+                const isDraggedContainer = actualDraggedBlock?.type === 'Container' || actualDraggedBlock?.type === 'ColumnsContainer';
                 const isTargetContainer = targetBlock?.type === 'Container' || targetBlock?.type === 'ColumnsContainer';
 
                 // 优先处理分栏间交换（同一个ColumnsContainer的不同列之间），不受列数限制
                 // 如果是分栏间交换，显示全边框（蓝色），不显示水平指示线
-                if (isCrossColumnSwap && !isDraggedContainer && !isTargetContainer && draggedId !== childId) {
-                  setDraggedBlockId(draggedId);
-                  setDragOverIndex(i); // 显示全边框
-                  setHorizontalDragSide(null); // 清除水平拖拽指示
-                  setHorizontalDragTargetIndex(null);
-                  return;
+                // 注意：即使 draggedBlock 为 null，只要 isCrossColumnSwap 为 true，也应该显示边框
+                if (isCrossColumnSwap && draggedId !== childId) {
+                  // 只有当不是 Container 或 ColumnsContainer 时才允许交换
+                  if (!isDraggedContainer && !isTargetContainer) {
+                    setDraggedBlockId(draggedId);
+                    setDragOverIndex(i); // 显示全边框
+                    setHorizontalDragSide(null); // 清除水平拖拽指示
+                    setHorizontalDragTargetIndex(null);
+                    return;
+                  }
                 }
 
                 // 处理跨列拖拽扩列（从另一个列拖入当前列，用于扩列）

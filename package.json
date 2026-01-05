@@ -66,9 +66,9 @@
     "@usewaypoint/block-spacer": "0.0.3",
     "@usewaypoint/block-text": "0.0.6",
     "@usewaypoint/document-core": "0.0.6",
-    "monto-email-block-socials": "file:./monto-email-block-socials",
+    "monto-email-block-socials": "0.0.3",
     "monto-email-block-video": "0.0.1",
-    "monto-email-core": "file:./email-builder",
+    "monto-email-core": "0.0.9",
     "react-colorful": "^5.6.1",
     "zod": "^3.22.4",
     "zustand": "^4.5.1"

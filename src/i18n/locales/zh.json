@@ -156,6 +156,18 @@
     "title": "HTML块",
     "content": "内容"
   },
+  "socials": {
+    "title": "社媒块",
+    "selectPlatforms": "选择社媒类型",
+    "iconStyle": "图标类别",
+    "iconPreview": "图标预览",
+    "configureIcon": "配置 {{platform}} 图标",
+    "iconSize": "图标尺寸",
+    "iconWidth": "图标宽度",
+    "iconHeight": "图标高度",
+    "iconUrl": "跳转链接",
+    "placeholder": "点击右侧面板添加社媒图标"
+  },
   "style": {
     "backgroundColor": "背景颜色",
     "borderColor": "边框颜色",

@@ -18,10 +18,10 @@ export default function VideoEditor(props: VideoEditorProps) {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: 200,
-          backgroundColor: '#F5F5F5',
-          border: '2px dashed #CCCCCC',
+          // backgroundColor: '#F5F5F5',
+          border: '2px dashed #cccccc73',
           borderRadius: 1,
-          color: '#999999',
+          // color: '#999999',
         }}
       >
         <Typography variant="body2" sx={{ textAlign: 'center', px: 2 }}>
@@ -48,9 +48,6 @@ export default function VideoEditor(props: VideoEditorProps) {
         alignItems: props.props.contentAlignment === 'top' ? 'flex-start' :
           props.props.contentAlignment === 'bottom' ? 'flex-end' : 'center',
         width: '100%',
-        padding: props.style?.padding ?
-          `${props.style.padding.top}px ${props.style.padding.right}px ${props.style.padding.bottom}px ${props.style.padding.left}px` :
-          undefined,
         backgroundColor: props.style?.backgroundColor || undefined,
         textAlign: props.style?.textAlign || undefined,
       }}

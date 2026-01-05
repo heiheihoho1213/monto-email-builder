@@ -55,7 +55,7 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
     // 检查是否点击的是插入点区域（EditorChildrenIds 内部）
     const target = e.target as HTMLElement;
     const isInsideEditorChildrenIds = target.closest('[data-column-content="true"]') !== null;
-    
+
     // 如果是在 EditorChildrenIds 内部，不处理（由 EditorChildrenIds 自己处理）
     if (isInsideEditorChildrenIds) {
       return;
@@ -75,8 +75,17 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
     // 检查是否是从侧边栏拖拽的新块
     const isSidebarBlock = (window as any).__isSidebarBlock === true;
     const draggedBlock = getCurrentDraggedBlock();
-    
+
     if (!draggedBlock) {
+      (window as any).__currentDraggedBlockId = null;
+      (window as any).__currentDraggedBlock = null;
+      (window as any).__isSidebarBlock = false;
+      return;
+    }
+
+    // 如果元素已经在画布上（在 childrenIds 中），且不是从侧边栏拖拽的，则不处理
+    // 因为已经在画布上的元素应该通过 EditorChildrenIds 的拖拽逻辑处理，而不是在这里追加到底部
+    if (!isSidebarBlock && childrenIds.includes(draggedId)) {
       (window as any).__currentDraggedBlockId = null;
       (window as any).__currentDraggedBlock = null;
       (window as any).__isSidebarBlock = false;
@@ -96,7 +105,7 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
 
     // 获取最新的 document
     const latestDocument = editorStateStore.getState().document;
-    
+
     // 如果不是侧边栏块，需要从原容器中移除
     if (!isSidebarBlock) {
       // 查找原容器
@@ -128,7 +137,7 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
       if (parentInfo.containerId) {
         const parentContainer = latestDocument[parentInfo.containerId];
         const newDocument = { ...latestDocument };
-        
+
         if (parentInfo.columnIndex !== null) {
           // 从 ColumnsContainer 的列中移除
           const columns = [...(parentContainer.data.props?.columns || [])];
@@ -152,7 +161,7 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
             ? parentContainer.data.props?.childrenIds || []
             : parentContainer.data.childrenIds || [];
           const newChildrenIds = currentChildrenIds.filter((id) => id !== draggedId);
-          
+
           if (parentContainer.type === 'Container') {
             newDocument[parentInfo.containerId] = {
               ...parentContainer,
@@ -174,7 +183,7 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
             };
           }
         }
-        
+
         setDocument(newDocument);
       }
     }
@@ -193,12 +202,12 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
         },
       },
     };
-    
+
     // 只有当 block 不存在时，才创建新块
     if (!blockExists) {
       updates[blockId] = draggedBlock;
     }
-    
+
     setDocument(updates);
     setSelectedBlockId(blockId);
 
@@ -211,7 +220,7 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
     // 检查是否点击的是插入点区域（EditorChildrenIds 内部）
     const target = e.target as HTMLElement;
     const isInsideEditorChildrenIds = target.closest('[data-column-content="true"]') !== null;
-    
+
     // 如果是在 EditorChildrenIds 内部，不处理（由 EditorChildrenIds 自己处理）
     if (isInsideEditorChildrenIds) {
       return;

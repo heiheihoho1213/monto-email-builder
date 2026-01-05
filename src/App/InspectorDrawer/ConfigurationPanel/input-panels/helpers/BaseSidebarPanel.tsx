@@ -12,7 +12,7 @@ export default function BaseSidebarPanel({ title, children }: SidebarPanelProps)
       <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
         {title}
       </Typography>
-      <Stack spacing={5} mb={3} sx={{ width: '100%', maxWidth: '100%' }}>
+      <Stack spacing={3} mb={3} sx={{ width: '100%', maxWidth: '100%' }}>
         {children}
       </Stack>
     </Box>

@@ -143,7 +143,14 @@ export const BUTTONS: TButtonProps[] = [
       type: 'Socials',
       data: {
         props: {
-          socials: [],
+          platforms: ['facebook', 'instagram', 'x'],
+          iconStyle: 'origin-colorful',
+          iconSize: 36,
+          socials: [
+            { platform: 'facebook', url: null },
+            { platform: 'instagram', url: null },
+            { platform: 'x', url: null },
+          ],
         },
         style: { padding: { top: 16, bottom: 16, left: 24, right: 24 } },
       },

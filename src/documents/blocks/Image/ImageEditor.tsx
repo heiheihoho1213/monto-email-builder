@@ -9,7 +9,7 @@ type ImageEditorProps = ImageProps;
 
 export default function ImageEditor(props: ImageEditorProps) {
   const { t } = useTranslation();
-  
+
   // 如果没有 URL，显示空白占位符
   if (!props.props?.url) {
     return (
@@ -18,11 +18,11 @@ export default function ImageEditor(props: ImageEditorProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: 200,
-          backgroundColor: '#F5F5F5',
-          border: '2px dashed #CCCCCC',
+          minHeight: 150,
+          // backgroundColor: '#F5F5F5',
+          border: '2px dashed #cccccc73',
           borderRadius: 1,
-          color: '#999999',
+          // color: '#999999',
         }}
       >
         <Typography variant="body2" sx={{ textAlign: 'center', px: 2 }}>

@@ -51,14 +51,14 @@ importers:
         specifier: 0.0.6
         version: 0.0.6(react@18.3.1)(zod@3.25.76)
       monto-email-block-socials:
-        specifier: file:./monto-email-block-socials
-        version: file:monto-email-block-socials(react@18.3.1)(zod@3.25.76)
+        specifier: 0.0.3
+        version: 0.0.3(react@18.3.1)(zod@3.25.76)
       monto-email-block-video:
         specifier: 0.0.1
         version: 0.0.1(react@18.3.1)(zod@3.25.76)
       monto-email-core:
-        specifier: file:./email-builder
-        version: file:email-builder(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)
+        specifier: 0.0.9
+        version: 0.0.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)
       react-colorful:
         specifier: ^5.6.1
         version: 5.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1376,8 +1376,8 @@ packages:
     resolution: {integrity: sha512-RHiac9mvaRw0x3AYRgDC1CxAP7HTcNrrECeA8YYJeWnpo+2Q5CegtZjaotWTWxDG3UeGA1coE05iH1mPjT/2mg==}
     engines: {node: '>=16 || 14 >=14.17'}
 
-  monto-email-block-socials@file:monto-email-block-socials:
-    resolution: {directory: monto-email-block-socials, type: directory}
+  monto-email-block-socials@0.0.3:
+    resolution: {integrity: sha512-J9MVopxXv1jA9brsZFb6/ARgcc+KFeWuurJXmDEGiNVYTpLAXb08WPZ0jIbyqJFOLftkBWikwahnw95bhaMmWw==}
     peerDependencies:
       react: ^16 || ^17 || ^18
       zod: ^1 || ^2 || ^3
@@ -1388,8 +1388,8 @@ packages:
       react: ^16 || ^17 || ^18
       zod: ^1 || ^2 || ^3
 
-  monto-email-core@file:email-builder:
-    resolution: {directory: email-builder, type: directory}
+  monto-email-core@0.0.9:
+    resolution: {integrity: sha512-/U+5EJ2G0StLe6bMxOOf/8TkssPGn6qXM33oS6qjUOoLnmkJ4C4Kvy+OGQjuEBI7cm0fzOZ8NXkAHdJ4YhjUQA==}
     peerDependencies:
       react: ^16 || ^17 || ^18
       react-dom: ^16 || ^17 || ^18
@@ -2977,7 +2977,7 @@ snapshots:
     dependencies:
       brace-expansion: 2.0.2
 
-  monto-email-block-socials@file:monto-email-block-socials(react@18.3.1)(zod@3.25.76):
+  monto-email-block-socials@0.0.3(react@18.3.1)(zod@3.25.76):
     dependencies:
       react: 18.3.1
       zod: 3.25.76
@@ -2987,7 +2987,7 @@ snapshots:
       react: 18.3.1
       zod: 3.25.76
 
-  monto-email-core@file:email-builder(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76):
+  monto-email-core@0.0.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76):
     dependencies:
       '@usewaypoint/block-avatar': 0.0.3(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/block-button': 0.0.3(react@18.3.1)(zod@3.25.76)
@@ -3000,7 +3000,7 @@ snapshots:
       '@usewaypoint/block-spacer': 0.0.3(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/block-text': 0.0.6(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/document-core': 0.0.6(react@18.3.1)(zod@3.25.76)
-      monto-email-block-socials: file:monto-email-block-socials(react@18.3.1)(zod@3.25.76)
+      monto-email-block-socials: 0.0.3(react@18.3.1)(zod@3.25.76)
       monto-email-block-video: 0.0.1(react@18.3.1)(zod@3.25.76)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)

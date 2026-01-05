@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { renderToStaticMarkup } from 'monto-email-core';
 
@@ -8,6 +8,17 @@ import HighlightedCodePanel from './helper/HighlightedCodePanel';
 
 export default function HtmlPanel() {
   const document = useDocument();
-  const code = useMemo(() => renderToStaticMarkup(document, { rootBlockId: 'root' }), [document]);
+  const [code, setCode] = useState<string>('');
+
+  useEffect(() => {
+    // 在 useEffect 中调用 renderToStaticMarkup，避免在 useMemo 中调用 Hooks
+    try {
+      const htmlCode = renderToStaticMarkup(document, { rootBlockId: 'root' });
+      setCode(htmlCode);
+    } catch (error) {
+      setCode('<!-- Error rendering HTML -->');
+    }
+  }, [document]);
+
   return <HighlightedCodePanel type="html" value={code} />;
 }
