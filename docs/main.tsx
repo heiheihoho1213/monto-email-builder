@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 
 import App from '../src/App';
-import { setImageUploadHandler } from '../src/documents/editor/EditorContext';
+import { setImageUploadHandler, setVideoUploadHandler } from '../src/documents/editor/EditorContext';
 import theme from '../src/theme';
 
 // 示例：图片上传函数
@@ -33,11 +33,24 @@ async function exampleImageUploadHandler(file: File): Promise<string> {
   // return data.url;
 }
 
+async function exampleVideoUploadHandler(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64Url = reader.result as string;
+      resolve(base64Url);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 function AppWithConfig() {
   useEffect(() => {
     // 配置图片上传处理器
     // 如果您不需要本地上传功能，可以不调用此函数
     setImageUploadHandler(exampleImageUploadHandler);
+    setVideoUploadHandler(exampleVideoUploadHandler);
   }, []);
 
   return <App />;
