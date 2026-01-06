@@ -26,6 +26,9 @@ import VideoEditor from '../blocks/Video/VideoEditor';
 import VideoPropsSchema from '../blocks/Video/VideoPropsSchema';
 import SocialsEditor from '../blocks/Socials/SocialsEditor';
 import SocialsPropsSchema from '../blocks/Socials/SocialsPropsSchema';
+import TextEditor from '../blocks/Text/TextEditor';
+import HeadingEditor from '../blocks/Heading/HeadingEditor';
+import ButtonEditor from '../blocks/Button/ButtonEditor';
 import EditorBlockWrapper from '../blocks/helpers/block-wrappers/EditorBlockWrapper';
 
 const EDITOR_DICTIONARY = buildBlockConfigurationDictionary({
@@ -41,7 +44,7 @@ const EDITOR_DICTIONARY = buildBlockConfigurationDictionary({
     schema: ButtonPropsSchema,
     Component: (props) => (
       <EditorBlockWrapper>
-        <Button {...props} />
+        <ButtonEditor {...props} />
       </EditorBlockWrapper>
     ),
   },
@@ -65,7 +68,7 @@ const EDITOR_DICTIONARY = buildBlockConfigurationDictionary({
     schema: HeadingPropsSchema,
     Component: (props) => (
       <EditorBlockWrapper>
-        <Heading {...props} />
+        <HeadingEditor {...props} />
       </EditorBlockWrapper>
     ),
   },
@@ -101,7 +104,7 @@ const EDITOR_DICTIONARY = buildBlockConfigurationDictionary({
     schema: TextPropsSchema,
     Component: (props) => (
       <EditorBlockWrapper>
-        <Text {...props} />
+        <TextEditor {...props} />
       </EditorBlockWrapper>
     ),
   },

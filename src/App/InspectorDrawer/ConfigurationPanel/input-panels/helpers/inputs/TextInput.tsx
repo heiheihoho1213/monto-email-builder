@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { InputProps, TextField } from '@mui/material';
 
@@ -14,6 +14,12 @@ type Props = {
 export default function TextInput({ helperText, label, placeholder, rows, InputProps, defaultValue, onChange }: Props) {
   const [value, setValue] = useState(defaultValue);
   const isMultiline = typeof rows === 'number' && rows > 1;
+  
+  // 当 defaultValue 变化时，更新内部状态（用于响应外部数据变化）
+  useEffect(() => {
+    setValue(defaultValue);
+  }, [defaultValue]);
+  
   return (
     <TextField
       fullWidth

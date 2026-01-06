@@ -5,8 +5,6 @@ import { ZodError } from 'zod';
 import { useTranslation } from '../../../../i18n/useTranslation';
 
 import BaseSidebarPanel from './helpers/BaseSidebarPanel';
-import BooleanInput from './helpers/inputs/BooleanInput';
-import TextInput from './helpers/inputs/TextInput';
 import MultiStylePropertyPanel from './helpers/style-inputs/MultiStylePropertyPanel';
 
 type TextSidebarPanelProps = {
@@ -29,17 +27,13 @@ export default function TextSidebarPanel({ data, setData }: TextSidebarPanelProp
 
   return (
     <BaseSidebarPanel title={t('text.title')}>
-      <TextInput
-        label={t('text.content')}
-        rows={5}
-        defaultValue={data.props?.text ?? ''}
-        onChange={(text) => updateData({ ...data, props: { ...data.props, text } })}
-      />
-      <BooleanInput
+      {/* 文本内容输入框已移除，请直接在画布上编辑 */}
+      {/* 暂时隐藏 Markdown 选项，默认使用普通文本 */}
+      {/* <BooleanInput
         label={t('text.markdown')}
         defaultValue={data.props?.markdown ?? false}
         onChange={(markdown) => updateData({ ...data, props: { ...data.props, markdown } })}
-      />
+      /> */}
 
       <MultiStylePropertyPanel
         names={['color', 'backgroundColor', 'fontFamily', 'fontSize', 'fontWeight', 'textAlign', 'padding']}

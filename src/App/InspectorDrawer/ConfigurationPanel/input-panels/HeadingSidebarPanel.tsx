@@ -7,7 +7,6 @@ import { useTranslation } from '../../../../i18n/useTranslation';
 
 import BaseSidebarPanel from './helpers/BaseSidebarPanel';
 import RadioGroupInput from './helpers/inputs/RadioGroupInput';
-import TextInput from './helpers/inputs/TextInput';
 import MultiStylePropertyPanel from './helpers/style-inputs/MultiStylePropertyPanel';
 
 type HeadingSidebarPanelProps = {
@@ -30,14 +29,7 @@ export default function HeadingSidebarPanel({ data, setData }: HeadingSidebarPan
 
   return (
     <BaseSidebarPanel title={t('heading.title')}>
-      <TextInput
-        label={t('heading.content')}
-        rows={3}
-        defaultValue={data.props?.text ?? HeadingPropsDefaults.text}
-        onChange={(text) => {
-          updateData({ ...data, props: { ...data.props, text } });
-        }}
-      />
+      {/* 文本内容输入框已移除，请直接在画布上编辑 */}
       <RadioGroupInput
         label={t('heading.level')}
         defaultValue={data.props?.level ?? HeadingPropsDefaults.level}

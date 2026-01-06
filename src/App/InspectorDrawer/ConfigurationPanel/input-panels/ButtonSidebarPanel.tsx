@@ -29,7 +29,6 @@ export default function ButtonSidebarPanel({ data, setData }: ButtonSidebarPanel
     }
   };
 
-  const text = data.props?.text ?? ButtonPropsDefaults.text;
   const url = data.props?.url ?? ButtonPropsDefaults.url;
   const fullWidth = data.props?.fullWidth ?? ButtonPropsDefaults.fullWidth;
   const size = data.props?.size ?? ButtonPropsDefaults.size;
@@ -39,11 +38,7 @@ export default function ButtonSidebarPanel({ data, setData }: ButtonSidebarPanel
 
   return (
     <BaseSidebarPanel title={t('button.title')}>
-      <TextInput
-        label={t('button.text')}
-        defaultValue={text}
-        onChange={(text) => updateData({ ...data, props: { ...data.props, text } })}
-      />
+      {/* 文本内容输入框已移除，请直接在画布上编辑 */}
       <TextInput
         label={t('button.url')}
         defaultValue={url}
