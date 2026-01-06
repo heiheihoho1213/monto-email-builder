@@ -36,7 +36,7 @@ function findParentContainerId(document: TEditorConfiguration, blockId: string):
 const sx: SxProps = {
   position: 'absolute',
   bottom: -12,
-  left: -56,
+  left: -50,
   borderRadius: 64,
   paddingX: 0.5,
   paddingY: 0.5,
@@ -99,6 +99,11 @@ export default function TuneMenu({ blockId }: Props) {
       return childrenIds.filter((f) => f !== blockId);
     };
     const nDocument: typeof document = { ...document };
+
+    // 如果删除的是 ColumnsContainer 中的子元素，需要检查删除后 column 是否为空
+    let columnsContainerIdToCheck: string | null = null;
+    let columnIndexToCheck: number | null = null;
+
     for (const [id, b] of Object.entries(nDocument)) {
       const block = b as TEditorBlock;
       if (id === blockId) {
@@ -127,13 +132,32 @@ export default function TuneMenu({ blockId }: Props) {
           };
           break;
         case 'ColumnsContainer':
+          // 检查删除的 block 是否在这个 ColumnsContainer 中
+          const columns = block.data.props?.columns || [];
+          let foundInColumn = false;
+          let foundColumnIndex = -1;
+
+          for (let i = 0; i < columns.length; i++) {
+            if (columns[i].childrenIds?.includes(blockId)) {
+              foundInColumn = true;
+              foundColumnIndex = i;
+              break;
+            }
+          }
+
+          if (foundInColumn) {
+            // 记录需要检查的 ColumnsContainer
+            columnsContainerIdToCheck = id;
+            columnIndexToCheck = foundColumnIndex;
+          }
+
           nDocument[id] = {
             type: 'ColumnsContainer',
             data: {
               style: block.data.style,
               props: {
                 ...block.data.props,
-                columns: block.data.props?.columns?.map((c) => ({
+                columns: columns.map((c) => ({
                   childrenIds: filterChildrenIds(c.childrenIds),
                 })),
               },
@@ -144,7 +168,79 @@ export default function TuneMenu({ blockId }: Props) {
           nDocument[id] = block;
       }
     }
+
+    // 删除被删除的 block
     delete nDocument[blockId];
+
+    // 如果删除的是 ColumnsContainer 中的子元素，检查删除后该 column 是否为空
+    if (columnsContainerIdToCheck && columnIndexToCheck !== null) {
+      const columnsContainer = nDocument[columnsContainerIdToCheck];
+      if (columnsContainer && columnsContainer.type === 'ColumnsContainer') {
+        const updatedColumns = columnsContainer.data.props?.columns || [];
+        const deletedColumn = updatedColumns[columnIndexToCheck];
+
+        // 检查删除后的 column 是否为空
+        if (deletedColumn && (!deletedColumn.childrenIds || deletedColumn.childrenIds.length === 0)) {
+          // 如果只剩下最后一列，删除整个 ColumnsContainer
+          if (updatedColumns.length <= 1) {
+            // 需要从父容器中移除这个 ColumnsContainer
+            const columnsContainerParentInfo = findParentContainerId(nDocument, columnsContainerIdToCheck);
+
+            if (columnsContainerParentInfo.containerId) {
+              const parentContainer = nDocument[columnsContainerParentInfo.containerId];
+              if (parentContainer) {
+                if (parentContainer.type === 'EmailLayout') {
+                  nDocument[columnsContainerParentInfo.containerId] = {
+                    ...parentContainer,
+                    data: {
+                      ...parentContainer.data,
+                      childrenIds: (parentContainer.data.childrenIds || []).filter(
+                        (id) => id !== columnsContainerIdToCheck
+                      ),
+                    },
+                  };
+                } else if (parentContainer.type === 'Container') {
+                  nDocument[columnsContainerParentInfo.containerId] = {
+                    ...parentContainer,
+                    data: {
+                      ...parentContainer.data,
+                      props: {
+                        ...parentContainer.data.props,
+                        childrenIds: (parentContainer.data.props?.childrenIds || []).filter(
+                          (id) => id !== columnsContainerIdToCheck
+                        ),
+                      },
+                    },
+                  };
+                }
+              }
+            }
+
+            // 删除 ColumnsContainer
+            delete nDocument[columnsContainerIdToCheck];
+            // 取消选中（如果选中的是 ColumnsContainer）
+            setSelectedBlockId(null);
+          } else {
+            // 如果还有其他列，只删除这一列（从 columns 数组中移除）
+            const newColumns = updatedColumns.filter((_, index) => index !== columnIndexToCheck);
+            const newColumnsCount = newColumns.length;
+
+            nDocument[columnsContainerIdToCheck] = {
+              type: 'ColumnsContainer',
+              data: {
+                style: columnsContainer.data.style,
+                props: {
+                  ...columnsContainer.data.props,
+                  columns: newColumns,
+                  columnsCount: newColumnsCount,
+                },
+              } as ColumnsContainerProps,
+            };
+          }
+        }
+      }
+    }
+
     resetDocument(nDocument);
   };
 
