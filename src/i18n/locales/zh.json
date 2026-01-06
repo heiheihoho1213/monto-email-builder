@@ -158,7 +158,7 @@
   },
   "socials": {
     "title": "社媒块",
-    "selectPlatforms": "选择社媒类型",
+    "selectPlatforms": "社媒选择",
     "iconStyle": "图标类别",
     "iconPreview": "图标预览",
     "configureIcon": "配置 {{platform}} 图标",
@@ -166,7 +166,8 @@
     "iconWidth": "图标宽度",
     "iconHeight": "图标高度",
     "iconUrl": "跳转链接",
-    "placeholder": "点击右侧面板添加社媒图标"
+    "placeholder": "点击右侧面板添加社媒图标",
+    "addAnother": "新增社媒"
   },
   "style": {
     "backgroundColor": "背景颜色",

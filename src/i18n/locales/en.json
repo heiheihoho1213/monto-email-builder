@@ -158,7 +158,7 @@
   },
   "socials": {
     "title": "Social Media block",
-    "selectPlatforms": "Select Platforms",
+    "selectPlatforms": "Social Media Selection",
     "iconStyle": "Icon Style",
     "iconPreview": "Icon Preview",
     "configureIcon": "Configure {{platform}} Icon",
@@ -166,7 +166,8 @@
     "iconWidth": "Icon Width",
     "iconHeight": "Icon Height",
     "iconUrl": "Link URL",
-    "placeholder": "Click the right panel to add social media icons"
+    "placeholder": "Click the right panel to add social media icons",
+    "addAnother": "Add another social link"
   },
   "style": {
     "backgroundColor": "Background color",

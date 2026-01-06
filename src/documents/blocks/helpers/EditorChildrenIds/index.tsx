@@ -83,8 +83,8 @@ function canDropBlockIntoContainer(
   if (targetContainerType === 'ColumnsContainer') {
     // ColumnsContainer 内部不允许拖入 Container 或 ColumnsContainer
     if (draggedBlockType === 'Container' || draggedBlockType === 'ColumnsContainer') {
-      return false;
-    }
+    return false;
+  }
   }
   // 如果目标是 Container，允许拖入任何内容（包括 Container 和 ColumnsContainer）
 
@@ -922,19 +922,19 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
               }}
               onDragLeave={handleDragLeave}
               onDrop={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
+                  e.preventDefault();
+                  e.stopPropagation();
 
-                const draggedId = e.dataTransfer.getData('text/plain') || getCurrentDraggedBlockId();
-                if (!draggedId || !childrenIds) {
-                  (window as any).__currentDraggedBlockId = null;
-                  (window as any).__currentDraggedBlock = null;
-                  setDraggedBlockId(null);
-                  setDragOverIndex(null);
+                  const draggedId = e.dataTransfer.getData('text/plain') || getCurrentDraggedBlockId();
+                  if (!draggedId || !childrenIds) {
+                    (window as any).__currentDraggedBlockId = null;
+                    (window as any).__currentDraggedBlock = null;
+                    setDraggedBlockId(null);
+                    setDragOverIndex(null);
                   setHorizontalDragSide(null);
                   setHorizontalDragTargetIndex(null);
-                  return;
-                }
+                    return;
+                  }
 
                 const draggedBlock = getCurrentDraggedBlock();
                 if (!draggedBlock) {
@@ -1700,18 +1700,18 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                         pointerEvents: 'none',
                       }
                       : (showTopIndicator || showTopIndicatorForExternal)
-                        ? {
-                          content: '""',
-                          position: 'absolute',
-                          top: -2,
-                          left: 0,
-                          right: 0,
-                          height: 4,
-                          backgroundColor: isDragNotAllowed ? '#d3d9dd' : 'primary.main',
-                          zIndex: 1000,
-                          pointerEvents: 'none',
-                        }
-                        : {},
+                      ? {
+                        content: '""',
+                        position: 'absolute',
+                        top: -2,
+                        left: 0,
+                        right: 0,
+                        height: 4,
+                        backgroundColor: isDragNotAllowed ? '#d3d9dd' : 'primary.main',
+                        zIndex: 1000,
+                        pointerEvents: 'none',
+                      }
+                      : {},
                     '&::after': showRightIndicator
                       ? {
                         content: '""',
@@ -1725,18 +1725,18 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                         pointerEvents: 'none',
                       }
                       : (showBottomIndicator || showBottomIndicatorForExternal)
-                        ? {
-                          content: '""',
-                          position: 'absolute',
-                          bottom: -2,
-                          left: 0,
-                          right: 0,
-                          height: 4,
-                          backgroundColor: isDragNotAllowed ? '#d3d9dd' : 'primary.main',
-                          zIndex: 1000,
-                          pointerEvents: 'none',
-                        }
-                        : {},
+                      ? {
+                        content: '""',
+                        position: 'absolute',
+                        bottom: -2,
+                        left: 0,
+                        right: 0,
+                        height: 4,
+                        backgroundColor: isDragNotAllowed ? '#d3d9dd' : 'primary.main',
+                        zIndex: 1000,
+                        pointerEvents: 'none',
+                      }
+                      : {},
                   }),
               }}
             >

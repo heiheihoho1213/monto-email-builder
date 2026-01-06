@@ -111,17 +111,16 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
       // 查找原容器
       let parentInfo = { containerId: null as string | null, columnIndex: null as number | null };
       for (const [containerId, container] of Object.entries(latestDocument)) {
-        const containerData = container.data;
-        if (container.type === 'EmailLayout' && containerData.childrenIds?.includes(draggedId)) {
+        if (container.type === 'EmailLayout' && container.data.childrenIds?.includes(draggedId)) {
           parentInfo = { containerId, columnIndex: null };
           break;
         }
-        if (container.type === 'Container' && containerData.props?.childrenIds?.includes(draggedId)) {
+        if (container.type === 'Container' && container.data.props?.childrenIds?.includes(draggedId)) {
           parentInfo = { containerId, columnIndex: null };
           break;
         }
         if (container.type === 'ColumnsContainer') {
-          const columns = containerData.props?.columns;
+          const columns = container.data.props?.columns;
           if (columns) {
             for (let i = 0; i < columns.length; i++) {
               if (columns[i].childrenIds?.includes(draggedId)) {

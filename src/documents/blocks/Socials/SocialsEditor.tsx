@@ -9,9 +9,12 @@ type SocialsEditorProps = SocialsProps;
 export default function SocialsEditor(props: SocialsEditorProps) {
   const { t } = useTranslation();
 
-  // 如果没有配置社交媒体平台，显示占位符
+  const socials = props.props?.socials || [];
   const platforms = props.props?.platforms || [];
-  if (platforms.length === 0) {
+
+  // 如果没有配置社交媒体平台，显示占位符
+  const displayPlatforms = socials.length > 0 ? socials.map(s => s.platform) : platforms;
+  if (displayPlatforms.length === 0) {
     return (
       <Box
         sx={{
@@ -32,6 +35,6 @@ export default function SocialsEditor(props: SocialsEditorProps) {
     );
   }
 
+  // Socials 组件现在直接支持 socials 数组的顺序和重复
   return <Socials {...props} />;
 }
-

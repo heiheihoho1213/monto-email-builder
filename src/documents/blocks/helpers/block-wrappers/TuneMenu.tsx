@@ -10,18 +10,17 @@ import { ColumnsContainerProps } from '../../ColumnsContainer/ColumnsContainerPr
 // 查找block所在的父容器ID和列索引（如果是ColumnsContainer）
 function findParentContainerId(document: TEditorConfiguration, blockId: string): { containerId: string | null; columnIndex: number | null } {
   for (const [containerId, container] of Object.entries(document)) {
-    const containerData = container.data;
     // 检查EmailLayout
-    if (container.type === 'EmailLayout' && containerData.childrenIds?.includes(blockId)) {
+    if (container.type === 'EmailLayout' && container.data.childrenIds?.includes(blockId)) {
       return { containerId, columnIndex: null };
     }
     // 检查Container
-    if (container.type === 'Container' && containerData.props?.childrenIds?.includes(blockId)) {
+    if (container.type === 'Container' && container.data.props?.childrenIds?.includes(blockId)) {
       return { containerId, columnIndex: null };
     }
     // 检查ColumnsContainer
     if (container.type === 'ColumnsContainer') {
-      const columns = containerData.props?.columns;
+      const columns = container.data.props?.columns;
       if (columns) {
         for (let i = 0; i < columns.length; i++) {
           if (columns[i].childrenIds?.includes(blockId)) {
@@ -36,11 +35,11 @@ function findParentContainerId(document: TEditorConfiguration, blockId: string):
 
 const sx: SxProps = {
   position: 'absolute',
-  top: 0,
+  bottom: -12,
   left: -56,
   borderRadius: 64,
   paddingX: 0.5,
-  paddingY: 1,
+  paddingY: 0.5,
   zIndex: 'fab',
 };
 
@@ -49,23 +48,23 @@ type Props = {
 };
 export default function TuneMenu({ blockId }: Props) {
   const document = useDocument();
-  
+
   // 查找当前 block 所在的父容器
   const parentInfo = findParentContainerId(document, blockId);
-  
+
   // 检查是否可以移动（上下箭头是否应该显示）
   const canMove = React.useMemo(() => {
     if (!parentInfo.containerId) {
       return { canMoveUp: false, canMoveDown: false };
     }
-    
+
     const container = document[parentInfo.containerId];
     if (!container) {
       return { canMoveUp: false, canMoveDown: false };
     }
-    
+
     let childrenIds: string[] | null | undefined = null;
-    
+
     if (container.type === 'EmailLayout') {
       childrenIds = container.data.childrenIds;
     } else if (container.type === 'Container') {
@@ -76,16 +75,16 @@ export default function TuneMenu({ blockId }: Props) {
         childrenIds = columns[parentInfo.columnIndex].childrenIds;
       }
     }
-    
+
     if (!childrenIds || childrenIds.length <= 1) {
       return { canMoveUp: false, canMoveDown: false };
     }
-    
+
     const index = childrenIds.indexOf(blockId);
     if (index < 0) {
       return { canMoveUp: false, canMoveDown: false };
     }
-    
+
     return {
       canMoveUp: index > 0,
       canMoveDown: index < childrenIds.length - 1,
@@ -236,7 +235,7 @@ export default function TuneMenu({ blockId }: Props) {
         )}
         <Tooltip title="Delete" placement="left-start">
           <IconButton onClick={handleDeleteClick} sx={{ color: 'text.primary' }}>
-            <DeleteOutlined fontSize="small" />
+            <DeleteOutlined color="error" fontSize="small" />
           </IconButton>
         </Tooltip>
       </Stack>
