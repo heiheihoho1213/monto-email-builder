@@ -87,6 +87,10 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
   // Handler 鼠标按下事件
   const handleHandlerMouseDown = () => {
     isHandlerClickedRef.current = true;
+    // 如果当前 block 被选中，取消选中，避免拖拽阴影偏移问题
+    if (selectedBlockId === blockId) {
+      setSelectedBlockId(null);
+    }
   };
 
   // 鼠标松开时重置标记

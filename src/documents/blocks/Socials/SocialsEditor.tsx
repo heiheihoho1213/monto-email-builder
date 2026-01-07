@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { Socials, SocialsProps } from 'monto-email-block-socials';
+// import { Socials, SocialsProps } from '../../../../monto-email-block-socials/src';
 
 import { useTranslation } from '../../../i18n/useTranslation';
 
