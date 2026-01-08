@@ -39,16 +39,16 @@ const SocialsPropsSchema = z.object({
   props: z
     .object({
       // 选中的社媒平台列表
-      platforms: z.array(z.enum(SOCIAL_PLATFORMS as [string, ...string[]])).optional().nullable(),
+      platforms: z.array(z.enum(SOCIAL_PLATFORMS as [SocialPlatform, ...SocialPlatform[]])).optional().nullable(),
       // 图标类别
-      iconStyle: z.enum(ICON_STYLES as [string, ...string[]]).optional().nullable(),
+      iconStyle: z.enum(ICON_STYLES as [IconStyle, ...IconStyle[]]).optional().nullable(),
       // 图标统一尺寸（宽高相同）
       iconSize: z.number().optional().nullable(),
       // 每个平台的配置
       socials: z
         .array(
           z.object({
-            platform: z.enum(SOCIAL_PLATFORMS as [string, ...string[]]),
+            platform: z.enum(SOCIAL_PLATFORMS as [SocialPlatform, ...SocialPlatform[]]),
             url: z.string().optional().nullable(),
           })
         )

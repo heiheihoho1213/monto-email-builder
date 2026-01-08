@@ -25,7 +25,7 @@ import ImageEditor from '../blocks/Image/ImageEditor';
 import VideoEditor from '../blocks/Video/VideoEditor';
 import VideoPropsSchema from '../blocks/Video/VideoPropsSchema';
 import SocialsEditor from '../blocks/Socials/SocialsEditor';
-import SocialsPropsSchema from '../blocks/Socials/SocialsPropsSchema';
+import SocialsPropsSchema, { type SocialsProps as LocalSocialsProps } from '../blocks/Socials/SocialsPropsSchema';
 import TextEditor from '../blocks/Text/TextEditor';
 import HeadingEditor from '../blocks/Heading/HeadingEditor';
 import ButtonEditor from '../blocks/Button/ButtonEditor';
@@ -130,7 +130,7 @@ const EDITOR_DICTIONARY = buildBlockConfigurationDictionary({
   },
   Socials: {
     schema: SocialsPropsSchema,
-    Component: (data) => {
+    Component: (data: LocalSocialsProps) => {
       return (
         <EditorBlockWrapper>
           <SocialsEditor {...data} />

@@ -40,18 +40,18 @@ const getCurrentDraggedBlock = (): TEditorBlock | null => {
 // 查找block所在的父容器ID和列索引（如果是ColumnsContainer）
 function findParentContainerId(document: TEditorConfiguration, blockId: string): { containerId: string | null; columnIndex: number | null } {
   for (const [containerId, container] of Object.entries(document)) {
-    const containerData = container.data;
+    // const containerData = container.data;
     // 检查EmailLayout
-    if (container.type === 'EmailLayout' && containerData.childrenIds?.includes(blockId)) {
+    if (container.type === 'EmailLayout' && container.data.childrenIds?.includes(blockId)) {
       return { containerId, columnIndex: null };
     }
     // 检查Container
-    if (container.type === 'Container' && containerData.props?.childrenIds?.includes(blockId)) {
+    if (container.type === 'Container' && container.data.props?.childrenIds?.includes(blockId)) {
       return { containerId, columnIndex: null };
     }
     // 检查ColumnsContainer
     if (container.type === 'ColumnsContainer') {
-      const columns = containerData.props?.columns;
+      const columns = container.data.props?.columns;
       if (columns) {
         for (let i = 0; i < columns.length; i++) {
           if (columns[i].childrenIds?.includes(blockId)) {
@@ -83,8 +83,8 @@ function canDropBlockIntoContainer(
   if (targetContainerType === 'ColumnsContainer') {
     // ColumnsContainer 内部不允许拖入 Container 或 ColumnsContainer
     if (draggedBlockType === 'Container' || draggedBlockType === 'ColumnsContainer') {
-    return false;
-  }
+      return false;
+    }
   }
   // 如果目标是 Container，允许拖入任何内容（包括 Container 和 ColumnsContainer）
 
@@ -143,7 +143,7 @@ function removeBlockFromParentContainer(
     };
   }
 
-  newDocument[parentInfo.containerId] = newContainer;
+  newDocument[parentInfo.containerId] = newContainer as TEditorBlock;
   return newDocument;
 }
 
@@ -168,8 +168,8 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
   }, [isDragNotAllowed]);
 
   // 获取容器类型，用于禁用 Container 和 ColumnsContainer 选项
-  const document = editorStateStore.getState().document;
-  const containerType = containerId ? document[containerId]?.type : null;
+  const currentDocument = editorStateStore.getState().document;
+  const containerType = containerId ? currentDocument[containerId]?.type : null;
   const isContainerOrColumnsContainer = containerType === 'ColumnsContainer';
   // 检查是否在 column 内部（如果 containerType 是 ColumnsContainer，说明当前在 column 内部）
   const isInsideColumn = containerType === 'ColumnsContainer';
@@ -194,7 +194,6 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
     });
   };
 
-
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     e.stopPropagation();
@@ -217,7 +216,22 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
       }
 
       setDraggedBlockId(draggedId);
-      setDragOverIndex(index);
+
+      // 根据鼠标位置判断显示上拖拽线还是下拖拽线
+      const rect = e.currentTarget.getBoundingClientRect();
+      const mouseY = e.clientY;
+      const blockCenterY = rect.top + rect.height / 2;
+
+      // 如果鼠标在块的上半部分，显示上拖拽线（dragOverIndex = index）
+      // 如果鼠标在块的下半部分，显示下拖拽线（dragOverIndex = index + 1）
+      if (mouseY < blockCenterY) {
+        setDragOverIndex(index);
+      } else {
+        // 确保 index + 1 不超过 childrenIds.length
+        const maxIndex = childrenIds?.length || 0;
+        const nextIndex = Math.min(index + 1, maxIndex);
+        setDragOverIndex(nextIndex);
+      }
     }
   };
 
@@ -554,11 +568,16 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
         const isExternalDrag = draggedBlockId !== null && draggedBlockId !== childId && !childrenIds.includes(draggedBlockId);
         // 同一个容器内的拖拽，显示排序指示线
         const showTopIndicator = dragOverIndex === i && draggedBlockId !== null && draggedBlockId !== childId && !isExternalDrag;
-        // 底部指示线：同一个容器内的拖拽到底部，或外部拖拽到底部（非替换模式）
-        const showBottomIndicator = isLastBlock && dragOverIndex === childrenIds.length && draggedBlockId !== null && draggedBlockId !== childId && (!isExternalDrag || !allowReplace);
+        // 底部指示线：
+        // 1. 最后一个块：dragOverIndex === childrenIds.length（同一个容器内的拖拽到底部，或外部拖拽到底部）
+        // 2. 非最后一个块：dragOverIndex === i + 1（同一个容器内的拖拽到当前块下方）
+        const showBottomIndicator = (
+          (isLastBlock && dragOverIndex === childrenIds.length) ||
+          (!isLastBlock && dragOverIndex === i + 1)
+        ) && draggedBlockId !== null && draggedBlockId !== childId && (!isExternalDrag || !allowReplace);
         // 检查是否是分栏间交换（同一个ColumnsContainer的不同列之间）
-        const draggedParentInfoForRender = draggedBlockId ? findParentContainerId(document, draggedBlockId) : null;
-        const targetParentInfoForRender = findParentContainerId(document, childId);
+        const draggedParentInfoForRender = draggedBlockId ? findParentContainerId(currentDocument, draggedBlockId) : null;
+        const targetParentInfoForRender = findParentContainerId(currentDocument, childId);
         // 确保 draggedBlockId 存在且不是当前元素，并且两个元素都在同一个 ColumnsContainer 的不同列中
         const isCrossColumnSwapForRender = draggedBlockId &&
           draggedBlockId !== childId &&
@@ -743,7 +762,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   const blockCenterX = rect.left + rect.width / 2;
 
                   // 如果鼠标在block的左侧或右侧（距离边缘一定范围内），显示水平拖拽指示线
-                  const edgeThreshold = rect.width * 0.3; // 边缘30%的区域用于水平拖拽
+                  const edgeThreshold = rect.width * 0.1; // 边缘30%的区域用于水平拖拽
 
                   if (mouseX < rect.left + edgeThreshold) {
                     // 左侧拖拽
@@ -922,19 +941,19 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
               }}
               onDragLeave={handleDragLeave}
               onDrop={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
+                e.preventDefault();
+                e.stopPropagation();
 
-                  const draggedId = e.dataTransfer.getData('text/plain') || getCurrentDraggedBlockId();
-                  if (!draggedId || !childrenIds) {
-                    (window as any).__currentDraggedBlockId = null;
-                    (window as any).__currentDraggedBlock = null;
-                    setDraggedBlockId(null);
-                    setDragOverIndex(null);
+                const draggedId = e.dataTransfer.getData('text/plain') || getCurrentDraggedBlockId();
+                if (!draggedId || !childrenIds) {
+                  (window as any).__currentDraggedBlockId = null;
+                  (window as any).__currentDraggedBlock = null;
+                  setDraggedBlockId(null);
+                  setDragOverIndex(null);
                   setHorizontalDragSide(null);
                   setHorizontalDragTargetIndex(null);
-                    return;
-                  }
+                  return;
+                }
 
                 const draggedBlock = getCurrentDraggedBlock();
                 if (!draggedBlock) {
@@ -1055,7 +1074,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 // 重新检测水平拖拽：检查鼠标位置是否在block的边缘区域（仅用于外部元素）
                 const rect = e.currentTarget.getBoundingClientRect();
                 const mouseX = e.clientX;
-                const edgeThreshold = rect.width * 0.3; // 边缘30%的区域用于水平拖拽
+                const edgeThreshold = rect.width * 0.1; // 边缘30%的区域用于水平拖拽
                 // 允许水平拖拽的情况：外部元素之间（不在列中，不是Container/ColumnsContainer）
                 // 禁止自己拖拽到自己（防止自己跟自己合并）
                 const isHorizontalDrag = !isDraggedContainer && !isTargetContainer &&
@@ -1700,18 +1719,18 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                         pointerEvents: 'none',
                       }
                       : (showTopIndicator || showTopIndicatorForExternal)
-                      ? {
-                        content: '""',
-                        position: 'absolute',
-                        top: -2,
-                        left: 0,
-                        right: 0,
-                        height: 4,
-                        backgroundColor: isDragNotAllowed ? '#d3d9dd' : 'primary.main',
-                        zIndex: 1000,
-                        pointerEvents: 'none',
-                      }
-                      : {},
+                        ? {
+                          content: '""',
+                          position: 'absolute',
+                          top: -2,
+                          left: 0,
+                          right: 0,
+                          height: 4,
+                          backgroundColor: isDragNotAllowed ? '#d3d9dd' : 'primary.main',
+                          zIndex: 1000,
+                          pointerEvents: 'none',
+                        }
+                        : {},
                     '&::after': showRightIndicator
                       ? {
                         content: '""',
@@ -1725,18 +1744,18 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                         pointerEvents: 'none',
                       }
                       : (showBottomIndicator || showBottomIndicatorForExternal)
-                      ? {
-                        content: '""',
-                        position: 'absolute',
-                        bottom: -2,
-                        left: 0,
-                        right: 0,
-                        height: 4,
-                        backgroundColor: isDragNotAllowed ? '#d3d9dd' : 'primary.main',
-                        zIndex: 1000,
-                        pointerEvents: 'none',
-                      }
-                      : {},
+                        ? {
+                          content: '""',
+                          position: 'absolute',
+                          bottom: -2,
+                          left: 0,
+                          right: 0,
+                          height: 4,
+                          backgroundColor: isDragNotAllowed ? '#d3d9dd' : 'primary.main',
+                          zIndex: 1000,
+                          pointerEvents: 'none',
+                        }
+                        : {},
                   }),
               }}
             >
