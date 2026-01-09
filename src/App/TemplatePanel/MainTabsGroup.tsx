@@ -3,12 +3,13 @@ import React from 'react';
 import { CodeOutlined, DataObjectOutlined, EditOutlined, PreviewOutlined } from '@mui/icons-material';
 import { Tab, Tabs, Tooltip } from '@mui/material';
 
-import { setSelectedMainTab, useSelectedMainTab } from '../../documents/editor/EditorContext';
+import { setSelectedMainTab, useSelectedMainTab, useShowJsonFeatures } from '../../documents/editor/EditorContext';
 import { useTranslation } from '../../i18n/useTranslation';
 
 export default function MainTabsGroup() {
   const { t } = useTranslation();
   const selectedMainTab = useSelectedMainTab();
+  const showJsonFeatures = useShowJsonFeatures();
   const handleChange = (_: unknown, v: unknown) => {
     switch (v) {
       case 'json':
@@ -48,14 +49,16 @@ export default function MainTabsGroup() {
           </Tooltip>
         }
       />
-      <Tab
-        value="json"
-        label={
-          <Tooltip title={t('tabs.jsonOutput')}>
-            <DataObjectOutlined fontSize="small" />
-          </Tooltip>
-        }
-      />
+      {showJsonFeatures && (
+        <Tab
+          value="json"
+          label={
+            <Tooltip title={t('tabs.jsonOutput')}>
+              <DataObjectOutlined fontSize="small" />
+            </Tooltip>
+          }
+        />
+      )}
     </Tabs>
   );
 }

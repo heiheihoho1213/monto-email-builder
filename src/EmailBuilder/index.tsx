@@ -6,6 +6,8 @@ import {
   initializeStore,
   resetDocument,
   setImageUploadHandler,
+  setShowJsonFeatures,
+  setShowSamplesDrawerTitle,
   setVideoUploadHandler,
   setLanguage,
   setName,
@@ -84,6 +86,18 @@ export interface EmailBuilderProps {
    * 如果不提供，将使用默认的 Material-UI 主题
    */
   theme?: typeof theme;
+
+  /**
+   * 是否显示 JSON 相关功能（JSON tab、下载 JSON、导入 JSON）
+   * @default true
+   */
+  showJsonFeatures?: boolean;
+
+  /**
+   * 是否显示左侧边栏标题
+   * @default true
+   */
+  showSamplesDrawerTitle?: boolean;
 }
 
 /**
@@ -134,14 +148,18 @@ export default function EmailBuilder({
   initialName,
   onNameChange,
   theme: customTheme,
+  showJsonFeatures = true,
+  showSamplesDrawerTitle = true,
 }: EmailBuilderProps) {
   // 初始化 store（包括历史记录管理器）
   useEffect(() => {
     initializeStore({
       document: initialDocument,
       language: initialLanguage,
+      showJsonFeatures: showJsonFeatures,
+      showSamplesDrawerTitle: showSamplesDrawerTitle,
     });
-  }, []); // 只在组件挂载时初始化一次
+  }, [showJsonFeatures, showSamplesDrawerTitle]); // 当配置变化时也重新初始化
 
   // 当 initialDocument 变化时，更新文档
   useEffect(() => {
@@ -195,6 +213,16 @@ export default function EmailBuilder({
   useEffect(() => {
     setOnNameChange(onNameChange);
   }, [onNameChange]);
+
+  // 当 showJsonFeatures 变化时，更新配置
+  useEffect(() => {
+    setShowJsonFeatures(showJsonFeatures);
+  }, [showJsonFeatures]);
+
+  // 当 showSamplesDrawerTitle 变化时，更新配置
+  useEffect(() => {
+    setShowSamplesDrawerTitle(showSamplesDrawerTitle);
+  }, [showSamplesDrawerTitle]);
 
   return (
     <ThemeProvider theme={customTheme || theme}>

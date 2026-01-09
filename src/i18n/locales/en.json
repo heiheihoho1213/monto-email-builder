@@ -2,7 +2,7 @@
   "common": {
     "newDocument": "New Blank Document",
     "useBuiltInTemplates": "Use Built-in Templates",
-    "emailBuilder": "Email Builder",
+    "emailBuilder": "Monto Email Builder",
     "save": "Save",
     "saving": "Saving...",
     "saveAndExit": "Save and Exit",
@@ -46,6 +46,7 @@
   },
   "image": {
     "title": "Image block",
+    "name": "Image",
     "sourceUrl": "Source URL",
     "altText": "Alt text",
     "clickThroughUrl": "Click through URL",
@@ -62,6 +63,7 @@
   },
   "video": {
     "title": "Video block",
+    "name": "Video",
     "sourceUrl": "Video URL",
     "altText": "Alt text",
     "clickThroughUrl": "Click through URL",
@@ -83,6 +85,7 @@
   },
   "columns": {
     "title": "Columns block",
+    "name": "Columns",
     "layout": "Layout",
     "numberOfColumns": "Number of columns",
     "ratio": "Column width ratio",
@@ -107,11 +110,13 @@
   },
   "text": {
     "title": "Text block",
+    "name": "Text",
     "content": "Content",
     "markdown": "Markdown"
   },
   "button": {
     "title": "Button block",
+    "name": "Button",
     "text": "Text",
     "url": "URL",
     "width": "Width",
@@ -131,6 +136,7 @@
   },
   "heading": {
     "title": "Heading block",
+    "name": "Heading",
     "content": "Content",
     "level": "Level"
   },
@@ -146,22 +152,27 @@
   },
   "divider": {
     "title": "Divider block",
+    "name": "Divider",
     "color": "Color",
     "height": "Height"
   },
   "container": {
-    "title": "Container block"
+    "title": "Container block",
+    "name": "Container"
   },
   "spacer": {
     "title": "Spacer block",
+    "name": "Spacer",
     "height": "Height"
   },
   "html": {
     "title": "HTML block",
+    "name": "HTML",
     "content": "Content"
   },
   "socials": {
     "title": "Social Media block",
+    "name": "Socials",
     "selectPlatforms": "Social Media Selection",
     "iconStyle": "Icon Style",
     "iconPreview": "Icon Preview",

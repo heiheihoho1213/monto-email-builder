@@ -1,11 +1,184 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 
-import { CssBaseline, ThemeProvider } from '@mui/material';
+import {
+  LanguageOutlined,
+  DataObjectOutlined,
+  TitleOutlined,
+  FileUploadOutlined,
+} from '@mui/icons-material';
+import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
 
-import App from '../src/App';
-import { setImageUploadHandler, setVideoUploadHandler } from '../src/documents/editor/EditorContext';
-import theme from '../src/theme';
+import EmailBuilder from '../src/EmailBuilder';
+import { Language } from '../src/i18n';
+import { TEditorConfiguration } from '../src/documents/editor/core';
+
+const testJSON = {
+  "root": {
+    "type": "EmailLayout",
+    "data": {
+      "backdropColor": "#F5F5F5",
+      "canvasColor": "#FFFFFF",
+      "textColor": "#262626",
+      "fontFamily": "MODERN_SANS",
+      "childrenIds": [
+        "block-1767940150149-2",
+        "block-1767940151420-3",
+        "block-1767940152389-4",
+        "block-1767940178344-1",
+        "block-1767940190319-3",
+        "block-1767940154214-5",
+        "block-1767940184342-2"
+      ]
+    }
+  },
+  "block-1767940150149-2": {
+    "type": "Heading",
+    "data": {
+      "props": {
+        "text": "My new heading block"
+      },
+      "style": {
+        "padding": {
+          "top": 16,
+          "bottom": 16,
+          "left": 24,
+          "right": 24
+        }
+      }
+    }
+  },
+  "block-1767940151420-3": {
+    "type": "Text",
+    "data": {
+      "props": {
+        "text": "My new text block",
+        "markdown": false
+      },
+      "style": {
+        "padding": {
+          "top": 16,
+          "bottom": 16,
+          "left": 24,
+          "right": 24
+        },
+        "fontWeight": "normal"
+      }
+    }
+  },
+  "block-1767940152389-4": {
+    "type": "Text",
+    "data": {
+      "props": {
+        "text": "My new text block",
+        "markdown": false
+      },
+      "style": {
+        "padding": {
+          "top": 16,
+          "bottom": 16,
+          "left": 24,
+          "right": 24
+        },
+        "fontWeight": "normal"
+      }
+    }
+  },
+  "block-1767940154214-5": {
+    "type": "Button",
+    "data": {
+      "style": {
+        "backgroundColor": "#ede7e7",
+        "textAlign": "center",
+        "padding": {
+          "top": 16,
+          "bottom": 16,
+          "right": 24,
+          "left": 24
+        }
+      },
+      "props": {
+        "buttonBackgroundColor": "#1148ef",
+        "buttonStyle": "rectangle",
+        "fullWidth": true,
+        "text": "Button",
+        "url": ""
+      }
+    }
+  },
+  "block-1767940178344-1": {
+    "type": "Image",
+    "data": {
+      "props": {
+        "url": "",
+        "alt": "Sample product",
+        "contentAlignment": "middle",
+        "linkHref": null
+      },
+      "style": {
+        "padding": {
+          "top": 16,
+          "bottom": 16,
+          "left": 24,
+          "right": 24
+        }
+      }
+    }
+  },
+  "block-1767940184342-2": {
+    "type": "Socials",
+    "data": {
+      "props": {
+        "platforms": [
+          "facebook",
+          "instagram",
+          "x"
+        ],
+        "iconStyle": "origin-colorful",
+        "iconSize": 36,
+        "socials": [
+          {
+            "platform": "facebook",
+            "url": null
+          },
+          {
+            "platform": "instagram",
+            "url": null
+          },
+          {
+            "platform": "x",
+            "url": null
+          }
+        ]
+      },
+      "style": {
+        "padding": {
+          "top": 16,
+          "bottom": 16,
+          "right": 24,
+          "left": 24
+        },
+        "backgroundColor": "#ede7e7"
+      }
+    }
+  },
+  "block-1767940190319-3": {
+    "type": "Divider",
+    "data": {
+      "style": {
+        "padding": {
+          "top": 16,
+          "bottom": 0,
+          "right": 0,
+          "left": 0
+        }
+      },
+      "props": {
+        "lineColor": "#CCCCCC"
+      }
+    }
+  }
+};
 
 // 示例：图片上传函数
 // 您可以将此函数替换为您自己的上传逻辑
@@ -45,23 +218,90 @@ async function exampleVideoUploadHandler(file: File): Promise<string> {
   });
 }
 
-function AppWithConfig() {
-  useEffect(() => {
-    // 配置图片上传处理器
-    // 如果您不需要本地上传功能，可以不调用此函数
-    setImageUploadHandler(exampleImageUploadHandler);
-    setVideoUploadHandler(exampleVideoUploadHandler);
-  }, []);
+const Home = () => {
+  const [language, setLanguage] = useState<Language>('en');
+  const [showJsonFeatures, setShowJsonFeatures] = useState(true);
+  const [speedDialOpen, setSpeedDialOpen] = useState(false);
+  const [showSamplesDrawerTitle, setShowSamplesDrawerTitle] = useState(true);
+  const [initialDocument, setInitialDocument] = useState<TEditorConfiguration | undefined>(undefined);
 
-  return <App />;
-}
+  const handleToggleLanguage = () => {
+    setLanguage((prev) => (prev === 'en' ? 'zh' : 'en'));
+  };
+
+  const handleToggleJsonFeatures = () => {
+    setShowJsonFeatures((prev) => !prev);
+  };
+
+  const handleToggleSamplesDrawerTitle = () => {
+    setShowSamplesDrawerTitle((prev) => !prev);
+  };
+
+  const handleLoadTestJSON = () => {
+    setInitialDocument(testJSON as TEditorConfiguration);
+  };
+
+  return (
+    <React.StrictMode>
+      <Box sx={{ position: 'relative', width: '100%', height: '100vh' }}>
+        <EmailBuilder
+          initialDocument={initialDocument}
+          initialLanguage={language}
+          showJsonFeatures={showJsonFeatures}
+          showSamplesDrawerTitle={showSamplesDrawerTitle}
+          imageUploadHandler={exampleImageUploadHandler}
+          videoUploadHandler={exampleVideoUploadHandler}
+          onChange={(document) => {
+            console.log('Document changed:', document);
+          }}
+          saveHandler={async (document) => {
+            console.log('Save document:', document);
+          }}
+          saveAndExitHandler={async (document) => {
+            console.log('Save and exit:', document);
+          }}
+          onNameChange={(name) => {
+            console.log('Name changed:', name);
+          }}
+        />
+        <SpeedDial
+          ariaLabel="测试功能"
+          sx={{ position: 'fixed', bottom: 16, left: 16, zIndex: 1000 }}
+          icon={<SpeedDialIcon />}
+          onClose={() => setSpeedDialOpen(false)}
+          onOpen={() => setSpeedDialOpen(true)}
+          open={speedDialOpen}
+        >
+          <SpeedDialAction
+            key="language"
+            icon={<LanguageOutlined />}
+            tooltipTitle={`切换语言: ${language === 'en' ? '中文' : 'English'}`}
+            onClick={handleToggleLanguage}
+          />
+          <SpeedDialAction
+            key="json"
+            icon={<DataObjectOutlined />}
+            tooltipTitle={`JSON功能: ${showJsonFeatures ? '显示' : '隐藏'}`}
+            onClick={handleToggleJsonFeatures}
+          />
+          <SpeedDialAction
+            key="samplesDrawerTitle"
+            icon={<TitleOutlined />}
+            tooltipTitle={`左侧边栏标题: ${showSamplesDrawerTitle ? '显示' : '隐藏'}`}
+            onClick={handleToggleSamplesDrawerTitle}
+          />
+          <SpeedDialAction
+            key="loadTestJSON"
+            icon={<FileUploadOutlined />}
+            tooltipTitle="加载测试 JSON"
+            onClick={handleLoadTestJSON}
+          />
+        </SpeedDial>
+      </Box>
+    </React.StrictMode>
+  );
+};
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AppWithConfig />
-    </ThemeProvider>
-  </React.StrictMode>
+  <Home />
 );
-
