@@ -15,7 +15,11 @@
     "importJsonHelperText": "这将覆盖您当前的模板。",
     "import": "导入",
     "cancel": "取消",
-    "addContentBlocks": "添加内容块"
+    "addContentBlocks": "添加内容块",
+    "undo": "撤销",
+    "undoTooltip": "撤销 (Ctrl/Cmd + Z)",
+    "redo": "重做",
+    "redoTooltip": "重做 (Ctrl/Cmd + Shift + Z)"
   },
   "samples": {
     "welcomeEmail": "营销模板",
@@ -54,7 +58,7 @@
     "selectImage": "选择图片",
     "uploading": "上传中...",
     "uploadHandlerNotConfigured": "请配置 imageUploadHandler 以启用本地上传功能",
-    "placeholder": "点击右侧面板添加图片"
+    "placeholder": "添加图片"
   },
   "video": {
     "title": "视频块",
@@ -70,7 +74,7 @@
     "selectVideo": "选择视频",
     "uploading": "上传中...",
     "uploadHandlerNotConfigured": "请配置 videoUploadHandler 以启用本地上传功能",
-    "placeholder": "点击右侧面板添加视频",
+    "placeholder": "添加视频",
     "notSupported": "您的浏览器不支持视频标签",
     "autoplay": "自动播放",
     "loop": "循环播放",

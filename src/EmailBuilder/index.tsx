@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { Box, CssBaseline, ThemeProvider } from '@mui/material';
 
 import {
+  initializeStore,
   resetDocument,
   setImageUploadHandler,
   setVideoUploadHandler,
@@ -134,6 +135,14 @@ export default function EmailBuilder({
   onNameChange,
   theme: customTheme,
 }: EmailBuilderProps) {
+  // 初始化 store（包括历史记录管理器）
+  useEffect(() => {
+    initializeStore({
+      document: initialDocument,
+      language: initialLanguage,
+    });
+  }, []); // 只在组件挂载时初始化一次
+
   // 当 initialDocument 变化时，更新文档
   useEffect(() => {
     if (initialDocument !== undefined) {

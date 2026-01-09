@@ -72,7 +72,7 @@ export default function ImageSidebarPanel({ data, setData }: ImageSidebarPanelPr
   };
 
   return (
-    <BaseSidebarPanel title={t('image.imageBlock')}>
+    <BaseSidebarPanel title={t('image.title')}>
       <Stack spacing={1}>
         <Stack direction="row" spacing={1}>
           <ToggleButton

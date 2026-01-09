@@ -1457,8 +1457,10 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
                 // 如果拖拽的block在当前容器中，执行排序操作
                 if (sourceIndex !== -1) {
-                  // 同一个容器内的排序，直接调用 handleDrop
-                  handleDrop(e, i);
+                  // 同一个容器内的排序，使用 dragOverIndex 来决定插入位置（所见即所得）
+                  // 如果 dragOverIndex 为 null，回退到使用 i
+                  const dropIndex = dragOverIndex !== null ? dragOverIndex : i;
+                  handleDrop(e, dropIndex);
                   return;
                 }
 
@@ -1658,8 +1660,12 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   // 替换当前元素（仅适用于 ColumnsContainer 的列）
                   newChildrenIds.splice(i, 1, blockId);
                 } else {
-                  // 插入到当前元素之前（其他容器类型）
-                  newChildrenIds.splice(i, 0, blockId);
+                  // 根据 dragOverIndex 来决定插入位置（所见即所得）
+                  // 如果 dragOverIndex === i，插入到 i 之前（上拖拽线）
+                  // 如果 dragOverIndex === i + 1，插入到 i 之后（下拖拽线）
+                  // 如果 dragOverIndex 为 null，默认插入到 i 之前
+                  const insertIndex = dragOverIndex !== null ? dragOverIndex : i;
+                  newChildrenIds.splice(insertIndex, 0, blockId);
                 }
 
                 // 找到原容器（侧边栏块没有原容器）

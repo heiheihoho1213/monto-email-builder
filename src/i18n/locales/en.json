@@ -15,7 +15,11 @@
     "importJsonHelperText": "This will override your current template.",
     "import": "Import",
     "cancel": "Cancel",
-    "addContentBlocks": "Add Content Blocks"
+    "addContentBlocks": "Add Content Blocks",
+    "undo": "Undo",
+    "undoTooltip": "Undo (Ctrl/Cmd + Z)",
+    "redo": "Redo",
+    "redoTooltip": "Redo (Ctrl/Cmd + Shift + Z)"
   },
   "samples": {
     "welcomeEmail": "Marketing Template",
@@ -54,7 +58,7 @@
     "selectImage": "Select Image",
     "uploading": "Uploading...",
     "uploadHandlerNotConfigured": "Please configure imageUploadHandler to enable local upload",
-    "placeholder": "Click the right panel to add an image"
+    "placeholder": "Add an image"
   },
   "video": {
     "title": "Video block",
@@ -70,7 +74,7 @@
     "selectVideo": "Select Video",
     "uploading": "Uploading...",
     "uploadHandlerNotConfigured": "Please configure videoUploadHandler to enable local upload",
-    "placeholder": "Click the right panel to add a video",
+    "placeholder": "Add a video",
     "notSupported": "Your browser does not support the video tag",
     "autoplay": "Autoplay",
     "loop": "Loop",

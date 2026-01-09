@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { Box, Stack, useTheme } from '@mui/material';
 
-import { useInspectorDrawerOpen, useSamplesDrawerOpen } from '../documents/editor/EditorContext';
+import { useInspectorDrawerOpen, useSamplesDrawerOpen, undo, redo } from '../documents/editor/EditorContext';
 
 import InspectorDrawer from './InspectorDrawer';
 import SamplesDrawer from './SamplesDrawer';
@@ -22,6 +22,40 @@ export default function App() {
 
   const marginLeftTransition = useDrawerTransition('margin-left', samplesDrawerOpen);
   const marginRightTransition = useDrawerTransition('margin-right', inspectorDrawerOpen);
+
+  // 快捷键支持：撤销/重做
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 检查是否按下了 Ctrl/Cmd + Z（撤销）
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        // 如果焦点在输入框或文本区域，不拦截（让浏览器默认行为处理）
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+          return;
+        }
+
+        e.preventDefault();
+        undo();
+      }
+
+      // 检查是否按下了 Ctrl/Cmd + Shift + Z 或 Ctrl/Cmd + Y（重做）
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        // 如果焦点在输入框或文本区域，不拦截
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+          return;
+        }
+
+        e.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   return (
     <Box

@@ -21,8 +21,10 @@ import ImportJson from './ImportJson';
 import JsonPanel from './JsonPanel';
 import MainTabsGroup from './MainTabsGroup';
 import NameInput from './NameInput';
+import RedoButton from './RedoButton';
 import SaveAndExitButton from './SaveAndExitButton';
 import SaveButton from './SaveButton';
+import UndoButton from './UndoButton';
 
 export default function TemplatePanel() {
   const { t } = useTranslation();
@@ -101,6 +103,8 @@ export default function TemplatePanel() {
             <MainTabsGroup />
           </Stack>
           <Stack direction="row" spacing={2} alignItems="center">
+            <UndoButton />
+            <RedoButton />
             <DownloadJson />
             <ImportJson />
             <SaveButton />

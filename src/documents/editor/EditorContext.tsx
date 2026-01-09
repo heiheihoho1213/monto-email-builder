@@ -1,6 +1,8 @@
+import React from 'react';
 import { create } from 'zustand';
 
 import { TEditorConfiguration } from './core';
+import { HistoryManager } from './HistoryManager';
 
 import { getLanguage, Language, setLanguage as setI18nLanguage } from '../../i18n';
 
@@ -44,6 +46,9 @@ type TValue = {
 let initialDocument: TEditorConfiguration | null = null;
 let initialLanguage: Language | null = null;
 
+// 历史记录管理器实例
+let historyManager: HistoryManager | null = null;
+
 export function initializeStore(config?: { document?: TEditorConfiguration; language?: Language }) {
   if (config?.document) {
     initialDocument = config.document;
@@ -51,9 +56,19 @@ export function initializeStore(config?: { document?: TEditorConfiguration; lang
   if (config?.language) {
     initialLanguage = config.language;
   }
+
+  // 初始化历史记录管理器
+  const doc = initialDocument || EMPTY_EMAIL_MESSAGE;
+  historyManager = new HistoryManager(doc);
 }
 
 import EMPTY_EMAIL_MESSAGE from '../../getConfiguration/sample/empty-email-message';
+
+// 确保历史记录管理器已初始化
+if (!historyManager) {
+  const doc = initialDocument || EMPTY_EMAIL_MESSAGE;
+  historyManager = new HistoryManager(doc);
+}
 
 const editorStateStore = create<TValue>((set, get) => ({
   document: initialDocument || EMPTY_EMAIL_MESSAGE,
@@ -124,6 +139,11 @@ export function setSidebarTab(selectedSidebarTab: TValue['selectedSidebarTab']) 
 }
 
 export function resetDocument(document: TValue['document']) {
+  // 重置历史记录管理器
+  if (historyManager) {
+    historyManager.reset(document);
+  }
+
   editorStateStore.setState({
     document,
     selectedSidebarTab: 'styles',
@@ -137,20 +157,36 @@ export function resetDocument(document: TValue['document']) {
   }
 }
 
-export function setDocument(document: TValue['document']) {
+export function setDocument(document: TValue['document'], options?: { recordHistory?: boolean }) {
   const originalDocument = editorStateStore.getState().document;
   const newDocument = {
     ...originalDocument,
     ...document,
   };
-  editorStateStore.setState({
-    document: newDocument,
-  });
 
-  // 调用 onChange 回调
-  const onChange = editorStateStore.getState().onChange;
-  if (onChange) {
-    onChange(newDocument);
+  // 如果需要记录历史（默认记录）
+  if (options?.recordHistory !== false && historyManager) {
+    const recordedDocument = historyManager.record(newDocument);
+    editorStateStore.setState({
+      document: recordedDocument,
+    });
+
+    // 调用 onChange 回调
+    const onChange = editorStateStore.getState().onChange;
+    if (onChange) {
+      onChange(recordedDocument);
+    }
+  } else {
+    // 不记录历史（用于撤销/重做操作本身）
+    editorStateStore.setState({
+      document: newDocument,
+    });
+
+    // 调用 onChange 回调
+    const onChange = editorStateStore.getState().onChange;
+    if (onChange) {
+      onChange(newDocument);
+    }
   }
 }
 
@@ -245,6 +281,90 @@ export function setName(name: string) {
 
 export function setOnNameChange(handler: TValue['onNameChange']) {
   return editorStateStore.setState({ onNameChange: handler });
+}
+
+// ==================== 撤销/重做相关 ====================
+
+/**
+ * 检查是否可以撤销
+ */
+export function canUndo(): boolean {
+  return historyManager ? historyManager.canUndo() : false;
+}
+
+/**
+ * 检查是否可以重做
+ */
+export function canRedo(): boolean {
+  return historyManager ? historyManager.canRedo() : false;
+}
+
+/**
+ * 撤销操作
+ */
+export function undo(): boolean {
+  if (!historyManager) return false;
+
+  const previousDocument = historyManager.undo();
+  if (!previousDocument) return false;
+
+  // 更新文档状态（不记录历史）
+  editorStateStore.setState({
+    document: previousDocument,
+  });
+
+  // 调用 onChange 回调
+  const onChange = editorStateStore.getState().onChange;
+  if (onChange) {
+    onChange(previousDocument);
+  }
+
+  return true;
+}
+
+/**
+ * 重做操作
+ */
+export function redo(): boolean {
+  if (!historyManager) return false;
+
+  const nextDocument = historyManager.redo();
+  if (!nextDocument) return false;
+
+  // 更新文档状态（不记录历史）
+  editorStateStore.setState({
+    document: nextDocument,
+  });
+
+  // 调用 onChange 回调
+  const onChange = editorStateStore.getState().onChange;
+  if (onChange) {
+    onChange(nextDocument);
+  }
+
+  return true;
+}
+
+/**
+ * Hook: 检查是否可以撤销
+ */
+export function useCanUndo(): boolean {
+  // 使用 Zustand 的 selector 来订阅 document 变化
+  const document = editorStateStore((s) => s.document);
+
+  // 每次 document 变化时重新计算 canUndo
+  return React.useMemo(() => canUndo(), [document]);
+}
+
+/**
+ * Hook: 检查是否可以重做
+ */
+export function useCanRedo(): boolean {
+  // 使用 Zustand 的 selector 来订阅 document 变化
+  const document = editorStateStore((s) => s.document);
+
+  // 每次 document 变化时重新计算 canRedo
+  return React.useMemo(() => canRedo(), [document]);
 }
 
 // 导出 editorStateStore 用于跨容器拖拽
