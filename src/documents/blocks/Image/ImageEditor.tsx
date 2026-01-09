@@ -83,10 +83,33 @@ export default function ImageEditor(props: ImageEditorProps) {
       setUrlInput('');
     };
 
+    // 处理空白区域的点击，允许冒泡以选中 block
+    const handleBoxClick = (e: React.MouseEvent) => {
+      // 如果点击的是交互元素（按钮、输入框等），阻止冒泡
+      const target = e.target as HTMLElement;
+      const isInteractiveElement = target.closest('button, input, [role="button"], [role="textbox"]');
+      if (!isInteractiveElement) {
+        // 点击空白区域，允许冒泡以选中 block
+        // 不阻止事件，让 EditorBlockWrapper 的 onClick 处理选中
+      } else {
+        // 点击交互元素，阻止冒泡
+        e.stopPropagation();
+      }
+    };
+
+    const handleBoxMouseDown = (e: React.MouseEvent) => {
+      // 如果点击的是交互元素，阻止冒泡
+      const target = e.target as HTMLElement;
+      const isInteractiveElement = target.closest('button, input, [role="button"], [role="textbox"]');
+      if (isInteractiveElement) {
+        e.stopPropagation();
+      }
+    };
+
     return (
       <Box
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
+        onClick={handleBoxClick}
+        onMouseDown={handleBoxMouseDown}
         sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -178,6 +201,17 @@ export default function ImageEditor(props: ImageEditorProps) {
   }
 
   // 如果有 URL，正常显示图片
-  return <Image {...props} />;
+  // 确保图片可以被点击选中（不阻止事件冒泡）
+  return (
+    <Box
+      onClick={(e) => {
+        // 允许点击事件冒泡到 EditorBlockWrapper，以便选中 block
+        // 不阻止事件，让父组件处理选中逻辑
+      }}
+      sx={{ display: 'inline-block', width: '100%' }}
+    >
+      <Image {...props} />
+    </Box>
+  );
 }
 

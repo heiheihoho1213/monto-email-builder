@@ -83,16 +83,39 @@ export default function VideoEditor(props: VideoEditorProps) {
       setUrlInput('');
     };
 
+    // 处理空白区域的点击，允许冒泡以选中 block
+    const handleBoxClick = (e: React.MouseEvent) => {
+      // 如果点击的是交互元素（按钮、输入框等），阻止冒泡
+      const target = e.target as HTMLElement;
+      const isInteractiveElement = target.closest('button, input, [role="button"], [role="textbox"]');
+      if (!isInteractiveElement) {
+        // 点击空白区域，允许冒泡以选中 block
+        // 不阻止事件，让 EditorBlockWrapper 的 onClick 处理选中
+      } else {
+        // 点击交互元素，阻止冒泡
+        e.stopPropagation();
+      }
+    };
+
+    const handleBoxMouseDown = (e: React.MouseEvent) => {
+      // 如果点击的是交互元素，阻止冒泡
+      const target = e.target as HTMLElement;
+      const isInteractiveElement = target.closest('button, input, [role="button"], [role="textbox"]');
+      if (isInteractiveElement) {
+        e.stopPropagation();
+      }
+    };
+
     return (
       <Box
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
+        onClick={handleBoxClick}
+        onMouseDown={handleBoxMouseDown}
         sx={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: 200,
+          // minHeight: 200,
           border: '2px dashed #cccccc73',
           borderRadius: 1,
           p: 2,
@@ -102,7 +125,7 @@ export default function VideoEditor(props: VideoEditorProps) {
         <Typography variant="body2" sx={{ textAlign: 'center', px: 2 }}>
           {t('video.placeholder')}
         </Typography>
-        
+
         <Stack spacing={1} sx={{ width: '100%', maxWidth: 400 }}>
           <Stack direction="row" spacing={1}>
             <ToggleButton
@@ -188,6 +211,10 @@ export default function VideoEditor(props: VideoEditorProps) {
 
   return (
     <Box
+      onClick={(e) => {
+        // 允许点击事件冒泡到 EditorBlockWrapper，以便选中 block
+        // 不阻止事件，让父组件处理选中逻辑
+      }}
       sx={{
         display: 'flex',
         justifyContent: 'center',
