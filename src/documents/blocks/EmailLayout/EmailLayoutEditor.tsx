@@ -263,6 +263,8 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
           maxWidth: props.width ? `${props.width}px` : '600px',
           backgroundColor: props.canvasColor ?? '#FFFFFF',
           borderRadius: props.borderRadius ?? undefined,
+          // clipPath: 'inset(0 0 0 0 round 16px)',
+          // overflow: 'hidden',
           border: (() => {
             const v = props.borderColor;
             if (!v) {

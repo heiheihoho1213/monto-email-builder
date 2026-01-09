@@ -238,7 +238,8 @@ const Home = () => {
   };
 
   const handleLoadTestJSON = () => {
-    setInitialDocument(testJSON as TEditorConfiguration);
+    // 深拷贝 testJSON，确保每次都是新的对象引用，触发 React 的变更检测
+    setInitialDocument(JSON.parse(JSON.stringify(testJSON)) as TEditorConfiguration);
   };
 
   return (
@@ -246,7 +247,7 @@ const Home = () => {
       <Box sx={{ position: 'relative', width: '100%', height: '100vh' }}>
         <EmailBuilder
           initialDocument={initialDocument}
-          initialLanguage={language}
+          language={language}
           showJsonFeatures={showJsonFeatures}
           showSamplesDrawerTitle={showSamplesDrawerTitle}
           imageUploadHandler={exampleImageUploadHandler}

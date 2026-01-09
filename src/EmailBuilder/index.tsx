@@ -34,7 +34,7 @@ export interface EmailBuilderProps {
    * 当此值变化时，编辑器会自动切换语言
    * @default 'en'
    */
-  initialLanguage?: Language;
+  language?: Language;
 
   /**
    * 图片上传回调函数
@@ -128,7 +128,7 @@ export interface EmailBuilderProps {
  * 
  *   return (
  *     <EmailBuilder
- *       initialLanguage="zh"
+ *       language="zh"
  *       imageUploadHandler={handleImageUpload}
  *       videoUploadHandler={handleVideoUpload}
  *       onChange={handleChange}
@@ -139,7 +139,7 @@ export interface EmailBuilderProps {
  */
 export default function EmailBuilder({
   initialDocument,
-  initialLanguage = 'en',
+  language = 'en',
   imageUploadHandler,
   videoUploadHandler,
   onChange,
@@ -155,7 +155,7 @@ export default function EmailBuilder({
   useEffect(() => {
     initializeStore({
       document: initialDocument,
-      language: initialLanguage,
+      language: language,
       showJsonFeatures: showJsonFeatures,
       showSamplesDrawerTitle: showSamplesDrawerTitle,
     });
@@ -168,14 +168,14 @@ export default function EmailBuilder({
     }
   }, [initialDocument]);
 
-  // 当 initialLanguage 变化时，更新语言
+  // 当 language 变化时，更新语言
   // 注意：这里不依赖 currentLanguage，避免循环更新
-  // 只要 initialLanguage 有值，就强制更新语言
+  // 只要 language 有值，就强制更新语言
   useEffect(() => {
-    if (initialLanguage !== undefined) {
-      setLanguage(initialLanguage);
+    if (language !== undefined) {
+      setLanguage(language);
     }
-  }, [initialLanguage]);
+  }, [language]);
 
   // 当 imageUploadHandler 变化时，更新处理器
   useEffect(() => {

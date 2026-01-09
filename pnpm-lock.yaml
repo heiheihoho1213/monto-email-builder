@@ -57,8 +57,8 @@ importers:
         specifier: 0.0.1
         version: 0.0.1(react@18.3.1)(zod@3.25.76)
       monto-email-core:
-        specifier: 0.0.10
-        version: 0.0.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)
+        specifier: 0.0.12
+        version: 0.0.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)
       react-colorful:
         specifier: ^5.6.1
         version: 5.6.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1403,8 +1403,8 @@ packages:
       react: ^16 || ^17 || ^18
       zod: ^1 || ^2 || ^3
 
-  monto-email-core@0.0.10:
-    resolution: {integrity: sha512-C+reyutdMXmyL+oCXf9yp+Co2ixp5HMYrkfRF/uIEC4Obun9a1QpXAF+HfZNcZTlEiX9Z2/YkdGcCuHuj83xSA==}
+  monto-email-core@0.0.12:
+    resolution: {integrity: sha512-lNGYib90nDThKWHavmAX6BSsFQt44+b/I2YNhcYB95DzBR86M3acP+7CrvikFYPqiA4bDcIVPpwRGFoiie9UYQ==}
     peerDependencies:
       react: ^16 || ^17 || ^18
       react-dom: ^16 || ^17 || ^18
@@ -3011,7 +3011,7 @@ snapshots:
       react: 18.3.1
       zod: 3.25.76
 
-  monto-email-core@0.0.10(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76):
+  monto-email-core@0.0.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76):
     dependencies:
       '@usewaypoint/block-avatar': 0.0.3(react@18.3.1)(zod@3.25.76)
       '@usewaypoint/block-button': 0.0.3(react@18.3.1)(zod@3.25.76)
