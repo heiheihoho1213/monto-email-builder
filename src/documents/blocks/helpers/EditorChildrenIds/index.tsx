@@ -64,7 +64,7 @@ function findParentContainerId(document: TEditorConfiguration, blockId: string):
   return { containerId: null, columnIndex: null };
 }
 
-// 检查是否允许将 block 拖入目标容器（防止 ColumnsContainer 嵌套）
+// 检查是否允许将 block 拖入目标容器（防止 Container 和 ColumnsContainer 相互嵌套）
 function canDropBlockIntoContainer(
   draggedBlock: TEditorBlock | null,
   targetContainerId: string | undefined,
@@ -78,15 +78,22 @@ function canDropBlockIntoContainer(
   const targetContainer = document[targetContainerId];
   const targetContainerType = targetContainer?.type;
 
-  // Container 内部允许拖入 Container 和 ColumnsContainer
-  // 只有当目标是 ColumnsContainer 时，才禁止拖入 Container 和 ColumnsContainer
-  if (targetContainerType === 'ColumnsContainer') {
-    // ColumnsContainer 内部不允许拖入 Container 或 ColumnsContainer
-    if (draggedBlockType === 'Container' || draggedBlockType === 'ColumnsContainer') {
+  // Container 内部不允许拖入 ColumnsContainer（但可以拖入 Container）
+  if (targetContainerType === 'Container') {
+    // Container 内部不允许拖入 ColumnsContainer
+    if (draggedBlockType === 'ColumnsContainer') {
       return false;
     }
   }
-  // 如果目标是 Container，允许拖入任何内容（包括 Container 和 ColumnsContainer）
+
+  // ColumnsContainer 内部允许拖入 Container（但不可以拖入 ColumnsContainer）
+  if (targetContainerType === 'ColumnsContainer') {
+    // ColumnsContainer 内部不允许拖入 ColumnsContainer
+    if (draggedBlockType === 'ColumnsContainer') {
+      return false;
+    }
+    // ColumnsContainer 内部允许拖入 Container
+  }
 
   return true;
 }
@@ -170,7 +177,12 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
   // 获取容器类型，用于禁用 Container 和 ColumnsContainer 选项
   const currentDocument = editorStateStore.getState().document;
   const containerType = containerId ? currentDocument[containerId]?.type : null;
-  const isContainerOrColumnsContainer = containerType === 'ColumnsContainer';
+  // 根据新规则：
+  // - Container 内部：禁用 ColumnsContainer（但不禁用 Container）
+  // - ColumnsContainer 内部：禁用 ColumnsContainer（但不禁用 Container，因为 Container 可以嵌套在 ColumnsContainer 中）
+  // 所以 disableContainerBlocks 应该只在需要禁用 ColumnsContainer 时使用
+  // 但实际上我们需要更细粒度的控制，所以这里只禁用 ColumnsContainer
+  const isContainerOrColumnsContainer = containerType === 'Container' || containerType === 'ColumnsContainer';
   // 检查是否在 column 内部（如果 containerType 是 ColumnsContainer，说明当前在 column 内部）
   const isInsideColumn = containerType === 'ColumnsContainer';
 
@@ -553,7 +565,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
         }}
       >
         {/* 空列表时，即使在 column 内部也显示占位符按钮，让用户可以添加第一个元素 */}
-        <AddBlockButton placeholder onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} />
+        <AddBlockButton placeholder onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} containerType={containerType} />
       </Box>
     );
   }
@@ -623,7 +635,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
         return (
           <Fragment key={childId}>
-            {!isInsideColumn && <AddBlockButton onSelect={(block) => insertBlock(block, i)} disableContainerBlocks={isContainerOrColumnsContainer} />}
+            {!isInsideColumn && <AddBlockButton onSelect={(block) => insertBlock(block, i)} disableContainerBlocks={isContainerOrColumnsContainer} containerType={containerType} />}
             <Box
               onDragOver={(e) => {
                 e.preventDefault();
@@ -1878,7 +1890,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
           </Fragment>
         );
       })}
-      {!isInsideColumn && <AddBlockButton onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} />}
+      {!isInsideColumn && <AddBlockButton onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} containerType={containerType} />}
     </>
   );
 }

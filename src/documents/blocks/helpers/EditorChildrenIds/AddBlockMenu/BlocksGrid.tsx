@@ -11,6 +11,7 @@ import { BUTTONS } from './buttons';
 type BlocksGridProps = {
   onSelect: (block: TEditorBlock) => void;
   disableContainerBlocks?: boolean; // 是否禁用 Container 和 ColumnsContainer
+  containerType?: string | null; // 当前容器类型，用于精确控制禁用哪些块
 };
 
 // 将 block type 映射到国际化 key
@@ -31,16 +32,28 @@ const getBlockI18nKey = (blockType: string): string => {
   return typeMap[blockType] || blockType;
 };
 
-export default function BlocksGrid({ onSelect, disableContainerBlocks = false }: BlocksGridProps) {
+export default function BlocksGrid({ onSelect, disableContainerBlocks = false, containerType = null }: BlocksGridProps) {
   const { t } = useTranslation();
-  
+
   // 过滤按钮列表
   const filteredButtons = BUTTONS.filter((k) => {
     const block = k.block();
     const isContainerBlock = block.type === 'Container' || block.type === 'ColumnsContainer';
-    // 如果 disableContainerBlocks 为 true，过滤掉 Container 和 ColumnsContainer
+
+    // 如果 disableContainerBlocks 为 true，根据容器类型精确控制
     if (disableContainerBlocks && isContainerBlock) {
-      return false;
+      // Container 内部：禁用 ColumnsContainer（但不禁用 Container）
+      if (containerType === 'Container' && block.type === 'ColumnsContainer') {
+        return false;
+      }
+      // ColumnsContainer 内部：禁用 ColumnsContainer（但不禁用 Container）
+      if (containerType === 'ColumnsContainer' && block.type === 'ColumnsContainer') {
+        return false;
+      }
+      // 如果不在容器内，或者不匹配上述条件，保持原有逻辑（禁用所有 Container 和 ColumnsContainer）
+      if (!containerType || (containerType !== 'Container' && containerType !== 'ColumnsContainer')) {
+        return false;
+      }
     }
     // 否则显示所有选项
     return true;
