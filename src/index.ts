@@ -7,6 +7,10 @@
 export { default as EmailBuilder } from './EmailBuilder';
 export type { EmailBuilderProps } from './EmailBuilder';
 
+// 导出 HtmlEditor 组件
+export { default as HtmlEditor } from './HtmlEditor';
+export type { HtmlEditorProps, HtmlEditorMode, HtmlEditorDevice } from './HtmlEditor';
+
 // 导出类型
 export type { TEditorConfiguration, TEditorBlock } from './documents/editor/core';
 export type { Language } from './i18n';
