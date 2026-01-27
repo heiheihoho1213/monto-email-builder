@@ -1,13 +1,46 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { html } from '@codemirror/lang-html';
-import { oneDark } from '@codemirror/theme-one-dark';
+import {
+  abcdef,
+  abyss,
+  androidstudio,
+  andromeda,
+  atomone,
+  aura,
+  bbedit,
+  bespin,
+  copilot,
+  darcula,
+  dracula,
+  eclipse,
+  gruvboxDark,
+  kimbie,
+  material,
+  monokai,
+  monokaiDimmed,
+  noctisLilac,
+  nord,
+  okaidia,
+  quietlight,
+  red,
+  sublime,
+  tokyoNight,
+  tokyoNightStorm,
+  tokyoNightDay,
+  tomorrowNightBlue,
+  vscodeDark,
+} from '@uiw/codemirror-themes-all';
 import {
   Box,
   ToggleButton,
   ToggleButtonGroup,
   IconButton,
   Tooltip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
   SxProps,
   Theme,
 } from '@mui/material';
@@ -21,6 +54,74 @@ import {
 
 export type HtmlEditorMode = 'split' | 'code' | 'preview';
 export type HtmlEditorDevice = 'desktop' | 'mobile';
+
+// 主题映射表
+const themeMap: Record<string, any> = {
+  // 深色主题
+  abcdef,
+  abyss,
+  androidstudio,
+  andromeda,
+  atomone,
+  aura,
+  bespin,
+  copilot,
+  darcula,
+  dracula,
+  gruvboxDark,
+  kimbie,
+  monokai,
+  monokaiDimmed,
+  noctisLilac,
+  nord,
+  okaidia,
+  red,
+  sublime,
+  tokyoNight,
+  tokyoNightStorm,
+  tomorrowNightBlue,
+  vscodeDark,
+  // 浅色主题
+  bbedit,
+  eclipse,
+  material,
+  quietlight,
+  tokyoNightDay,
+};
+
+// 主题显示名称（按类型分组）
+const themeNames: Record<string, string> = {
+  // 深色主题
+  abcdef: 'ABCDEF (深色)',
+  abyss: 'Abyss (深色)',
+  androidstudio: 'Android Studio (深色)',
+  andromeda: 'Andromeda (深色)',
+  atomone: 'Atom One (深色)',
+  aura: 'Aura (深色)',
+  bespin: 'Bespin (深色)',
+  copilot: 'Copilot (深色)',
+  darcula: 'Darcula (深色)',
+  dracula: 'Dracula (深色)',
+  gruvboxDark: 'Gruvbox Dark (深色)',
+  kimbie: 'Kimbie (深色)',
+  monokai: 'Monokai (深色)',
+  monokaiDimmed: 'Monokai Dimmed (深色)',
+  noctisLilac: 'Noctis Lilac (深色)',
+  nord: 'Nord (深色)',
+  okaidia: 'Okaidia (深色)',
+  red: 'Red (深色)',
+  sublime: 'Sublime (深色)',
+  tokyoNight: 'Tokyo Night (深色)',
+  tokyoNightStorm: 'Tokyo Night Storm (深色)',
+  tomorrowNightBlue: 'Tomorrow Night Blue (深色)',
+  vscodeDark: 'VS Code Dark (深色)',
+  // 浅色主题
+  bbedit: 'BBEdit (浅色)',
+  eclipse: 'Eclipse (浅色)',
+  material: 'Material (浅色)',
+  quietlight: 'Quiet Light (浅色)',
+  tokyoNightDay: 'Tokyo Night Day (浅色)',
+};
 
 export interface HtmlEditorProps {
   /**
@@ -74,6 +175,7 @@ export default function HtmlEditor({
 }: HtmlEditorProps) {
   const [mode, setMode] = useState<HtmlEditorMode>(initialMode);
   const [device, setDevice] = useState<HtmlEditorDevice>(initialDevice);
+  const [theme, setTheme] = useState<string>('dracula');
   const [internalValue, setInternalValue] = useState(value);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -188,10 +290,21 @@ export default function HtmlEditor({
           flex: 1,
           overflow: 'hidden',
           '& .cm-editor': {
-            fontSize: '13px',
+            fontSize: '14px',
           },
           '& .cm-scroller': {
             fontFamily: 'monospace',
+          },
+          // 自定义光标样式，使其更粗、更显眼
+          '& .cm-cursor': {
+            borderLeftWidth: '2px !important',
+            borderLeftStyle: 'solid !important',
+            marginLeft: '-1px', // 补偿增加的宽度，保持位置居中
+          },
+          '& .cm-focused .cm-cursor': {
+            borderLeftWidth: '2px !important',
+            borderLeftStyle: 'solid !important',
+            opacity: 1,
           },
         }}
       >
@@ -199,7 +312,7 @@ export default function HtmlEditor({
           value={internalValue}
           height="calc(100vh - 60px)"
           extensions={[html()]}
-          theme={oneDark}
+          theme={themeMap[theme] || dracula}
           onChange={handleChangeDebounced}
           basicSetup={{
             lineNumbers: true,
@@ -273,50 +386,76 @@ export default function HtmlEditor({
             backgroundColor: 'background.paper',
           }}
         >
-          <ToggleButtonGroup
-            value={mode}
-            exclusive
-            onChange={handleModeChange}
-            size="small"
-            aria-label="显示模式"
-          >
-            <Tooltip title="左右栏">
-              <ToggleButton value="split" aria-label="左右栏">
-                <ViewColumnIcon fontSize="small" />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip title="仅代码">
-              <ToggleButton value="code" aria-label="仅代码">
-                <CodeIcon fontSize="small" />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip title="仅预览">
-              <ToggleButton value="preview" aria-label="仅预览">
-                <VisibilityIcon fontSize="small" />
-              </ToggleButton>
-            </Tooltip>
-          </ToggleButtonGroup>
-
-          {mode !== 'code' && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ToggleButtonGroup
-              value={device}
+              value={mode}
               exclusive
-              onChange={handleDeviceChange}
+              onChange={handleModeChange}
               size="small"
-              aria-label="设备模式"
+              aria-label="显示模式"
             >
-              <Tooltip title="桌面视图">
-                <ToggleButton value="desktop" aria-label="桌面视图">
-                  <DesktopIcon fontSize="small" />
+              <Tooltip title="左右栏">
+                <ToggleButton value="split" aria-label="左右栏">
+                  <ViewColumnIcon fontSize="small" />
                 </ToggleButton>
               </Tooltip>
-              <Tooltip title="移动视图">
-                <ToggleButton value="mobile" aria-label="移动视图">
-                  <MobileIcon fontSize="small" />
+              <Tooltip title="仅代码">
+                <ToggleButton value="code" aria-label="仅代码">
+                  <CodeIcon fontSize="small" />
+                </ToggleButton>
+              </Tooltip>
+              <Tooltip title="仅预览">
+                <ToggleButton value="preview" aria-label="仅预览">
+                  <VisibilityIcon fontSize="small" />
                 </ToggleButton>
               </Tooltip>
             </ToggleButtonGroup>
-          )}
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <InputLabel id="theme-select-label">主题</InputLabel>
+              <Select
+                labelId="theme-select-label"
+                id="theme-select"
+                value={theme}
+                label="主题"
+                onChange={(e) => setTheme(e.target.value)}
+                sx={{
+                  fontSize: '0.875rem',
+                  '& .MuiSelect-select': {
+                    py: 0.5,
+                  },
+                }}
+              >
+                {Object.entries(themeNames).map(([key, name]) => (
+                  <MenuItem key={key} value={key}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {mode !== 'code' && (
+              <ToggleButtonGroup
+                value={device}
+                exclusive
+                onChange={handleDeviceChange}
+                size="small"
+                aria-label="设备模式"
+              >
+                <Tooltip title="桌面视图">
+                  <ToggleButton value="desktop" aria-label="桌面视图">
+                    <DesktopIcon fontSize="small" />
+                  </ToggleButton>
+                </Tooltip>
+                <Tooltip title="移动视图">
+                  <ToggleButton value="mobile" aria-label="移动视图">
+                    <MobileIcon fontSize="small" />
+                  </ToggleButton>
+                </Tooltip>
+              </ToggleButtonGroup>
+            )}
+          </Box>
         </Box>
       )}
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { html } from '@codemirror/lang-html';
-import { oneDark } from '@codemirror/theme-one-dark';
+import { dracula } from '@uiw/codemirror-themes-all';
 import { Box, Typography } from '@mui/material';
 
 type CodeMirrorInputProps = {
@@ -64,7 +64,7 @@ export default function CodeMirrorInput({ label, value, onChange, height = '200p
           value={internalValue}
           height={height}
           extensions={[html()]}
-          theme={oneDark}
+          theme={dracula}
           onChange={handleChangeDebounced}
           basicSetup={{
             lineNumbers: true,
