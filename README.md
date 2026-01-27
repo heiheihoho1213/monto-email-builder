@@ -53,7 +53,7 @@ npm install @emotion/react @emotion/styled
 npm install zustand zod react-colorful
 
 # @usewaypoint 系列包
-npm install @usewaypoint/block-avatar @usewaypoint/block-button \
+npm install @usewaypoint/block-button \
   @usewaypoint/block-columns-container @usewaypoint/block-container \
   @usewaypoint/block-divider @usewaypoint/block-heading \
   @usewaypoint/block-html @usewaypoint/block-image \

@@ -1,11 +1,10 @@
 import React from 'react';
 import { z } from 'zod';
 
-import { Avatar, AvatarPropsSchema } from '@usewaypoint/block-avatar';
 import { Button, ButtonPropsSchema } from '@usewaypoint/block-button';
 import { Divider, DividerPropsSchema } from '@usewaypoint/block-divider';
 import { Heading, HeadingPropsSchema } from '@usewaypoint/block-heading';
-import { Html, HtmlPropsSchema } from '@usewaypoint/block-html';
+import { Html, HtmlPropsSchema } from 'monto-email-block-html';
 import { ImagePropsSchema } from '@usewaypoint/block-image';
 import { Spacer, SpacerPropsSchema } from '@usewaypoint/block-spacer';
 import { Text, TextPropsSchema } from '@usewaypoint/block-text';
@@ -32,14 +31,6 @@ import ButtonEditor from '../blocks/Button/ButtonEditor';
 import EditorBlockWrapper from '../blocks/helpers/block-wrappers/EditorBlockWrapper';
 
 const EDITOR_DICTIONARY = buildBlockConfigurationDictionary({
-  Avatar: {
-    schema: AvatarPropsSchema,
-    Component: (props) => (
-      <EditorBlockWrapper>
-        <Avatar {...props} />
-      </EditorBlockWrapper>
-    ),
-  },
   Button: {
     schema: ButtonPropsSchema,
     Component: (props) => (

@@ -6,10 +6,13 @@ import {
   DataObjectOutlined,
   TitleOutlined,
   FileUploadOutlined,
+  Code as CodeIcon,
+  Email as EmailIcon,
 } from '@mui/icons-material';
 import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
 
 import EmailBuilder from '../src/EmailBuilder';
+import { HtmlEditor } from '../src';
 import { Language } from '../src/i18n';
 import { TEditorConfiguration } from '../src/documents/editor/core';
 
@@ -224,6 +227,8 @@ const Home = () => {
   const [speedDialOpen, setSpeedDialOpen] = useState(false);
   const [showSamplesDrawerTitle, setShowSamplesDrawerTitle] = useState(true);
   const [initialDocument, setInitialDocument] = useState<TEditorConfiguration | undefined>(undefined);
+  const [editorMode, setEditorMode] = useState<'email' | 'html'>('email');
+  const [htmlCode, setHtmlCode] = useState('<p>Hello World</p>\n<h1>HTML Editor Test</h1>\n<p>这是一个 HTML 编辑器测试</p>');
 
   const handleToggleLanguage = () => {
     setLanguage((prev) => (prev === 'en' ? 'zh' : 'en'));
@@ -242,29 +247,45 @@ const Home = () => {
     setInitialDocument(JSON.parse(JSON.stringify(testJSON)) as TEditorConfiguration);
   };
 
+  const handleToggleEditorMode = () => {
+    setEditorMode((prev) => (prev === 'email' ? 'html' : 'email'));
+  };
+
   return (
     <React.StrictMode>
-      <Box sx={{ position: 'relative', width: '100%', height: '100vh' }}>
-        <EmailBuilder
-          initialDocument={initialDocument}
-          language={language}
-          showJsonFeatures={showJsonFeatures}
-          showSamplesDrawerTitle={showSamplesDrawerTitle}
-          imageUploadHandler={exampleImageUploadHandler}
-          videoUploadHandler={exampleVideoUploadHandler}
-          onChange={(document) => {
-            console.log('Document changed:', document);
-          }}
-          saveHandler={async (document) => {
-            console.log('Save document:', document);
-          }}
-          saveAndExitHandler={async (document) => {
-            console.log('Save and exit:', document);
-          }}
-          onNameChange={(name) => {
-            console.log('Name changed:', name);
-          }}
-        />
+      <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+        {editorMode === 'email' ? (
+          <EmailBuilder
+            initialDocument={initialDocument}
+            language={language}
+            showJsonFeatures={showJsonFeatures}
+            showSamplesDrawerTitle={showSamplesDrawerTitle}
+            imageUploadHandler={exampleImageUploadHandler}
+            videoUploadHandler={exampleVideoUploadHandler}
+            onChange={(document) => {
+              console.log('Document changed:', document);
+            }}
+            saveHandler={async (document) => {
+              console.log('Save document:', document);
+            }}
+            saveAndExitHandler={async (document) => {
+              console.log('Save and exit:', document);
+            }}
+            onNameChange={(name) => {
+              console.log('Name changed:', name);
+            }}
+          />
+        ) : (
+          <HtmlEditor
+            value={htmlCode}
+            onChange={(value) => {
+              setHtmlCode(value);
+              console.log('HTML code changed:', value);
+            }}
+            initialMode="split"
+            initialDevice="desktop"
+          />
+        )}
         <SpeedDial
           ariaLabel="测试功能"
           sx={{ position: 'fixed', bottom: 16, left: 16, zIndex: 1000 }}
@@ -296,6 +317,12 @@ const Home = () => {
             icon={<FileUploadOutlined />}
             tooltipTitle="加载测试 JSON"
             onClick={handleLoadTestJSON}
+          />
+          <SpeedDialAction
+            key="toggleEditor"
+            icon={editorMode === 'email' ? <CodeIcon /> : <EmailIcon />}
+            tooltipTitle={`切换到: ${editorMode === 'email' ? 'HTML 编辑器' : '邮件编辑器'}`}
+            onClick={handleToggleEditorMode}
           />
         </SpeedDial>
       </Box>
