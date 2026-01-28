@@ -280,10 +280,10 @@ const Home = () => {
             value={htmlCode}
             onChange={(value) => {
               setHtmlCode(value);
-              console.log('HTML code changed:', value);
             }}
             initialMode="split"
             initialDevice="desktop"
+            language={language}
           />
         )}
         <SpeedDial

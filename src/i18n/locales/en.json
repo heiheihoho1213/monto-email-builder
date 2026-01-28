@@ -194,5 +194,24 @@
     "fontWeight": "Font weight",
     "alignment": "Alignment",
     "padding": "Padding"
+  },
+  "htmlEditor": {
+    "mode": {
+      "split": "Split view",
+      "code": "Code only",
+      "preview": "Preview only"
+    },
+    "device": {
+      "desktop": "Desktop view",
+      "mobile": "Mobile view"
+    },
+    "theme": "Theme",
+    "tooltips": {
+      "splitView": "Split view",
+      "codeOnly": "Code only",
+      "previewOnly": "Preview only",
+      "desktopView": "Desktop view",
+      "mobileView": "Mobile view"
+    }
   }
 }
