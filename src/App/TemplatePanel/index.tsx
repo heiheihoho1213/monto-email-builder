@@ -117,8 +117,8 @@ export default function TemplatePanel() {
             <RedoButton />
             {showJsonFeatures && <DownloadJson />}
             {showJsonFeatures && <ImportJson />}
-            <SaveButton />
-            <SaveAndExitButton />
+            {/* <SaveButton />
+            <SaveAndExitButton /> */}
             <ToggleButtonGroup size="small" value={selectedScreenSize} exclusive onChange={handleScreenSizeChange}>
               <ToggleButton value="desktop">
                 <Tooltip title={t('common.desktopView')}>

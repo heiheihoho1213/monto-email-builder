@@ -5,7 +5,7 @@
  */
 
 export { default as EmailBuilder } from './EmailBuilder';
-export type { EmailBuilderProps } from './EmailBuilder';
+export type { EmailBuilderProps, EmailBuilderRef } from './EmailBuilder';
 
 // 导出 HtmlEditor 组件
 export { default as HtmlEditor } from './HtmlEditor';
