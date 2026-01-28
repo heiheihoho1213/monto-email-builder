@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useImperativeHandle, forwardRef, useRef } from 'react';
 
 import { Box, CssBaseline, ThemeProvider } from '@mui/material';
 import { renderToStaticMarkup } from 'monto-email-core';
@@ -143,14 +143,17 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   showSamplesDrawerTitle = true,
 }, ref) => {
   // 初始化 store（包括历史记录管理器）
-  useEffect(() => {
+  // 关键点：这里要“同步初始化”，保证第三方集成时首屏就按 props 生效（避免抽屉/标题/语言闪一下）
+  const initializedRef = useRef(false);
+  if (!initializedRef.current) {
     initializeStore({
       document: initialDocument,
       language: language,
       showJsonFeatures: showJsonFeatures,
       showSamplesDrawerTitle: showSamplesDrawerTitle,
     });
-  }, [showJsonFeatures, showSamplesDrawerTitle]); // 当配置变化时也重新初始化
+    initializedRef.current = true;
+  }
 
   // 当 initialDocument 变化时，更新文档
   useEffect(() => {
@@ -241,4 +244,5 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
 EmailBuilder.displayName = 'EmailBuilder';
 
 export default EmailBuilder;
+export { EmailBuilder };
 
