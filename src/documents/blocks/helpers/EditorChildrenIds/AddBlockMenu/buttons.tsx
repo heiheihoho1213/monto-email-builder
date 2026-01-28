@@ -168,7 +168,7 @@ export const BUTTONS: TButtonProps[] = [
           textAlign: null,
           padding: { top: 16, bottom: 16, left: 24, right: 24 },
         },
-      },
+      } as any,
     }),
   },
   {

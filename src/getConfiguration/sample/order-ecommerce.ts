@@ -464,7 +464,7 @@ const ORDER_ECOMMERCE: TEditorConfiguration = {
         },
       },
       props: {
-        fixedWidths: [64, null, 80],
+        fixedWidths: [64, null, 80] as any,
         columnsCount: 3,
         columnsGap: 16,
         columns: [
