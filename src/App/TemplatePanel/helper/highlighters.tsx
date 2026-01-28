@@ -20,16 +20,16 @@ async function loadSyntaxHighlighter() {
 
   isLoading = true;
   try {
-    const module = await import('react-syntax-highlighter');
+    const module = await import('react-syntax-highlighter') as any;
     SyntaxHighlighter = module.Light;
 
-    const jsonLangModule = await import('react-syntax-highlighter/dist/esm/languages/hljs/json');
+    const jsonLangModule = await import('react-syntax-highlighter/dist/esm/languages/hljs/json') as any;
     jsonLang = jsonLangModule.default || jsonLangModule;
 
-    const xmlLangModule = await import('react-syntax-highlighter/dist/esm/languages/hljs/xml');
+    const xmlLangModule = await import('react-syntax-highlighter/dist/esm/languages/hljs/xml') as any;
     xmlLang = xmlLangModule.default || xmlLangModule;
 
-    const styleModule = await import('react-syntax-highlighter/dist/esm/styles/hljs/github');
+    const styleModule = await import('react-syntax-highlighter/dist/esm/styles/hljs/github') as any;
     githubStyle = styleModule.default || styleModule;
 
     // 注册语言

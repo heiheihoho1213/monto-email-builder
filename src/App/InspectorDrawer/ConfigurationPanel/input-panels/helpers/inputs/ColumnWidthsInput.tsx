@@ -89,7 +89,7 @@ export default function ColumnWidthsInput({ columnsCount, defaultValue, onChange
 
   // 检查当前值是否匹配某个比例
   useEffect(() => {
-    if (columnsCount === 2 && currentValue[0] !== null && currentValue[1] !== null) {
+    if (columnsCount === 2 && currentValue[0] !== null && currentValue[0] !== undefined && currentValue[1] !== null && currentValue[1] !== undefined) {
       const val1 = currentValue[0];
       const val2 = currentValue[1];
       if (Math.abs(val1 - 66.67) < 1 && Math.abs(val2 - 33.33) < 1) {
@@ -99,7 +99,7 @@ export default function ColumnWidthsInput({ columnsCount, defaultValue, onChange
       } else {
         setRatioMode((prev) => (prev !== 'custom' ? 'custom' : prev));
       }
-    } else if (columnsCount === 3 && currentValue[0] !== null && currentValue[1] !== null && currentValue[2] !== null) {
+    } else if (columnsCount === 3 && currentValue[0] !== null && currentValue[0] !== undefined && currentValue[1] !== null && currentValue[1] !== undefined && currentValue[2] !== null && currentValue[2] !== undefined) {
       const val1 = currentValue[0];
       const val2 = currentValue[1];
       const val3 = currentValue[2];
@@ -154,7 +154,7 @@ export default function ColumnWidthsInput({ columnsCount, defaultValue, onChange
       <Stack direction="row" spacing={1}>
         {Array.from({ length: columnsCount }).map((_, index) => {
           const isPercentage = (columnsCount === 2 && (ratioMode === '2:1' || ratioMode === '1:2')) ||
-                               (columnsCount === 3 && (ratioMode === '1:3' || ratioMode === '3:1'));
+            (columnsCount === 3 && (ratioMode === '1:3' || ratioMode === '3:1'));
           return (
             <TextField
               key={index}
