@@ -40,26 +40,57 @@ type TValue = {
 
   // 名称变化回调
   onNameChange?: (name: string) => void;
+
+  // 是否显示 JSON 相关功能
+  showJsonFeatures: boolean;
+
+  // 是否显示左侧边栏标题
+  showSamplesDrawerTitle: boolean;
 };
 
 // 初始化函数，支持外部传入初始值
 let initialDocument: TEditorConfiguration | null = null;
 let initialLanguage: Language | null = null;
+let initialShowJsonFeatures: boolean = true; // 默认值改为 true，与 EmailBuilder 的默认值一致
+let initialShowSamplesDrawerTitle: boolean = true; // 默认显示标题
 
 // 历史记录管理器实例
 let historyManager: HistoryManager | null = null;
 
-export function initializeStore(config?: { document?: TEditorConfiguration; language?: Language }) {
+export function initializeStore(config?: { document?: TEditorConfiguration; language?: Language; showJsonFeatures?: boolean; showSamplesDrawerTitle?: boolean }) {
   if (config?.document) {
     initialDocument = config.document;
   }
   if (config?.language) {
     initialLanguage = config.language;
   }
+  if (config?.showJsonFeatures !== undefined) {
+    initialShowJsonFeatures = config.showJsonFeatures;
+  }
+  if (config?.showSamplesDrawerTitle !== undefined) {
+    initialShowSamplesDrawerTitle = config.showSamplesDrawerTitle;
+  }
 
   // 初始化历史记录管理器
   const doc = initialDocument || EMPTY_EMAIL_MESSAGE;
   historyManager = new HistoryManager(doc);
+
+  // 更新 store 中的配置
+  const updates: Partial<TValue> = {};
+  if (config?.showJsonFeatures !== undefined) {
+    updates.showJsonFeatures = config.showJsonFeatures;
+  }
+  if (config?.showSamplesDrawerTitle !== undefined) {
+    updates.showSamplesDrawerTitle = config.showSamplesDrawerTitle;
+  }
+  if (config?.language !== undefined) {
+    updates.language = config.language;
+    // 同时更新 i18n 的 localStorage
+    setI18nLanguage(config.language);
+  }
+  if (Object.keys(updates).length > 0) {
+    editorStateStore.setState(updates);
+  }
 }
 
 import EMPTY_EMAIL_MESSAGE from '../../getConfiguration/sample/empty-email-message';
@@ -87,6 +118,8 @@ const editorStateStore = create<TValue>((set, get) => ({
   saveAndExitHandler: undefined,
   name: '',
   onNameChange: undefined,
+  showJsonFeatures: initialShowJsonFeatures,
+  showSamplesDrawerTitle: initialShowSamplesDrawerTitle,
 }));
 
 export function useDocument() {
@@ -281,6 +314,22 @@ export function setName(name: string) {
 
 export function setOnNameChange(handler: TValue['onNameChange']) {
   return editorStateStore.setState({ onNameChange: handler });
+}
+
+export function useShowJsonFeatures() {
+  return editorStateStore((s) => s.showJsonFeatures);
+}
+
+export function setShowJsonFeatures(show: boolean) {
+  return editorStateStore.setState({ showJsonFeatures: show });
+}
+
+export function useShowSamplesDrawerTitle() {
+  return editorStateStore((s) => s.showSamplesDrawerTitle);
+}
+
+export function setShowSamplesDrawerTitle(show: boolean) {
+  return editorStateStore.setState({ showSamplesDrawerTitle: show });
 }
 
 // ==================== 撤销/重做相关 ====================

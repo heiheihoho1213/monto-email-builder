@@ -1,18 +1,20 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useImperativeHandle, forwardRef } from 'react';
 
 import { Box, CssBaseline, ThemeProvider } from '@mui/material';
+import { renderToStaticMarkup } from 'monto-email-core';
 
 import {
   initializeStore,
   resetDocument,
   setImageUploadHandler,
+  setShowJsonFeatures,
+  setShowSamplesDrawerTitle,
   setVideoUploadHandler,
   setLanguage,
   setName,
   setOnChange,
   setOnNameChange,
-  setSaveAndExitHandler,
-  setSaveHandler,
+  editorStateStore,
 } from '../documents/editor/EditorContext';
 import { Language } from '../i18n';
 import { TEditorConfiguration } from '../documents/editor/core';
@@ -32,7 +34,7 @@ export interface EmailBuilderProps {
    * 当此值变化时，编辑器会自动切换语言
    * @default 'en'
    */
-  initialLanguage?: Language;
+  language?: Language;
 
   /**
    * 图片上传回调函数
@@ -53,21 +55,6 @@ export interface EmailBuilderProps {
   onChange?: (document: TEditorConfiguration) => void;
 
   /**
-   * 保存回调函数
-   * 当用户点击保存按钮时，会调用此函数并传入当前的配置
-   * 可以是同步函数或返回 Promise 的异步函数
-   */
-  saveHandler?: (document: TEditorConfiguration) => void | Promise<void>;
-
-  /**
-   * 保存并退出回调函数
-   * 当用户点击保存并退出按钮时，会先保存文档，然后调用此函数
-   * 可以是同步函数或返回 Promise 的异步函数
-   * 通常用于关闭编辑器或导航到其他页面
-   */
-  saveAndExitHandler?: (document: TEditorConfiguration) => void | Promise<void>;
-
-  /**
    * 模板名称
    * 当此值变化时，编辑器会自动更新名称输入框
    */
@@ -84,6 +71,29 @@ export interface EmailBuilderProps {
    * 如果不提供，将使用默认的 Material-UI 主题
    */
   theme?: typeof theme;
+
+  /**
+   * 是否显示 JSON 相关功能（JSON tab、下载 JSON、导入 JSON）
+   * @default true
+   */
+  showJsonFeatures?: boolean;
+
+  /**
+   * 是否显示左侧边栏标题
+   * @default true
+   */
+  showSamplesDrawerTitle?: boolean;
+}
+
+/**
+ * EmailBuilder 组件暴露的方法
+ */
+export interface EmailBuilderRef {
+  /**
+   * 获取当前的 JSON 和 HTML 数据
+   * @param callback 回调函数，接收 json 和 html 作为参数
+   */
+  getData: (callback: (json: TEditorConfiguration, html: string) => void) => void;
 }
 
 /**
@@ -96,52 +106,51 @@ export interface EmailBuilderProps {
  * import { EmailBuilder } from 'monto-email-builder';
  * 
  * function MyApp() {
- *   const handleChange = (document) => {
- *     // Handle document changes
- *   };
+ *   const emailBuilderRef = useRef<EmailBuilderRef>(null);
  * 
- *   const handleImageUpload = async (file: File) => {
- *     // 上传图片到服务器
- *     const formData = new FormData();
- *     formData.append('image', file);
- *     const response = await fetch('/api/upload', {
- *       method: 'POST',
- *       body: formData,
+ *   const handleSave = () => {
+ *     emailBuilderRef.current?.getData((json, html) => {
+ *       // 处理 json 和 html 数据
+ *       console.log('JSON:', json);
+ *       console.log('HTML:', html);
  *     });
- *     const data = await response.json();
- *     return data.url;
  *   };
  * 
  *   return (
- *     <EmailBuilder
- *       initialLanguage="zh"
- *       imageUploadHandler={handleImageUpload}
- *       videoUploadHandler={handleVideoUpload}
- *       onChange={handleChange}
- *     />
+ *     <>
+ *       <EmailBuilder
+ *         ref={emailBuilderRef}
+ *         language="zh"
+ *         imageUploadHandler={handleImageUpload}
+ *         onChange={handleChange}
+ *       />
+ *       <button onClick={handleSave}>保存</button>
+ *     </>
  *   );
  * }
  * ```
  */
-export default function EmailBuilder({
+const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   initialDocument,
-  initialLanguage = 'en',
+  language = 'en',
   imageUploadHandler,
   videoUploadHandler,
   onChange,
-  saveHandler,
-  saveAndExitHandler,
   initialName,
   onNameChange,
   theme: customTheme,
-}: EmailBuilderProps) {
+  showJsonFeatures = true,
+  showSamplesDrawerTitle = true,
+}, ref) => {
   // 初始化 store（包括历史记录管理器）
   useEffect(() => {
     initializeStore({
       document: initialDocument,
-      language: initialLanguage,
+      language: language,
+      showJsonFeatures: showJsonFeatures,
+      showSamplesDrawerTitle: showSamplesDrawerTitle,
     });
-  }, []); // 只在组件挂载时初始化一次
+  }, [showJsonFeatures, showSamplesDrawerTitle]); // 当配置变化时也重新初始化
 
   // 当 initialDocument 变化时，更新文档
   useEffect(() => {
@@ -150,14 +159,14 @@ export default function EmailBuilder({
     }
   }, [initialDocument]);
 
-  // 当 initialLanguage 变化时，更新语言
+  // 当 language 变化时，更新语言
   // 注意：这里不依赖 currentLanguage，避免循环更新
-  // 只要 initialLanguage 有值，就强制更新语言
+  // 只要 language 有值，就强制更新语言
   useEffect(() => {
-    if (initialLanguage !== undefined) {
-      setLanguage(initialLanguage);
+    if (language !== undefined) {
+      setLanguage(language);
     }
-  }, [initialLanguage]);
+  }, [language]);
 
   // 当 imageUploadHandler 变化时，更新处理器
   useEffect(() => {
@@ -174,15 +183,19 @@ export default function EmailBuilder({
     setOnChange(onChange);
   }, [onChange]);
 
-  // 当 saveHandler 变化时，更新处理器
-  useEffect(() => {
-    setSaveHandler(saveHandler);
-  }, [saveHandler]);
-
-  // 当 saveAndExitHandler 变化时，更新处理器
-  useEffect(() => {
-    setSaveAndExitHandler(saveAndExitHandler);
-  }, [saveAndExitHandler]);
+  // 暴露 ref API
+  useImperativeHandle(ref, () => ({
+    getData: (callback: (json: TEditorConfiguration, html: string) => void) => {
+      const document = editorStateStore.getState().document;
+      try {
+        const html = renderToStaticMarkup(document, { rootBlockId: 'root' });
+        callback(document, html);
+      } catch (error) {
+        // 如果生成 HTML 失败，仍然返回 JSON
+        callback(document, '<!-- Error rendering HTML -->');
+      }
+    },
+  }));
 
   // 当 initialName 变化时，更新名称
   useEffect(() => {
@@ -195,6 +208,16 @@ export default function EmailBuilder({
   useEffect(() => {
     setOnNameChange(onNameChange);
   }, [onNameChange]);
+
+  // 当 showJsonFeatures 变化时，更新配置
+  useEffect(() => {
+    setShowJsonFeatures(showJsonFeatures);
+  }, [showJsonFeatures]);
+
+  // 当 showSamplesDrawerTitle 变化时，更新配置
+  useEffect(() => {
+    setShowSamplesDrawerTitle(showSamplesDrawerTitle);
+  }, [showSamplesDrawerTitle]);
 
   return (
     <ThemeProvider theme={customTheme || theme}>
@@ -213,5 +236,9 @@ export default function EmailBuilder({
       </Box>
     </ThemeProvider>
   );
-}
+});
+
+EmailBuilder.displayName = 'EmailBuilder';
+
+export default EmailBuilder;
 

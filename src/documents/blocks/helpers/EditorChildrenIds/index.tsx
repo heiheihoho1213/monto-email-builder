@@ -64,7 +64,7 @@ function findParentContainerId(document: TEditorConfiguration, blockId: string):
   return { containerId: null, columnIndex: null };
 }
 
-// 检查是否允许将 block 拖入目标容器（防止 ColumnsContainer 嵌套）
+// 检查是否允许将 block 拖入目标容器（防止 Container 和 ColumnsContainer 相互嵌套）
 function canDropBlockIntoContainer(
   draggedBlock: TEditorBlock | null,
   targetContainerId: string | undefined,
@@ -78,15 +78,22 @@ function canDropBlockIntoContainer(
   const targetContainer = document[targetContainerId];
   const targetContainerType = targetContainer?.type;
 
-  // Container 内部允许拖入 Container 和 ColumnsContainer
-  // 只有当目标是 ColumnsContainer 时，才禁止拖入 Container 和 ColumnsContainer
-  if (targetContainerType === 'ColumnsContainer') {
-    // ColumnsContainer 内部不允许拖入 Container 或 ColumnsContainer
-    if (draggedBlockType === 'Container' || draggedBlockType === 'ColumnsContainer') {
+  // Container 内部不允许拖入 ColumnsContainer（但可以拖入 Container）
+  if (targetContainerType === 'Container') {
+    // Container 内部不允许拖入 ColumnsContainer
+    if (draggedBlockType === 'ColumnsContainer') {
       return false;
     }
   }
-  // 如果目标是 Container，允许拖入任何内容（包括 Container 和 ColumnsContainer）
+
+  // ColumnsContainer 内部允许拖入 Container（但不可以拖入 ColumnsContainer）
+  if (targetContainerType === 'ColumnsContainer') {
+    // ColumnsContainer 内部不允许拖入 ColumnsContainer
+    if (draggedBlockType === 'ColumnsContainer') {
+      return false;
+    }
+    // ColumnsContainer 内部允许拖入 Container
+  }
 
   return true;
 }
@@ -170,7 +177,12 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
   // 获取容器类型，用于禁用 Container 和 ColumnsContainer 选项
   const currentDocument = editorStateStore.getState().document;
   const containerType = containerId ? currentDocument[containerId]?.type : null;
-  const isContainerOrColumnsContainer = containerType === 'ColumnsContainer';
+  // 根据新规则：
+  // - Container 内部：禁用 ColumnsContainer（但不禁用 Container）
+  // - ColumnsContainer 内部：禁用 ColumnsContainer（但不禁用 Container，因为 Container 可以嵌套在 ColumnsContainer 中）
+  // 所以 disableContainerBlocks 应该只在需要禁用 ColumnsContainer 时使用
+  // 但实际上我们需要更细粒度的控制，所以这里只禁用 ColumnsContainer
+  const isContainerOrColumnsContainer = containerType === 'Container' || containerType === 'ColumnsContainer';
   // 检查是否在 column 内部（如果 containerType 是 ColumnsContainer，说明当前在 column 内部）
   const isInsideColumn = containerType === 'ColumnsContainer';
 
@@ -553,7 +565,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
         }}
       >
         {/* 空列表时，即使在 column 内部也显示占位符按钮，让用户可以添加第一个元素 */}
-        <AddBlockButton placeholder onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} />
+        <AddBlockButton placeholder onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} containerType={containerType} />
       </Box>
     );
   }
@@ -596,12 +608,16 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
           draggedParentInfoForRender.columnIndex !== targetParentInfoForRender.columnIndex;
 
         // 检查是否是外部元素拖入列中（列有元素），需要禁止上下插入
+        // 只有 Container 和 ColumnsContainer 才禁止上下插入，其他外部元素允许上下插入
+        const draggedBlockForRender = draggedBlockId ? currentDocument[draggedBlockId] : null;
+        const isDraggedContainerOrColumn = draggedBlockForRender?.type === 'Container' || draggedBlockForRender?.type === 'ColumnsContainer';
         const isExternalDragIntoColumn = isExternalDrag &&
           draggedParentInfoForRender &&
           draggedParentInfoForRender.columnIndex === null && // 外部元素不在列中
           targetParentInfoForRender.columnIndex !== null && // 目标在列中
           !allowReplace && // 列有元素
-          !isCrossColumnDragForRender; // 不是跨列拖拽
+          !isCrossColumnDragForRender && // 不是跨列拖拽
+          isDraggedContainerOrColumn; // 只有 Container 和 ColumnsContainer 才禁止上下插入
 
         // 外部拖拽时的指示线：
         // - 如果 allowReplace 为 true（ColumnsContainer 的列），显示全边框（表示可以替换）
@@ -619,7 +635,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
         return (
           <Fragment key={childId}>
-            {!isInsideColumn && <AddBlockButton onSelect={(block) => insertBlock(block, i)} disableContainerBlocks={isContainerOrColumnsContainer} />}
+            {!isInsideColumn && <AddBlockButton onSelect={(block) => insertBlock(block, i)} disableContainerBlocks={isContainerOrColumnsContainer} containerType={containerType} />}
             <Box
               onDragOver={(e) => {
                 e.preventDefault();
@@ -804,7 +820,12 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                     draggedParentInfo.containerId === targetParentInfo.containerId &&
                     draggedParentInfo.columnIndex !== targetParentInfo.columnIndex;
 
+                  // 检查被拖拽的元素是否是 Container 或 ColumnsContainer
+                  const isDraggedContainerOrColumnForBottom = actualDraggedBlock?.type === 'Container' || actualDraggedBlock?.type === 'ColumnsContainer';
+
                   // 如果是外部元素或跨列拖拽拖入列中（列中有元素），检查是否可以扩列插入
+                  // Container/ColumnsContainer：只允许左右插入（扩列）
+                  // 其他外部元素：根据鼠标位置决定是左右插入（扩列）还是上下插入
                   if (isExternal && isTargetInColumn && (!isDraggedInColumn || isCrossColumnDragForBottom) && !allowReplace) {
                     // 检查当前 ColumnsContainer 的列数
                     const columnsContainerId = targetParentInfo.containerId;
@@ -823,28 +844,62 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                           setHorizontalDragTargetIndex(null);
                           return;
                         }
-                        // 如果列数 < 4，允许插入（会扩列），禁止显示底部插入指示线
-                        // 只允许左右插入（扩列），不允许上下插入
-                        // 根据鼠标位置决定显示左侧还是右侧指示线
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const mouseY = e.clientY;
-                        const mouseX = e.clientX;
-                        const blockBottom = rect.bottom;
-                        const blockCenter = rect.left + rect.width / 2;
 
-                        setDraggedBlockId(draggedId);
-                        setDragOverIndex(null); // 不显示上下插入指示线
+                        // 对于 Container/ColumnsContainer，只允许左右插入（扩列）
+                        if (isDraggedContainerOrColumnForBottom) {
+                          // 根据鼠标位置决定显示左侧还是右侧指示线
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const mouseX = e.clientX;
+                          const blockCenter = rect.left + rect.width / 2;
 
-                        // 根据鼠标位置决定显示左侧还是右侧指示线
-                        if (mouseX < blockCenter) {
-                          // 鼠标在左侧，显示左侧插入指示线（在目标元素之前新增一列）
-                          setHorizontalDragSide('left');
-                        } else {
-                          // 鼠标在右侧，显示右侧插入指示线（在目标元素之后新增一列）
-                          setHorizontalDragSide('right');
+                          setDraggedBlockId(draggedId);
+                          setDragOverIndex(null); // 不显示上下插入指示线
+
+                          // 根据鼠标位置决定显示左侧还是右侧指示线
+                          if (mouseX < blockCenter) {
+                            // 鼠标在左侧，显示左侧插入指示线（在目标元素之前新增一列）
+                            setHorizontalDragSide('left');
+                          } else {
+                            // 鼠标在右侧，显示右侧插入指示线（在目标元素之后新增一列）
+                            setHorizontalDragSide('right');
+                          }
+                          setHorizontalDragTargetIndex(i);
+                          return;
                         }
-                        setHorizontalDragTargetIndex(i);
-                        return;
+
+                        // 对于其他外部元素，根据鼠标位置决定是左右插入（扩列）还是上下插入
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const mouseX = e.clientX;
+                        const mouseY = e.clientY;
+                        const blockBottom = rect.bottom;
+                        const edgeThreshold = rect.width * 0.15; // 边缘15%的区域用于水平拖拽（扩列）
+
+                        // 如果鼠标在左右边缘区域，显示左右插入指示线（扩列）
+                        if (mouseX < rect.left + edgeThreshold) {
+                          // 左侧拖拽（扩列）
+                          setDraggedBlockId(draggedId);
+                          setHorizontalDragSide('left');
+                          setHorizontalDragTargetIndex(i);
+                          setDragOverIndex(null); // 清除垂直拖拽指示
+                          return;
+                        } else if (mouseX > rect.right - edgeThreshold) {
+                          // 右侧拖拽（扩列）
+                          setDraggedBlockId(draggedId);
+                          setHorizontalDragSide('right');
+                          setHorizontalDragTargetIndex(i);
+                          setDragOverIndex(null); // 清除垂直拖拽指示
+                          return;
+                        } else {
+                          // 鼠标在中间区域，显示上下插入指示线
+                          // 如果鼠标在块的下半部分，认为是拖拽到底部
+                          if (mouseY > blockBottom - rect.height / 2) {
+                            setDraggedBlockId(draggedId);
+                            setDragOverIndex(childrenIds.length);
+                            setHorizontalDragSide(null);
+                            setHorizontalDragTargetIndex(null);
+                            return;
+                          }
+                        }
                       }
                     }
                   }
@@ -877,9 +932,12 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                     draggedParentInfoForExternal.containerId === targetParentInfoForExternal.containerId &&
                     draggedParentInfoForExternal.columnIndex !== targetParentInfoForExternal.columnIndex;
 
+                  // 检查被拖拽的元素是否是 Container 或 ColumnsContainer
+                  const isDraggedContainerOrColumnForExternal = actualDraggedBlock?.type === 'Container' || actualDraggedBlock?.type === 'ColumnsContainer';
+
                   // 如果列中有元素（allowReplace 为 false），检查是否可以扩列插入
-                  // 允许：1. 外部元素（不在列中）拖入列中扩列
-                  //       2. 已经在某个列中的元素拖入另一个列中扩列（跨列拖拽）
+                  // Container/ColumnsContainer：只允许左右插入（扩列）
+                  // 其他外部元素：根据鼠标位置决定是左右插入（扩列）还是上下插入
                   if (isTargetInColumnForExternal && !allowReplace && (!isDraggedInColumnForExternal || isCrossColumnDragForExternal)) {
                     // 检查当前 ColumnsContainer 的列数
                     const columnsContainerId = targetParentInfoForExternal.containerId;
@@ -898,24 +956,67 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                           setHorizontalDragTargetIndex(null);
                           return;
                         }
-                        // 如果列数 < 4，允许插入（会扩列，左右插入，新增一列）
-                        // 根据鼠标位置决定显示左侧还是右侧指示线
+
+                        // 对于 Container/ColumnsContainer，只允许左右插入（扩列）
+                        if (isDraggedContainerOrColumnForExternal) {
+                          // 根据鼠标位置决定显示左侧还是右侧指示线
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const mouseX = e.clientX;
+                          const blockCenter = rect.left + rect.width / 2;
+
+                          setDraggedBlockId(draggedId);
+                          setDragOverIndex(null); // 不显示上下插入指示线
+
+                          if (mouseX < blockCenter) {
+                            // 鼠标在左侧，显示左侧插入指示线（在目标元素之前新增一列）
+                            setHorizontalDragSide('left');
+                          } else {
+                            // 鼠标在右侧，显示右侧插入指示线（在目标元素之后新增一列）
+                            setHorizontalDragSide('right');
+                          }
+                          setHorizontalDragTargetIndex(i);
+                          return;
+                        }
+
+                        // 对于其他外部元素，根据鼠标位置决定是左右插入（扩列）还是上下插入
+                        // 检测鼠标位置在block的左侧、右侧还是中间
                         const rect = e.currentTarget.getBoundingClientRect();
                         const mouseX = e.clientX;
-                        const blockCenter = rect.left + rect.width / 2;
+                        const mouseY = e.clientY;
+                        const blockCenterX = rect.left + rect.width / 2;
+                        const blockCenterY = rect.top + rect.height / 2;
+                        const edgeThreshold = rect.width * 0.15; // 边缘15%的区域用于水平拖拽（扩列）
 
-                        setDraggedBlockId(draggedId);
-                        setDragOverIndex(null); // 不显示上下插入指示线
-
-                        if (mouseX < blockCenter) {
-                          // 鼠标在左侧，显示左侧插入指示线（在目标元素之前新增一列）
+                        // 如果鼠标在左右边缘区域，显示左右插入指示线（扩列）
+                        if (mouseX < rect.left + edgeThreshold) {
+                          // 左侧拖拽（扩列）
+                          setDraggedBlockId(draggedId);
                           setHorizontalDragSide('left');
-                        } else {
-                          // 鼠标在右侧，显示右侧插入指示线（在目标元素之后新增一列）
+                          setHorizontalDragTargetIndex(i);
+                          setDragOverIndex(null); // 清除垂直拖拽指示
+                          return;
+                        } else if (mouseX > rect.right - edgeThreshold) {
+                          // 右侧拖拽（扩列）
+                          setDraggedBlockId(draggedId);
                           setHorizontalDragSide('right');
+                          setHorizontalDragTargetIndex(i);
+                          setDragOverIndex(null); // 清除垂直拖拽指示
+                          return;
+                        } else {
+                          // 鼠标在中间区域，显示上下插入指示线
+                          setDraggedBlockId(draggedId);
+                          setHorizontalDragSide(null); // 清除水平拖拽指示
+                          setHorizontalDragTargetIndex(null);
+                          // 根据鼠标位置判断显示上拖拽线还是下拖拽线
+                          if (mouseY < blockCenterY) {
+                            setDragOverIndex(i);
+                          } else {
+                            const maxIndex = childrenIds?.length || 0;
+                            const nextIndex = Math.min(i + 1, maxIndex);
+                            setDragOverIndex(nextIndex);
+                          }
+                          return;
                         }
-                        setHorizontalDragTargetIndex(i);
-                        return;
                       }
                     }
                   }
@@ -1237,19 +1338,23 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   }
 
                   // 如果拖拽的block不在当前容器中，说明是从外部拖拽过来的
-                  // 检查是否是外部元素拖入列中做上下插入（需要检查列数）
+                  // 检查是否是 Container 或 ColumnsContainer 拖入列中做上下插入（需要检查列数）
                   const targetParentInfoForAppend = findParentContainerId(document, containerId || '');
                   const isTargetInColumnForAppend = allowReplace || targetParentInfoForAppend.columnIndex !== null;
                   const draggedParentInfoForAppend = isSidebarBlockForAppend ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
                   const isDraggedInColumnForAppend = draggedParentInfoForAppend.columnIndex !== null;
+
+                  // 检查被拖拽的元素是否是 Container 或 ColumnsContainer
+                  const isDraggedContainerOrColumnForAppend = draggedBlock?.type === 'Container' || draggedBlock?.type === 'ColumnsContainer';
 
                   // 检查是否是跨列拖拽（从另一个列拖入当前列）
                   const isCrossColumnDragForAppend = isDraggedInColumnForAppend && isTargetInColumnForAppend &&
                     draggedParentInfoForAppend.containerId === targetParentInfoForAppend.containerId &&
                     draggedParentInfoForAppend.columnIndex !== targetParentInfoForAppend.columnIndex;
 
-                  // 如果是外部元素或跨列拖拽拖入列中（列中有元素），检查是否可以扩列插入
-                  if (isTargetInColumnForAppend && !allowReplace && (!isDraggedInColumnForAppend || isCrossColumnDragForAppend)) {
+                  // 如果是 Container/ColumnsContainer 或跨列拖拽拖入列中（列中有元素），检查是否可以扩列插入
+                  // 只有 Container 和 ColumnsContainer 才需要扩列，其他外部元素允许上下插入
+                  if (isTargetInColumnForAppend && !allowReplace && (!isDraggedInColumnForAppend || isCrossColumnDragForAppend) && isDraggedContainerOrColumnForAppend) {
                     const columnsContainerId = targetParentInfoForAppend.containerId;
                     if (columnsContainerId) {
                       const columnsContainer = document[columnsContainerId];
@@ -1389,20 +1494,24 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                     return;
                   }
 
-                  // 检查是否是外部元素拖入列中（列有元素），禁止底部插入
+                  // 检查是否是 Container 或 ColumnsContainer 拖入列中（列有元素），禁止底部插入
                   if (containerId) {
                     const targetParentInfoForBottom = findParentContainerId(document, containerId);
                     const isTargetInColumnForBottom = allowReplace || targetParentInfoForBottom.columnIndex !== null;
                     const draggedParentInfoForBottom = isSidebarBlockForMove ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
                     const isDraggedInColumnForBottom = draggedParentInfoForBottom.columnIndex !== null;
 
+                    // 检查被拖拽的元素是否是 Container 或 ColumnsContainer
+                    const isDraggedContainerOrColumnForBottom = draggedBlock?.type === 'Container' || draggedBlock?.type === 'ColumnsContainer';
+
                     // 检查是否是跨列拖拽（从另一个列拖入当前列）
                     const isCrossColumnDragForBottomCheck = isDraggedInColumnForBottom && isTargetInColumnForBottom &&
                       draggedParentInfoForBottom.containerId === targetParentInfoForBottom.containerId &&
                       draggedParentInfoForBottom.columnIndex !== targetParentInfoForBottom.columnIndex;
 
-                    // 如果是外部元素或跨列拖拽拖入列中（列有元素），禁止底部插入
-                    if (isTargetInColumnForBottom && !allowReplace && (!isDraggedInColumnForBottom || isCrossColumnDragForBottomCheck)) {
+                    // 如果是 Container/ColumnsContainer 或跨列拖拽拖入列中（列有元素），禁止底部插入
+                    // 只有 Container 和 ColumnsContainer 才禁止底部插入，其他外部元素允许上下插入
+                    if (isTargetInColumnForBottom && !allowReplace && (!isDraggedInColumnForBottom || isCrossColumnDragForBottomCheck) && isDraggedContainerOrColumnForBottom) {
                       // 已经处理过扩列逻辑，如果到这里说明列数 >= 4，禁止插入
                       (window as any).__currentDraggedBlockId = null;
                       (window as any).__currentDraggedBlock = null;
@@ -1505,6 +1614,9 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                 const draggedParentInfoForInsert = isSidebarBlockForMove ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
                 const isDraggedInColumnForInsert = draggedParentInfoForInsert.columnIndex !== null;
 
+                // 检查被拖拽的元素是否是 Container 或 ColumnsContainer
+                const isDraggedContainerOrColumnForInsert = draggedBlock?.type === 'Container' || draggedBlock?.type === 'ColumnsContainer';
+
                 // 检查是否是跨列拖拽（从另一个列拖入当前列，用于扩列）
                 // 允许：1. 同一个 ColumnsContainer 的不同列之间
                 //       2. 不同的 ColumnsContainer 的列之间（从列中拖到另一个列中）
@@ -1517,14 +1629,18 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                     : true);
 
                 // 检查是否是水平拖拽指示线（外部元素或跨列拖拽拖入列中，需要扩列）
+                // 对于 Container/ColumnsContainer：总是需要扩列
+                // 对于其他外部元素：如果有水平拖拽指示线，也需要扩列
                 const isHorizontalDragForExpand = (horizontalDragSide === 'left' || horizontalDragSide === 'right') &&
                   horizontalDragTargetIndex === i &&
                   isTargetInColumnForInsert &&
                   (!isDraggedInColumnForInsert || isCrossColumnDragForInsert) &&
                   !allowReplace;
 
-                // 如果是外部元素或跨列拖拽拖入列中（列中有元素），检查是否需要扩列
-                if ((isTargetInColumnForInsert && (!isDraggedInColumnForInsert || isCrossColumnDragForInsert) && !allowReplace) || isHorizontalDragForExpand) {
+                // 如果是 Container/ColumnsContainer 或跨列拖拽拖入列中（列中有元素），检查是否需要扩列
+                // Container/ColumnsContainer：总是需要扩列
+                // 其他外部元素：如果有水平拖拽指示线，也需要扩列；否则允许上下插入
+                if (((isTargetInColumnForInsert && (!isDraggedInColumnForInsert || isCrossColumnDragForInsert) && !allowReplace && isDraggedContainerOrColumnForInsert) || isHorizontalDragForExpand)) {
                   const columnsContainerId = targetParentInfoForInsert.containerId;
                   if (columnsContainerId) {
                     const columnsContainer = document[columnsContainerId];
@@ -1630,19 +1746,23 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
                   }
                 }
 
-                // 检查是否是外部元素拖入列中（列有元素），禁止上下插入
+                // 检查是否是 Container 或 ColumnsContainer 拖入列中（列有元素），禁止上下插入
                 const targetParentInfoForCheck = findParentContainerId(document, childId);
                 const isTargetInColumnForCheck = allowReplace || targetParentInfoForCheck.columnIndex !== null;
                 const draggedParentInfoForCheck = isSidebarBlockForMove ? { containerId: null, columnIndex: null } : findParentContainerId(document, draggedId);
                 const isDraggedInColumnForCheck = draggedParentInfoForCheck.columnIndex !== null;
+
+                // 检查被拖拽的元素是否是 Container 或 ColumnsContainer
+                const isDraggedContainerOrColumnForCheck = draggedBlock?.type === 'Container' || draggedBlock?.type === 'ColumnsContainer';
 
                 // 检查是否是跨列拖拽（从另一个列拖入当前列）
                 const isCrossColumnDragForCheck = isDraggedInColumnForCheck && isTargetInColumnForCheck &&
                   draggedParentInfoForCheck.containerId === targetParentInfoForCheck.containerId &&
                   draggedParentInfoForCheck.columnIndex !== targetParentInfoForCheck.columnIndex;
 
-                // 如果是外部元素或跨列拖拽拖入列中（列有元素），禁止上下插入
-                if (isTargetInColumnForCheck && !allowReplace && (!isDraggedInColumnForCheck || isCrossColumnDragForCheck)) {
+                // 如果是 Container/ColumnsContainer 或跨列拖拽拖入列中（列有元素），禁止上下插入
+                // 只有 Container 和 ColumnsContainer 才禁止上下插入，其他外部元素允许上下插入
+                if (isTargetInColumnForCheck && !allowReplace && (!isDraggedInColumnForCheck || isCrossColumnDragForCheck) && isDraggedContainerOrColumnForCheck) {
                   // 已经处理过扩列逻辑，如果到这里说明列数 >= 4，禁止插入
                   (window as any).__currentDraggedBlockId = null;
                   (window as any).__currentDraggedBlock = null;
@@ -1770,7 +1890,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
           </Fragment>
         );
       })}
-      {!isInsideColumn && <AddBlockButton onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} />}
+      {!isInsideColumn && <AddBlockButton onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} containerType={containerType} />}
     </>
   );
 }

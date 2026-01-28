@@ -62,7 +62,7 @@ const POST_METRICS_REPORT: TEditorConfiguration = {
     },
   },
   block_A8GU16mV1RdP85jaszN7oj: {
-    type: 'Avatar',
+    type: 'Image' as any, // Avatar 类型不存在，使用 Image 替代
     data: {
       style: {
         textAlign: 'right',
@@ -74,9 +74,7 @@ const POST_METRICS_REPORT: TEditorConfiguration = {
         },
       },
       props: {
-        size: 32,
-        shape: 'circle',
-        imageUrl: 'https://ui-avatars.com/api/?name=John+Doe',
+        url: 'https://ui-avatars.com/api/?name=John+Doe',
         alt: 'Jordan',
       },
     },

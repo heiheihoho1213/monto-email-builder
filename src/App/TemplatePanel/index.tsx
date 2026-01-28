@@ -6,10 +6,12 @@ import { Reader } from 'monto-email-core';
 
 import EditorBlock from '../../documents/editor/EditorBlock';
 import {
+  setSelectedMainTab,
   setSelectedScreenSize,
   useDocument,
   useSelectedMainTab,
   useSelectedScreenSize,
+  useShowJsonFeatures,
 } from '../../documents/editor/EditorContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import ToggleInspectorPanelButton from '../InspectorDrawer/ToggleInspectorPanelButton';
@@ -31,6 +33,14 @@ export default function TemplatePanel() {
   const document = useDocument();
   const selectedMainTab = useSelectedMainTab();
   const selectedScreenSize = useSelectedScreenSize();
+  const showJsonFeatures = useShowJsonFeatures();
+
+  // 如果 JSON 功能被禁用且当前在 JSON tab，切换到 editor tab
+  React.useEffect(() => {
+    if (!showJsonFeatures && selectedMainTab === 'json') {
+      setSelectedMainTab('editor');
+    }
+  }, [showJsonFeatures, selectedMainTab]);
 
   let mainBoxSx: SxProps = {
     flex: 1,
@@ -75,7 +85,7 @@ export default function TemplatePanel() {
       case 'html':
         return <HtmlPanel />;
       case 'json':
-        return <JsonPanel />;
+        return showJsonFeatures ? <JsonPanel /> : null;
     }
   };
 
@@ -105,10 +115,10 @@ export default function TemplatePanel() {
           <Stack direction="row" spacing={2} alignItems="center">
             <UndoButton />
             <RedoButton />
-            <DownloadJson />
-            <ImportJson />
-            <SaveButton />
-            <SaveAndExitButton />
+            {showJsonFeatures && <DownloadJson />}
+            {showJsonFeatures && <ImportJson />}
+            {/* <SaveButton />
+            <SaveAndExitButton /> */}
             <ToggleButtonGroup size="small" value={selectedScreenSize} exclusive onChange={handleScreenSizeChange}>
               <ToggleButton value="desktop">
                 <Tooltip title={t('common.desktopView')}>

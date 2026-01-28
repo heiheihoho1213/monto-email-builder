@@ -48,7 +48,7 @@ export default function EmailLayoutSidebarFields({ data, setData }: EmailLayoutS
         defaultValue={data.borderColor ?? null}
         onChange={(borderColor) => updateData({ ...data, borderColor })}
       />
-      <SliderInput
+      {/* <SliderInput
         iconLabel={<RoundedCornerOutlined />}
         units="px"
         step={4}
@@ -58,7 +58,7 @@ export default function EmailLayoutSidebarFields({ data, setData }: EmailLayoutS
         label={t('emailLayout.canvasBorderRadius')}
         defaultValue={data.borderRadius ?? 0}
         onChange={(borderRadius) => updateData({ ...data, borderRadius })}
-      />
+      /> */}
       <SliderInput
         iconLabel={<AspectRatioOutlined />}
         units="px"

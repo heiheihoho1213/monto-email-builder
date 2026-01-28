@@ -10,8 +10,9 @@ type Props = {
   placeholder?: boolean;
   onSelect: (block: TEditorBlock) => void;
   disableContainerBlocks?: boolean; // 是否禁用 Container 和 ColumnsContainer
+  containerType?: string | null; // 当前容器类型，用于精确控制禁用哪些块
 };
-export default function AddBlockButton({ onSelect, placeholder, disableContainerBlocks = false }: Props) {
+export default function AddBlockButton({ onSelect, placeholder, disableContainerBlocks = false, containerType = null }: Props) {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [buttonElement, setButtonElement] = useState<HTMLElement | null>(null);
 
@@ -32,7 +33,7 @@ export default function AddBlockButton({ onSelect, placeholder, disableContainer
       <div ref={setButtonElement} style={{ position: 'relative' }}>
         {renderButton()}
       </div>
-      <BlocksMenu anchorEl={menuAnchorEl} setAnchorEl={setMenuAnchorEl} onSelect={onSelect} disableContainerBlocks={disableContainerBlocks} />
+      <BlocksMenu anchorEl={menuAnchorEl} setAnchorEl={setMenuAnchorEl} onSelect={onSelect} disableContainerBlocks={disableContainerBlocks} containerType={containerType} />
     </>
   );
 }

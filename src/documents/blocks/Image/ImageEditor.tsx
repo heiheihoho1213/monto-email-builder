@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 
 import {
+  Check,
   CloudUploadOutlined,
   LinkOutlined,
 } from '@mui/icons-material';
@@ -154,21 +155,35 @@ export default function ImageEditor(props: ImageEditorProps) {
           </Stack>
 
           {uploadMode === 'url' ? (
-            <TextField
-              size="small"
-              placeholder={t('image.sourceUrl')}
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+            <Stack direction="row" spacing={1}>
+              <TextField
+                size="small"
+                placeholder={t('image.sourceUrl')}
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleUrlSubmit();
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                sx={{ flex: 1 }}
+              />
+              <Button
+                variant="contained"
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
                   handleUrlSubmit();
-                }
-              }}
-              onBlur={handleUrlSubmit}
-              onClick={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              fullWidth
-            />
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                sx={{ minWidth: 'auto', px: 2 }}
+              >
+                <Check fontSize="small" />
+              </Button>
+            </Stack>
           ) : (
             <Stack spacing={1}>
               <input

@@ -2,7 +2,7 @@
   "common": {
     "newDocument": "新建空白文档",
     "useBuiltInTemplates": "使用内置模板",
-    "emailBuilder": "邮件编辑器",
+    "emailBuilder": "Monto 邮件编辑器",
     "save": "保存",
     "saving": "保存中...",
     "saveAndExit": "保存并退出",
@@ -46,6 +46,7 @@
   },
   "image": {
     "title": "图片块",
+    "name": "图片",
     "sourceUrl": "图片地址",
     "altText": "替代文本",
     "clickThroughUrl": "点击跳转链接",
@@ -62,6 +63,7 @@
   },
   "video": {
     "title": "视频块",
+    "name": "视频",
     "sourceUrl": "视频地址",
     "altText": "替代文本",
     "clickThroughUrl": "点击跳转链接",
@@ -83,6 +85,7 @@
   },
   "columns": {
     "title": "列块",
+    "name": "列容器",
     "layout": "分栏",
     "numberOfColumns": "列数",
     "ratio": "列宽比例",
@@ -107,11 +110,13 @@
   },
   "text": {
     "title": "文本块",
+    "name": "文本",
     "content": "内容",
     "markdown": "Markdown"
   },
   "button": {
     "title": "按钮块",
+    "name": "按钮",
     "text": "文本",
     "url": "链接",
     "width": "宽度",
@@ -131,6 +136,7 @@
   },
   "heading": {
     "title": "标题块",
+    "name": "标题",
     "content": "内容",
     "level": "级别"
   },
@@ -146,22 +152,27 @@
   },
   "divider": {
     "title": "分割线块",
+    "name": "分割线",
     "color": "颜色",
     "height": "高度"
   },
   "container": {
-    "title": "容器块"
+    "title": "容器块",
+    "name": "容器"
   },
   "spacer": {
     "title": "间距块",
+    "name": "间距",
     "height": "高度"
   },
   "html": {
     "title": "HTML块",
+    "name": "HTML",
     "content": "内容"
   },
   "socials": {
     "title": "社媒块",
+    "name": "社媒",
     "selectPlatforms": "社媒选择",
     "iconStyle": "图标类别",
     "iconPreview": "图标预览",
@@ -183,5 +194,24 @@
     "fontWeight": "字重",
     "alignment": "对齐方式",
     "padding": "内边距"
+  },
+  "htmlEditor": {
+    "mode": {
+      "split": "左右栏",
+      "code": "仅代码",
+      "preview": "仅预览"
+    },
+    "device": {
+      "desktop": "桌面视图",
+      "mobile": "移动视图"
+    },
+    "theme": "主题",
+    "tooltips": {
+      "splitView": "左右栏",
+      "codeOnly": "仅代码",
+      "previewOnly": "仅预览",
+      "desktopView": "桌面视图",
+      "mobileView": "移动视图"
+    }
   }
 }

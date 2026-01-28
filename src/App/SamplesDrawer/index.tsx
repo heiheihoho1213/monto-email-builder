@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Button, Divider, Drawer, Stack, Typography } from '@mui/material';
 
-import { resetDocument, useSamplesDrawerOpen, setDocument, setSelectedBlockId, useDocument, editorStateStore } from '../../documents/editor/EditorContext';
+import { resetDocument, useSamplesDrawerOpen, setDocument, setSelectedBlockId, useDocument, editorStateStore, useShowSamplesDrawerTitle } from '../../documents/editor/EditorContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { TEditorBlock } from '../../documents/editor/core';
 import EMPTY_EMAIL_MESSAGE from '../../getConfiguration/sample/empty-email-message';
@@ -20,6 +20,7 @@ export default function SamplesDrawer() {
   const { t } = useTranslation();
   const samplesDrawerOpen = useSamplesDrawerOpen();
   const document = useDocument();
+  const showSamplesDrawerTitle = useShowSamplesDrawerTitle();
 
   const handleNewDocumentClick = () => {
     resetDocument(EMPTY_EMAIL_MESSAGE);
@@ -94,42 +95,45 @@ export default function SamplesDrawer() {
     >
       <Stack spacing={3} py={1} px={2} width={SAMPLES_DRAWER_WIDTH} sx={{ overflowY: 'auto', overflowX: 'hidden', height: '100%' }}>
         <Stack spacing={2} sx={{ '& .MuiButtonBase-root': { width: '100%', justifyContent: 'flex-start' } }}>
-          <Typography variant="h6" component="h1" sx={{ p: 0.75 }}>
-            {t('common.emailBuilder')}
-          </Typography>
+          {showSamplesDrawerTitle && (
+            <>
+              <Typography variant="h6" component="h1" sx={{ p: 0.75 }}>
+                {t('common.emailBuilder')}
+              </Typography>
+              <Stack spacing={1} alignItems="flex-start" style={{ marginTop: showSamplesDrawerTitle ? 0 : 8 }}>
+                <Button
+                  // size="small"
+                  variant="contained"
+                  color="primary"
+                  onClick={handleNewDocumentClick}
+                  sx={{
+                    fontWeight: 500,
+                    width: '100%',
+                    justifyContent: 'flex-start',
+                  }}
+                >
+                  {t('common.newDocument')}
+                </Button>
+              </Stack>
 
-          <Stack spacing={1} alignItems="flex-start">
-            <Button
-              size="small"
-              variant="contained"
-              color="primary"
-              onClick={handleNewDocumentClick}
-              sx={{
-                fontWeight: 600,
-                width: '100%',
-                justifyContent: 'flex-start',
-              }}
-            >
-              {t('common.newDocument')}
-            </Button>
-          </Stack>
+              <Divider />
 
-          <Divider />
+              <Stack spacing={1}>
+                <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, fontWeight: 500 }}>
+                  {t('common.useBuiltInTemplates')}
+                </Typography>
+                <Stack alignItems="flex-start">
+                  <SidebarButton sampleName="basic-template">{t('samples.quickStart')}</SidebarButton>
+                  <SidebarButton sampleName="welcome">{t('samples.welcomeEmail')}</SidebarButton>
+                  <SidebarButton sampleName="reservation-reminder">{t('samples.reservationReminder')}</SidebarButton>
+                </Stack>
+              </Stack>
 
-          <Stack spacing={1}>
-            <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, fontWeight: 500 }}>
-              {t('common.useBuiltInTemplates')}
-            </Typography>
-            <Stack alignItems="flex-start">
-              <SidebarButton sampleName="basic-template">{t('samples.quickStart')}</SidebarButton>
-              <SidebarButton sampleName="welcome">{t('samples.welcomeEmail')}</SidebarButton>
-              <SidebarButton sampleName="reservation-reminder">{t('samples.reservationReminder')}</SidebarButton>
-            </Stack>
-          </Stack>
+              <Divider />
+            </>
+          )}
 
-          <Divider />
-
-          <Stack spacing={1}>
+          <Stack spacing={1} sx={{ mt: showSamplesDrawerTitle ? 0 : '16px !important' }}>
             <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, fontWeight: 500 }}>
               {t('common.addContentBlocks')}
             </Typography>

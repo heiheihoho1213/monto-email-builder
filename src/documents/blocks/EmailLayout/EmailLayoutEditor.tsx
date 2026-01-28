@@ -139,47 +139,51 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
 
         if (parentInfo.columnIndex !== null) {
           // 从 ColumnsContainer 的列中移除
-          const columns = [...(parentContainer.data.props?.columns || [])];
+          const parentData = parentContainer.data as any;
+          const columns = [...(parentData.props?.columns || [])];
           columns[parentInfo.columnIndex] = {
             ...columns[parentInfo.columnIndex],
-            childrenIds: columns[parentInfo.columnIndex].childrenIds?.filter((id) => id !== draggedId) || [],
+            childrenIds: columns[parentInfo.columnIndex].childrenIds?.filter((id: string) => id !== draggedId) || [],
           };
           newDocument[parentInfo.containerId] = {
             ...parentContainer,
             data: {
-              ...parentContainer.data,
+              ...parentData,
               props: {
-                ...parentContainer.data.props,
+                ...parentData.props,
                 columns,
               },
             },
-          };
+          } as any;
         } else {
           // 从 Container 或 EmailLayout 中移除
+          const parentData = parentContainer.data as any;
           const currentChildrenIds = parentContainer.type === 'Container'
-            ? parentContainer.data.props?.childrenIds || []
-            : parentContainer.data.childrenIds || [];
-          const newChildrenIds = currentChildrenIds.filter((id) => id !== draggedId);
+            ? parentData.props?.childrenIds || []
+            : parentData.childrenIds || [];
+          const newChildrenIds = currentChildrenIds.filter((id: string) => id !== draggedId);
 
           if (parentContainer.type === 'Container') {
+            const parentData = parentContainer.data as any;
             newDocument[parentInfo.containerId] = {
               ...parentContainer,
               data: {
-                ...parentContainer.data,
+                ...parentData,
                 props: {
-                  ...parentContainer.data.props,
+                  ...parentData.props,
                   childrenIds: newChildrenIds,
                 },
               },
-            };
+            } as any;
           } else {
+            const parentData = parentContainer.data as any;
             newDocument[parentInfo.containerId] = {
               ...parentContainer,
               data: {
-                ...parentContainer.data,
+                ...parentData,
                 childrenIds: newChildrenIds,
               },
-            };
+            } as any;
           }
         }
 
@@ -263,6 +267,8 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
           maxWidth: props.width ? `${props.width}px` : '600px',
           backgroundColor: props.canvasColor ?? '#FFFFFF',
           borderRadius: props.borderRadius ?? undefined,
+          // clipPath: 'inset(0 0 0 0 round 16px)',
+          // overflow: 'hidden',
           border: (() => {
             const v = props.borderColor;
             if (!v) {
