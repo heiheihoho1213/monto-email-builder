@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
 import {
@@ -9,9 +9,9 @@ import {
   Code as CodeIcon,
   Email as EmailIcon,
 } from '@mui/icons-material';
-import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
+import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Button } from '@mui/material';
 
-import EmailBuilder from '../src/EmailBuilder';
+import EmailBuilder, { EmailBuilderRef } from '../src/EmailBuilder';
 import { HtmlEditor } from '../src';
 import { Language } from '../src/i18n';
 import { TEditorConfiguration } from '../src/documents/editor/core';
@@ -229,6 +229,7 @@ const Home = () => {
   const [initialDocument, setInitialDocument] = useState<TEditorConfiguration | undefined>(undefined);
   const [editorMode, setEditorMode] = useState<'email' | 'html'>('email');
   const [htmlCode, setHtmlCode] = useState('<p>Hello World</p>\n<h1>HTML Editor Test</h1>\n<p>这是一个 HTML 编辑器测试</p>');
+  const emailBuilderRef = useRef<EmailBuilderRef>(null);
 
   const handleToggleLanguage = () => {
     setLanguage((prev) => (prev === 'en' ? 'zh' : 'en'));
@@ -251,11 +252,19 @@ const Home = () => {
     setEditorMode((prev) => (prev === 'email' ? 'html' : 'email'));
   };
 
+  const handleSave = () => {
+    emailBuilderRef.current?.getData((json, html) => {
+      console.log('JSON:', json);
+      console.log('HTML:', html);
+    });
+  };
+
   return (
     <React.StrictMode>
       <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
         {editorMode === 'email' ? (
           <EmailBuilder
+            ref={emailBuilderRef}
             initialDocument={initialDocument}
             language={language}
             showJsonFeatures={showJsonFeatures}
@@ -264,12 +273,6 @@ const Home = () => {
             videoUploadHandler={exampleVideoUploadHandler}
             onChange={(document) => {
               console.log('Document changed:', document);
-            }}
-            saveHandler={async (document) => {
-              console.log('Save document:', document);
-            }}
-            saveAndExitHandler={async (document) => {
-              console.log('Save and exit:', document);
             }}
             onNameChange={(name) => {
               console.log('Name changed:', name);

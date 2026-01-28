@@ -96,43 +96,44 @@ export default function SamplesDrawer() {
       <Stack spacing={3} py={1} px={2} width={SAMPLES_DRAWER_WIDTH} sx={{ overflowY: 'auto', overflowX: 'hidden', height: '100%' }}>
         <Stack spacing={2} sx={{ '& .MuiButtonBase-root': { width: '100%', justifyContent: 'flex-start' } }}>
           {showSamplesDrawerTitle && (
-            <Typography variant="h6" component="h1" sx={{ p: 0.75 }}>
-              {t('common.emailBuilder')}
-            </Typography>
+            <>
+              <Typography variant="h6" component="h1" sx={{ p: 0.75 }}>
+                {t('common.emailBuilder')}
+              </Typography>
+              <Stack spacing={1} alignItems="flex-start" style={{ marginTop: showSamplesDrawerTitle ? 0 : 8 }}>
+                <Button
+                  // size="small"
+                  variant="contained"
+                  color="primary"
+                  onClick={handleNewDocumentClick}
+                  sx={{
+                    fontWeight: 500,
+                    width: '100%',
+                    justifyContent: 'flex-start',
+                  }}
+                >
+                  {t('common.newDocument')}
+                </Button>
+              </Stack>
+
+              <Divider />
+
+              <Stack spacing={1}>
+                <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, fontWeight: 500 }}>
+                  {t('common.useBuiltInTemplates')}
+                </Typography>
+                <Stack alignItems="flex-start">
+                  <SidebarButton sampleName="basic-template">{t('samples.quickStart')}</SidebarButton>
+                  <SidebarButton sampleName="welcome">{t('samples.welcomeEmail')}</SidebarButton>
+                  <SidebarButton sampleName="reservation-reminder">{t('samples.reservationReminder')}</SidebarButton>
+                </Stack>
+              </Stack>
+
+              <Divider />
+            </>
           )}
 
-          <Stack spacing={1} alignItems="flex-start" style={{ marginTop: showSamplesDrawerTitle ? 0 : 8 }}>
-            <Button
-              // size="small"
-              variant="contained"
-              color="primary"
-              onClick={handleNewDocumentClick}
-              sx={{
-                fontWeight: 500,
-                width: '100%',
-                justifyContent: 'flex-start',
-              }}
-            >
-              {t('common.newDocument')}
-            </Button>
-          </Stack>
-
-          <Divider />
-
-          <Stack spacing={1}>
-            <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, fontWeight: 500 }}>
-              {t('common.useBuiltInTemplates')}
-            </Typography>
-            <Stack alignItems="flex-start">
-              <SidebarButton sampleName="basic-template">{t('samples.quickStart')}</SidebarButton>
-              <SidebarButton sampleName="welcome">{t('samples.welcomeEmail')}</SidebarButton>
-              <SidebarButton sampleName="reservation-reminder">{t('samples.reservationReminder')}</SidebarButton>
-            </Stack>
-          </Stack>
-
-          <Divider />
-
-          <Stack spacing={1}>
+          <Stack spacing={1} sx={{ mt: showSamplesDrawerTitle ? 0 : '16px !important' }}>
             <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, fontWeight: 500 }}>
               {t('common.addContentBlocks')}
             </Typography>

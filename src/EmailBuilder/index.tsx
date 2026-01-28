@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useImperativeHandle, forwardRef } from 'react';
 
 import { Box, CssBaseline, ThemeProvider } from '@mui/material';
+import { renderToStaticMarkup } from 'monto-email-core';
 
 import {
   initializeStore,
@@ -13,8 +14,7 @@ import {
   setName,
   setOnChange,
   setOnNameChange,
-  setSaveAndExitHandler,
-  setSaveHandler,
+  editorStateStore,
 } from '../documents/editor/EditorContext';
 import { Language } from '../i18n';
 import { TEditorConfiguration } from '../documents/editor/core';
@@ -55,21 +55,6 @@ export interface EmailBuilderProps {
   onChange?: (document: TEditorConfiguration) => void;
 
   /**
-   * 保存回调函数
-   * 当用户点击保存按钮时，会调用此函数并传入当前的配置
-   * 可以是同步函数或返回 Promise 的异步函数
-   */
-  saveHandler?: (document: TEditorConfiguration) => void | Promise<void>;
-
-  /**
-   * 保存并退出回调函数
-   * 当用户点击保存并退出按钮时，会先保存文档，然后调用此函数
-   * 可以是同步函数或返回 Promise 的异步函数
-   * 通常用于关闭编辑器或导航到其他页面
-   */
-  saveAndExitHandler?: (document: TEditorConfiguration) => void | Promise<void>;
-
-  /**
    * 模板名称
    * 当此值变化时，编辑器会自动更新名称输入框
    */
@@ -101,6 +86,17 @@ export interface EmailBuilderProps {
 }
 
 /**
+ * EmailBuilder 组件暴露的方法
+ */
+export interface EmailBuilderRef {
+  /**
+   * 获取当前的 JSON 和 HTML 数据
+   * @param callback 回调函数，接收 json 和 html 作为参数
+   */
+  getData: (callback: (json: TEditorConfiguration, html: string) => void) => void;
+}
+
+/**
  * EmailBuilder 组件
  * 
  * 一个功能完整的邮件模板编辑器组件，可以在其他 React 项目中使用
@@ -110,47 +106,42 @@ export interface EmailBuilderProps {
  * import { EmailBuilder } from 'monto-email-builder';
  * 
  * function MyApp() {
- *   const handleChange = (document) => {
- *     // Handle document changes
- *   };
+ *   const emailBuilderRef = useRef<EmailBuilderRef>(null);
  * 
- *   const handleImageUpload = async (file: File) => {
- *     // 上传图片到服务器
- *     const formData = new FormData();
- *     formData.append('image', file);
- *     const response = await fetch('/api/upload', {
- *       method: 'POST',
- *       body: formData,
+ *   const handleSave = () => {
+ *     emailBuilderRef.current?.getData((json, html) => {
+ *       // 处理 json 和 html 数据
+ *       console.log('JSON:', json);
+ *       console.log('HTML:', html);
  *     });
- *     const data = await response.json();
- *     return data.url;
  *   };
  * 
  *   return (
- *     <EmailBuilder
- *       language="zh"
- *       imageUploadHandler={handleImageUpload}
- *       videoUploadHandler={handleVideoUpload}
- *       onChange={handleChange}
- *     />
+ *     <>
+ *       <EmailBuilder
+ *         ref={emailBuilderRef}
+ *         language="zh"
+ *         imageUploadHandler={handleImageUpload}
+ *         onChange={handleChange}
+ *       />
+ *       <button onClick={handleSave}>保存</button>
+ *     </>
  *   );
  * }
  * ```
  */
-export default function EmailBuilder({
+const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   initialDocument,
   language = 'en',
   imageUploadHandler,
   videoUploadHandler,
   onChange,
-  saveHandler,
-  saveAndExitHandler,
   initialName,
   onNameChange,
   theme: customTheme,
   showJsonFeatures = true,
   showSamplesDrawerTitle = true,
-}: EmailBuilderProps) {
+}, ref) => {
   // 初始化 store（包括历史记录管理器）
   useEffect(() => {
     initializeStore({
@@ -192,15 +183,19 @@ export default function EmailBuilder({
     setOnChange(onChange);
   }, [onChange]);
 
-  // 当 saveHandler 变化时，更新处理器
-  useEffect(() => {
-    setSaveHandler(saveHandler);
-  }, [saveHandler]);
-
-  // 当 saveAndExitHandler 变化时，更新处理器
-  useEffect(() => {
-    setSaveAndExitHandler(saveAndExitHandler);
-  }, [saveAndExitHandler]);
+  // 暴露 ref API
+  useImperativeHandle(ref, () => ({
+    getData: (callback: (json: TEditorConfiguration, html: string) => void) => {
+      const document = editorStateStore.getState().document;
+      try {
+        const html = renderToStaticMarkup(document, { rootBlockId: 'root' });
+        callback(document, html);
+      } catch (error) {
+        // 如果生成 HTML 失败，仍然返回 JSON
+        callback(document, '<!-- Error rendering HTML -->');
+      }
+    },
+  }));
 
   // 当 initialName 变化时，更新名称
   useEffect(() => {
@@ -241,5 +236,9 @@ export default function EmailBuilder({
       </Box>
     </ThemeProvider>
   );
-}
+});
+
+EmailBuilder.displayName = 'EmailBuilder';
+
+export default EmailBuilder;
 
