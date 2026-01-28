@@ -2,34 +2,18 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { html } from '@codemirror/lang-html';
 import {
-  abcdef,
-  abyss,
-  androidstudio,
-  andromeda,
-  atomone,
-  aura,
-  bbedit,
-  bespin,
-  copilot,
-  darcula,
-  dracula,
-  eclipse,
-  gruvboxDark,
-  kimbie,
-  material,
-  monokai,
-  monokaiDimmed,
-  noctisLilac,
-  nord,
-  okaidia,
-  quietlight,
-  red,
-  sublime,
-  tokyoNight,
-  tokyoNightStorm,
+  xcodeLight,
+  vscodeLight,
   tokyoNightDay,
+  gruvboxLight,
+  noctisLilac,
+  bbedit,
+
+  abcdef,
+  basicDark,
+  dracula,
   tomorrowNightBlue,
-  vscodeDark,
+  xcodeDark
 } from '@uiw/codemirror-themes-all';
 import {
   Box,
@@ -51,76 +35,42 @@ import {
   DesktopWindowsOutlined as DesktopIcon,
   PhoneAndroid as MobileIcon,
 } from '@mui/icons-material';
+import { Language, t } from '../i18n';
 
 export type HtmlEditorMode = 'split' | 'code' | 'preview';
 export type HtmlEditorDevice = 'desktop' | 'mobile';
 
 // 主题映射表
 const themeMap: Record<string, any> = {
+  // 浅色主题
+  xcodeLight,
+  vscodeLight,
+  tokyoNightDay,
+  gruvboxLight,
+  noctisLilac,
+  bbedit,
   // 深色主题
   abcdef,
-  abyss,
-  androidstudio,
-  andromeda,
-  atomone,
-  aura,
-  bespin,
-  copilot,
-  darcula,
+  basicDark,
   dracula,
-  gruvboxDark,
-  kimbie,
-  monokai,
-  monokaiDimmed,
-  noctisLilac,
-  nord,
-  okaidia,
-  red,
-  sublime,
-  tokyoNight,
-  tokyoNightStorm,
   tomorrowNightBlue,
-  vscodeDark,
-  // 浅色主题
-  bbedit,
-  eclipse,
-  material,
-  quietlight,
-  tokyoNightDay,
+  xcodeDark
 };
 
 // 主题显示名称（按类型分组）
 const themeNames: Record<string, string> = {
-  // 深色主题
-  abcdef: 'ABCDEF (深色)',
-  abyss: 'Abyss (深色)',
-  androidstudio: 'Android Studio (深色)',
-  andromeda: 'Andromeda (深色)',
-  atomone: 'Atom One (深色)',
-  aura: 'Aura (深色)',
-  bespin: 'Bespin (深色)',
-  copilot: 'Copilot (深色)',
-  darcula: 'Darcula (深色)',
-  dracula: 'Dracula (深色)',
-  gruvboxDark: 'Gruvbox Dark (深色)',
-  kimbie: 'Kimbie (深色)',
-  monokai: 'Monokai (深色)',
-  monokaiDimmed: 'Monokai Dimmed (深色)',
-  noctisLilac: 'Noctis Lilac (深色)',
-  nord: 'Nord (深色)',
-  okaidia: 'Okaidia (深色)',
-  red: 'Red (深色)',
-  sublime: 'Sublime (深色)',
-  tokyoNight: 'Tokyo Night (深色)',
-  tokyoNightStorm: 'Tokyo Night Storm (深色)',
-  tomorrowNightBlue: 'Tomorrow Night Blue (深色)',
-  vscodeDark: 'VS Code Dark (深色)',
-  // 浅色主题
-  bbedit: 'BBEdit (浅色)',
-  eclipse: 'Eclipse (浅色)',
-  material: 'Material (浅色)',
-  quietlight: 'Quiet Light (浅色)',
-  tokyoNightDay: 'Tokyo Night Day (浅色)',
+  xcodeLight: 'Xcode Light (Light)',
+  vscodeLight: 'VSCode Light (Light)',
+  tokyoNightDay: 'Tokyo Night Day',
+  gruvboxLight: 'Gruvbox Light (Light)',
+  noctisLilac: 'Noctis Lilac (Light)',
+  bbedit: 'BBEdit (Light)',
+
+  abcdef: 'ABCDEF (Dark)',
+  basicDark: 'Basic Dark (Dark)',
+  dracula: 'Dracula (Dark)',
+  tomorrowNightBlue: 'Tomorrow Night Blue (Dark)',
+  xcodeDark: 'Xcode Dark (Dark)',
 };
 
 export interface HtmlEditorProps {
@@ -132,6 +82,11 @@ export interface HtmlEditorProps {
    * 代码变化回调
    */
   onChange?: (value: string) => void;
+  /**
+   * 语言设置，可选值：'zh' | 'en'
+   * @default 'en'
+   */
+  language?: Language;
   /**
    * 初始显示模式：split（左右栏）、code（仅代码）、preview（仅预览）
    * @default 'split'
@@ -166,6 +121,7 @@ export interface HtmlEditorProps {
 export default function HtmlEditor({
   value,
   onChange,
+  language = 'zh',
   initialMode = 'split',
   initialDevice = 'desktop',
   codeEditorHeight = '100%',
@@ -173,9 +129,13 @@ export default function HtmlEditor({
   sx,
   showToolbar = true,
 }: HtmlEditorProps) {
+  // 翻译函数
+  const translate = (key: string, params?: Record<string, string | number>): string => {
+    return t(key, params, language);
+  };
   const [mode, setMode] = useState<HtmlEditorMode>(initialMode);
   const [device, setDevice] = useState<HtmlEditorDevice>(initialDevice);
-  const [theme, setTheme] = useState<string>('dracula');
+  const [theme, setTheme] = useState<string>('xcodeLight');
   const [internalValue, setInternalValue] = useState(value);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -392,31 +352,31 @@ export default function HtmlEditor({
               exclusive
               onChange={handleModeChange}
               size="small"
-              aria-label="显示模式"
+              aria-label={translate('htmlEditor.mode.split')}
             >
-              <Tooltip title="左右栏">
-                <ToggleButton value="split" aria-label="左右栏">
+              <Tooltip title={translate('htmlEditor.tooltips.splitView')}>
+                <ToggleButton value="split" aria-label={translate('htmlEditor.mode.split')}>
                   <ViewColumnIcon fontSize="small" />
                 </ToggleButton>
               </Tooltip>
-              <Tooltip title="仅代码">
-                <ToggleButton value="code" aria-label="仅代码">
+              <Tooltip title={translate('htmlEditor.tooltips.codeOnly')}>
+                <ToggleButton value="code" aria-label={translate('htmlEditor.mode.code')}>
                   <CodeIcon fontSize="small" />
                 </ToggleButton>
               </Tooltip>
-              <Tooltip title="仅预览">
-                <ToggleButton value="preview" aria-label="仅预览">
+              <Tooltip title={translate('htmlEditor.tooltips.previewOnly')}>
+                <ToggleButton value="preview" aria-label={translate('htmlEditor.mode.preview')}>
                   <VisibilityIcon fontSize="small" />
                 </ToggleButton>
               </Tooltip>
             </ToggleButtonGroup>
             <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel id="theme-select-label">主题</InputLabel>
+              <InputLabel id="theme-select-label">{translate('htmlEditor.theme')}</InputLabel>
               <Select
                 labelId="theme-select-label"
                 id="theme-select"
                 value={theme}
-                label="主题"
+                label={translate('htmlEditor.theme')}
                 onChange={(e) => setTheme(e.target.value)}
                 sx={{
                   fontSize: '0.875rem',
@@ -441,15 +401,15 @@ export default function HtmlEditor({
                 exclusive
                 onChange={handleDeviceChange}
                 size="small"
-                aria-label="设备模式"
+                aria-label={translate('htmlEditor.device.desktop')}
               >
-                <Tooltip title="桌面视图">
-                  <ToggleButton value="desktop" aria-label="桌面视图">
+                <Tooltip title={translate('htmlEditor.tooltips.desktopView')}>
+                  <ToggleButton value="desktop" aria-label={translate('htmlEditor.device.desktop')}>
                     <DesktopIcon fontSize="small" />
                   </ToggleButton>
                 </Tooltip>
-                <Tooltip title="移动视图">
-                  <ToggleButton value="mobile" aria-label="移动视图">
+                <Tooltip title={translate('htmlEditor.tooltips.mobileView')}>
+                  <ToggleButton value="mobile" aria-label={translate('htmlEditor.device.mobile')}>
                     <MobileIcon fontSize="small" />
                   </ToggleButton>
                 </Tooltip>

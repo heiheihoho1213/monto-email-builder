@@ -194,5 +194,24 @@
     "fontWeight": "字重",
     "alignment": "对齐方式",
     "padding": "内边距"
+  },
+  "htmlEditor": {
+    "mode": {
+      "split": "左右栏",
+      "code": "仅代码",
+      "preview": "仅预览"
+    },
+    "device": {
+      "desktop": "桌面视图",
+      "mobile": "移动视图"
+    },
+    "theme": "主题",
+    "tooltips": {
+      "splitView": "左右栏",
+      "codeOnly": "仅代码",
+      "previewOnly": "仅预览",
+      "desktopView": "桌面视图",
+      "mobileView": "移动视图"
+    }
   }
 }
