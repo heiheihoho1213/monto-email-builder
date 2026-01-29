@@ -73,6 +73,28 @@ const themeNames: Record<string, string> = {
   xcodeDark: 'Xcode Dark (Dark)',
 };
 
+const HTML_EDITOR_THEME_STORAGE_KEY = 'html-editor-theme';
+const DEFAULT_THEME = 'xcodeLight';
+
+function getStoredTheme(): string {
+  if (typeof window === 'undefined') return DEFAULT_THEME;
+  try {
+    const stored = localStorage.getItem(HTML_EDITOR_THEME_STORAGE_KEY);
+    if (stored && themeMap[stored]) return stored;
+  } catch {
+    // ignore
+  }
+  return DEFAULT_THEME;
+}
+
+function setStoredTheme(theme: string): void {
+  try {
+    localStorage.setItem(HTML_EDITOR_THEME_STORAGE_KEY, theme);
+  } catch {
+    // ignore
+  }
+}
+
 export interface HtmlEditorProps {
   /**
    * HTML 代码内容
@@ -135,7 +157,7 @@ export default function HtmlEditor({
   };
   const [mode, setMode] = useState<HtmlEditorMode>(initialMode);
   const [device, setDevice] = useState<HtmlEditorDevice>(initialDevice);
-  const [theme, setTheme] = useState<string>('xcodeLight');
+  const [theme, setTheme] = useState<string>(getStoredTheme);
   const [internalValue, setInternalValue] = useState(value);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -377,7 +399,11 @@ export default function HtmlEditor({
                 id="theme-select"
                 value={theme}
                 label={translate('htmlEditor.theme')}
-                onChange={(e) => setTheme(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setTheme(next);
+                  setStoredTheme(next);
+                }}
                 sx={{
                   fontSize: '0.875rem',
                   '& .MuiSelect-select': {
