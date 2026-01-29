@@ -1,5 +1,6 @@
 import React from 'react';
 import { create } from 'zustand';
+import { renderToStaticMarkup } from 'monto-email-core';
 
 import { TEditorConfiguration } from './core';
 import { HistoryManager } from './HistoryManager';
@@ -26,8 +27,8 @@ type TValue = {
   // 语言设置
   language: Language;
 
-  // 文档变化回调
-  onChange?: (document: TEditorConfiguration) => void;
+  // 文档变化回调，第二个参数为当前 document 渲染出的 HTML（与 document 一一对应，避免用户再调 getData 产生竞态）
+  onChange?: (document: TEditorConfiguration, html: string) => void;
 
   // 保存回调
   saveHandler?: (document: TEditorConfiguration) => void | Promise<void>;
@@ -175,6 +176,16 @@ export function setSidebarTab(selectedSidebarTab: TValue['selectedSidebarTab']) 
   return editorStateStore.setState({ selectedSidebarTab });
 }
 
+function computeHtmlAndNotify(document: TEditorConfiguration, onChange: (doc: TEditorConfiguration, html: string) => void) {
+  let html: string;
+  try {
+    html = renderToStaticMarkup(document, { rootBlockId: 'root' });
+  } catch {
+    html = '<!-- Error rendering HTML -->';
+  }
+  onChange(document, html);
+}
+
 export function resetDocument(document: TValue['document']) {
   // 重置历史记录管理器
   if (historyManager) {
@@ -187,10 +198,11 @@ export function resetDocument(document: TValue['document']) {
     selectedBlockId: null,
   });
 
-  // 调用 onChange 回调
   const onChange = editorStateStore.getState().onChange;
   if (onChange) {
-    onChange(document);
+    queueMicrotask(() => {
+      computeHtmlAndNotify(document, onChange);
+    });
   }
 }
 
@@ -208,10 +220,11 @@ export function setDocument(document: TValue['document'], options?: { recordHist
       document: recordedDocument,
     });
 
-    // 调用 onChange 回调
     const onChange = editorStateStore.getState().onChange;
     if (onChange) {
-      onChange(recordedDocument);
+      queueMicrotask(() => {
+        computeHtmlAndNotify(recordedDocument, onChange);
+      });
     }
   } else {
     // 不记录历史（用于撤销/重做操作本身）
@@ -219,10 +232,11 @@ export function setDocument(document: TValue['document'], options?: { recordHist
       document: newDocument,
     });
 
-    // 调用 onChange 回调
     const onChange = editorStateStore.getState().onChange;
     if (onChange) {
-      onChange(newDocument);
+      queueMicrotask(() => {
+        computeHtmlAndNotify(newDocument, onChange);
+      });
     }
   }
 }
@@ -366,10 +380,9 @@ export function undo(): boolean {
     document: previousDocument,
   });
 
-  // 调用 onChange 回调
   const onChange = editorStateStore.getState().onChange;
   if (onChange) {
-    onChange(previousDocument);
+    queueMicrotask(() => computeHtmlAndNotify(previousDocument, onChange));
   }
 
   return true;
@@ -389,10 +402,9 @@ export function redo(): boolean {
     document: nextDocument,
   });
 
-  // 调用 onChange 回调
   const onChange = editorStateStore.getState().onChange;
   if (onChange) {
-    onChange(nextDocument);
+    queueMicrotask(() => computeHtmlAndNotify(nextDocument, onChange));
   }
 
   return true;

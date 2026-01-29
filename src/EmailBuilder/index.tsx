@@ -50,9 +50,9 @@ export interface EmailBuilderProps {
 
   /**
    * 文档变化时的回调函数
-   * 当用户编辑邮件模板时，会调用此函数并传入最新的配置
+   * 当用户编辑邮件模板时，会调用此函数并传入最新的配置与对应渲染出的 HTML（一一对应，无需再调 getData）
    */
-  onChange?: (document: TEditorConfiguration) => void;
+  onChange?: (document: TEditorConfiguration, html: string) => void;
 
   /**
    * 模板名称

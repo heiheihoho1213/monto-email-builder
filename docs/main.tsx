@@ -271,7 +271,8 @@ const Home = () => {
             showSamplesDrawerTitle={showSamplesDrawerTitle}
             imageUploadHandler={exampleImageUploadHandler}
             videoUploadHandler={exampleVideoUploadHandler}
-            onChange={(document) => {
+            onChange={(document, html) => {
+              console.log('HTML changed:', html);
               console.log('Document changed:', document);
             }}
             onNameChange={(name) => {
