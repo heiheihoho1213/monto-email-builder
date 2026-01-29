@@ -1,5 +1,6 @@
 import React from 'react';
 import { create } from 'zustand';
+import { renderToStaticMarkup } from 'monto-email-core';
 
 import { TEditorConfiguration } from './core';
 import { HistoryManager } from './HistoryManager';
@@ -26,8 +27,8 @@ type TValue = {
   // 语言设置
   language: Language;
 
-  // 文档变化回调
-  onChange?: (document: TEditorConfiguration) => void;
+  // 文档变化回调，第二个参数为当前 document 渲染出的 HTML（与 document 一一对应，避免用户再调 getData 产生竞态）
+  onChange?: (document: TEditorConfiguration, html: string) => void;
 
   // 保存回调
   saveHandler?: (document: TEditorConfiguration) => void | Promise<void>;
@@ -58,39 +59,43 @@ let initialShowSamplesDrawerTitle: boolean = true; // 默认显示标题
 let historyManager: HistoryManager | null = null;
 
 export function initializeStore(config?: { document?: TEditorConfiguration; language?: Language; showJsonFeatures?: boolean; showSamplesDrawerTitle?: boolean }) {
-  if (config?.document) {
-    initialDocument = config.document;
-  }
-  if (config?.language) {
-    initialLanguage = config.language;
-  }
-  if (config?.showJsonFeatures !== undefined) {
-    initialShowJsonFeatures = config.showJsonFeatures;
-  }
-  if (config?.showSamplesDrawerTitle !== undefined) {
-    initialShowSamplesDrawerTitle = config.showSamplesDrawerTitle;
+  // 1) 先把“初始值”落到模块级变量（用于 create() 默认值兜底）
+  if (config?.document) initialDocument = config.document;
+  if (config?.language) initialLanguage = config.language;
+  if (config?.showJsonFeatures !== undefined) initialShowJsonFeatures = config.showJsonFeatures;
+  if (config?.showSamplesDrawerTitle !== undefined) initialShowSamplesDrawerTitle = config.showSamplesDrawerTitle;
+
+  // 2) 计算本次初始化要应用到 store 的值（以传参为准）
+  const doc = config?.document ?? initialDocument ?? EMPTY_EMAIL_MESSAGE;
+  const lang = config?.language ?? initialLanguage ?? getLanguage();
+  const showJson = config?.showJsonFeatures ?? initialShowJsonFeatures;
+  const showTitle = config?.showSamplesDrawerTitle ?? initialShowSamplesDrawerTitle;
+
+  // 3) 初始化 / 重置历史记录（让撤销栈与初始文档一致）
+  if (historyManager) {
+    historyManager.reset(doc);
+  } else {
+    historyManager = new HistoryManager(doc);
   }
 
-  // 初始化历史记录管理器
-  const doc = initialDocument || EMPTY_EMAIL_MESSAGE;
-  historyManager = new HistoryManager(doc);
+  // 4) 同步写入 store：确保“首帧 UI”即使用 props 初始化值（避免第三方集成首屏错乱）
+  editorStateStore.setState({
+    document: doc,
+    language: lang,
+    showJsonFeatures: showJson,
+    showSamplesDrawerTitle: showTitle,
 
-  // 更新 store 中的配置
-  const updates: Partial<TValue> = {};
-  if (config?.showJsonFeatures !== undefined) {
-    updates.showJsonFeatures = config.showJsonFeatures;
-  }
-  if (config?.showSamplesDrawerTitle !== undefined) {
-    updates.showSamplesDrawerTitle = config.showSamplesDrawerTitle;
-  }
-  if (config?.language !== undefined) {
-    updates.language = config.language;
-    // 同时更新 i18n 的 localStorage
-    setI18nLanguage(config.language);
-  }
-  if (Object.keys(updates).length > 0) {
-    editorStateStore.setState(updates);
-  }
+    // 这些是 UI 初始态：按经典设计，初始化时应可预测、可复现
+    selectedBlockId: null,
+    selectedSidebarTab: 'styles',
+    selectedMainTab: 'editor',
+    selectedScreenSize: 'desktop',
+    inspectorDrawerOpen: true,
+    samplesDrawerOpen: true,
+  });
+
+  // 同步更新 i18n（保持外部 props 与内部语言一致）
+  setI18nLanguage(lang);
 }
 
 import EMPTY_EMAIL_MESSAGE from '../../getConfiguration/sample/empty-email-message';
@@ -171,6 +176,16 @@ export function setSidebarTab(selectedSidebarTab: TValue['selectedSidebarTab']) 
   return editorStateStore.setState({ selectedSidebarTab });
 }
 
+function computeHtmlAndNotify(document: TEditorConfiguration, onChange: (doc: TEditorConfiguration, html: string) => void) {
+  let html: string;
+  try {
+    html = renderToStaticMarkup(document, { rootBlockId: 'root' });
+  } catch {
+    html = '<!-- Error rendering HTML -->';
+  }
+  onChange(document, html);
+}
+
 export function resetDocument(document: TValue['document']) {
   // 重置历史记录管理器
   if (historyManager) {
@@ -183,10 +198,11 @@ export function resetDocument(document: TValue['document']) {
     selectedBlockId: null,
   });
 
-  // 调用 onChange 回调
   const onChange = editorStateStore.getState().onChange;
   if (onChange) {
-    onChange(document);
+    queueMicrotask(() => {
+      computeHtmlAndNotify(document, onChange);
+    });
   }
 }
 
@@ -204,10 +220,11 @@ export function setDocument(document: TValue['document'], options?: { recordHist
       document: recordedDocument,
     });
 
-    // 调用 onChange 回调
     const onChange = editorStateStore.getState().onChange;
     if (onChange) {
-      onChange(recordedDocument);
+      queueMicrotask(() => {
+        computeHtmlAndNotify(recordedDocument, onChange);
+      });
     }
   } else {
     // 不记录历史（用于撤销/重做操作本身）
@@ -215,10 +232,11 @@ export function setDocument(document: TValue['document'], options?: { recordHist
       document: newDocument,
     });
 
-    // 调用 onChange 回调
     const onChange = editorStateStore.getState().onChange;
     if (onChange) {
-      onChange(newDocument);
+      queueMicrotask(() => {
+        computeHtmlAndNotify(newDocument, onChange);
+      });
     }
   }
 }
@@ -362,10 +380,9 @@ export function undo(): boolean {
     document: previousDocument,
   });
 
-  // 调用 onChange 回调
   const onChange = editorStateStore.getState().onChange;
   if (onChange) {
-    onChange(previousDocument);
+    queueMicrotask(() => computeHtmlAndNotify(previousDocument, onChange));
   }
 
   return true;
@@ -385,10 +402,9 @@ export function redo(): boolean {
     document: nextDocument,
   });
 
-  // 调用 onChange 回调
   const onChange = editorStateStore.getState().onChange;
   if (onChange) {
-    onChange(nextDocument);
+    queueMicrotask(() => computeHtmlAndNotify(nextDocument, onChange));
   }
 
   return true;
