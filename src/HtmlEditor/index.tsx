@@ -83,6 +83,7 @@ function getStoredTheme(): string {
     if (stored && themeMap[stored]) return stored;
   } catch {
     // ignore
+    console.error('Failed to get HTML Editor stored theme');
   }
   return DEFAULT_THEME;
 }
@@ -91,6 +92,7 @@ function setStoredTheme(theme: string): void {
   try {
     localStorage.setItem(HTML_EDITOR_THEME_STORAGE_KEY, theme);
   } catch {
+    console.error('Failed to set HTML Editor stored theme', theme);
     // ignore
   }
 }
@@ -402,6 +404,7 @@ export default function HtmlEditor({
                 onChange={(e) => {
                   const next = e.target.value;
                   setTheme(next);
+                  console.log('theme changed to', next);
                   setStoredTheme(next);
                 }}
                 sx={{
