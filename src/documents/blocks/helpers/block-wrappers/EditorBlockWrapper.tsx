@@ -5,7 +5,6 @@ import { DragIndicator } from '@mui/icons-material';
 
 import { useCurrentBlockId } from '../../../editor/EditorBlock';
 import { setSelectedBlockId, useSelectedBlockId, editorStateStore } from '../../../editor/EditorContext';
-
 import TuneMenu from './TuneMenu';
 
 type TEditorBlockWrapperProps = {
@@ -121,14 +120,14 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
       sx={{
         position: 'relative',
         maxWidth: '100%',
-        width: '100%', // 确保宽度为100%
-        minWidth: 0, // 确保flex布局中文本可以换行
+        width: '100%',
+        minWidth: 0,
         outlineOffset: '-1px',
         outline,
         opacity: isDragging ? 0.5 : 1,
-        cursor: 'default', // 移除 grab 光标，因为只有 handler 可以拖拽
-        overflowWrap: 'break-word', // 允许长单词换行
-        wordBreak: 'break-word', // 确保文本换行。
+        cursor: 'default',
+        overflowWrap: 'break-word',
+        wordBreak: 'break-word',
       }}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}

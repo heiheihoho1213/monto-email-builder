@@ -54,7 +54,7 @@ npm install zustand zod react-colorful
 
 # @usewaypoint 系列包
 npm install @usewaypoint/block-button \
-  @usewaypoint/block-columns-container @usewaypoint/block-container \
+  monto-email-block-columns-container @usewaypoint/block-container \
   @usewaypoint/block-divider @usewaypoint/block-heading \
   @usewaypoint/block-html @usewaypoint/block-image \
   @usewaypoint/block-spacer @usewaypoint/block-text \
@@ -70,10 +70,10 @@ npm install react-syntax-highlighter
 
 ```bash
 # yarn
-yarn add react react-dom @mui/material @mui/icons-material @emotion/react @emotion/styled zustand zod react-colorful @usewaypoint/block-avatar @usewaypoint/block-button @usewaypoint/block-columns-container @usewaypoint/block-container @usewaypoint/block-divider @usewaypoint/block-heading @usewaypoint/block-html @usewaypoint/block-image @usewaypoint/block-spacer @usewaypoint/block-text @usewaypoint/document-core @usewaypoint/email-builder
+yarn add react react-dom @mui/material @mui/icons-material @emotion/react @emotion/styled zustand zod react-colorful @usewaypoint/block-avatar @usewaypoint/block-button monto-email-block-columns-container @usewaypoint/block-container @usewaypoint/block-divider @usewaypoint/block-heading @usewaypoint/block-html @usewaypoint/block-image @usewaypoint/block-spacer @usewaypoint/block-text @usewaypoint/document-core @usewaypoint/email-builder
 
 # pnpm
-pnpm add react react-dom @mui/material @mui/icons-material @emotion/react @emotion/styled zustand zod react-colorful @usewaypoint/block-avatar @usewaypoint/block-button @usewaypoint/block-columns-container @usewaypoint/block-container @usewaypoint/block-divider @usewaypoint/block-heading @usewaypoint/block-html @usewaypoint/block-image @usewaypoint/block-spacer @usewaypoint/block-text @usewaypoint/document-core @usewaypoint/email-builder
+pnpm add react react-dom @mui/material @mui/icons-material @emotion/react @emotion/styled zustand zod react-colorful @usewaypoint/block-avatar @usewaypoint/block-button monto-email-block-columns-container @usewaypoint/block-container @usewaypoint/block-divider @usewaypoint/block-heading @usewaypoint/block-html @usewaypoint/block-image @usewaypoint/block-spacer @usewaypoint/block-text @usewaypoint/document-core @usewaypoint/email-builder
 ```
 
 ## 基本使用

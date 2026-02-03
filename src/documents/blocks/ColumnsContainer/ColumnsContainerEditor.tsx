@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
 
-import { ColumnsContainer as BaseColumnsContainer } from '@usewaypoint/block-columns-container';
+import { ColumnsContainer as BaseColumnsContainer } from 'monto-email-block-columns-container';
 import { Box } from '@mui/material';
 
 import { useCurrentBlockId } from '../../editor/EditorBlock';
 import { setDocument, setSelectedBlockId, editorStateStore, useDocument } from '../../editor/EditorContext';
+import { ColumnStretchProvider } from '../helpers/ColumnStretchContext';
 import EditorChildrenIds, { EditorChildrenChange } from '../helpers/EditorChildrenIds';
 
 import ColumnsContainerPropsSchema, { ColumnsContainerProps } from './ColumnsContainerPropsSchema';
@@ -152,106 +153,63 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
   const currentContainer = currentDocument[currentBlockId];
   const currentColumns = (currentContainer && currentContainer.type === 'ColumnsContainer' && currentContainer.data.props?.columns) || columnsValue;
 
+  const contentAlignment = (restProps?.contentAlignment ?? 'middle') as 'top' | 'middle' | 'bottom' | 'stretch';
+  const isStretch = contentAlignment === 'stretch';
+  const columnHeights = restProps?.columnHeights;
+  const columnAreaSx = {
+    width: '100%',
+    height: '100%' as const,
+    minWidth: 0,
+    overflowWrap: 'break-word' as const,
+    wordBreak: 'break-word' as const,
+    ...(isStretch && { flex: 1, minHeight: 0, display: 'flex' as const, flexDirection: 'column' as const }),
+  };
+
   const columnComponents = currentColumns.map((col, index) => {
-    // 如果列是空白的（没有元素），允许替换（覆盖）
-    // 如果列中有元素，不允许替换，只允许插入
     const isColumnEmpty = !col?.childrenIds || col.childrenIds.length === 0;
     const allowReplace = isColumnEmpty;
+    const columnHeightPx = columnHeights?.[index];
+    const hasColumnHeight = columnHeightPx != null && columnHeightPx > 0;
+    const sx = {
+      ...columnAreaSx,
+      ...(hasColumnHeight
+        ? {
+          height: `${columnHeightPx}px`,
+          display: 'flex' as const,
+          flexDirection: 'column' as const,
+          minHeight: 0,
+        }
+        : {}),
+    };
 
-    return (
-      <Box
-        key={index}
-        data-column-area="true"
-        sx={{
-          width: '100%',
-          height: '100%',
-          minWidth: 0, // 确保flex布局中文本可以换行
-          overflowWrap: 'break-word', // 允许长单词换行
-          wordBreak: 'break-word', // 确保文本换行
-        }}
-      >
+    const columnContent = (
+      <Box key={index} data-column-area="true" sx={sx}>
         <EditorChildrenIds
           childrenIds={col?.childrenIds}
           onChange={(change) => updateColumn(index, change)}
           containerId={currentBlockId}
           allowReplace={allowReplace}
+          fillHeight={isStretch || hasColumnHeight}
         />
       </Box>
     );
+
+    return isStretch || hasColumnHeight ? (
+      <ColumnStretchProvider key={index} value={true}>
+        {columnContent}
+      </ColumnStretchProvider>
+    ) : (
+      columnContent
+    );
   });
 
-  // BaseColumnsContainer 只支持 2 或 3 列，对于 1 或 4 列，我们需要自定义渲染
-  if (count === 1 || count === 4) {
-    const columnsGap = (restProps && 'columnsGap' in restProps) ? restProps.columnsGap ?? 0 : 0;
-    const contentAlignment = (restProps && 'contentAlignment' in restProps) ? restProps.contentAlignment ?? 'middle' : 'middle';
-    const fixedWidths = (restProps && 'fixedWidths' in restProps) ? restProps.fixedWidths : undefined;
-
-    // 计算列宽
-    const getColumnWidth = (index: number): string => {
-      if (fixedWidths && fixedWidths[index] !== null && fixedWidths[index] !== undefined) {
-        return `${fixedWidths[index]}%`;
-      }
-      return count === 1 ? '100%' : '25%';
-    };
-
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'row',
-          gap: `${columnsGap}px`,
-          alignItems: contentAlignment === 'top' ? 'flex-start' : contentAlignment === 'bottom' ? 'flex-end' : 'center',
-          width: '100%',
-          color: 'inherit', // 继承父元素的文字颜色
-          ...(style?.padding && {
-            padding: `${style.padding.top}px ${style.padding.right}px ${style.padding.bottom}px ${style.padding.left}px`,
-          }),
-          ...(style?.backgroundColor && {
-            backgroundColor: style.backgroundColor,
-          }),
-        }}
-      >
-        {columnComponents.map((col, index) => (
-          <Box
-            key={index}
-            data-column-area="true"
-            sx={{
-              flex: fixedWidths && fixedWidths[index] !== null && fixedWidths[index] !== undefined ? 'none' : 1,
-              width: getColumnWidth(index),
-              minWidth: 0,
-            }}
-          >
-            {col}
-          </Box>
-        ))}
-      </Box>
-    );
-  }
-
-  // 对于 2 或 3 列，使用 BaseColumnsContainer
-  // 需要过滤掉 fixedWidths 的第4个元素（如果存在）
-  let baseFixedWidths: [number | null | undefined, number | null | undefined, number | null | undefined] | undefined = undefined;
-
-  if (restProps && 'fixedWidths' in restProps && restProps.fixedWidths) {
-    baseFixedWidths = [restProps.fixedWidths[0], restProps.fixedWidths[1], restProps.fixedWidths[2]];
-  }
-
-  // 创建不包含 fixedWidths 的 baseProps
   const baseProps: any = {
     ...(restProps && typeof restProps === 'object' ? restProps : {}),
-    columnsCount: count as 2 | 3,
+    columnsCount: count,
   };
 
-  // 如果有 fixedWidths，只取前3个元素
-  if (baseFixedWidths !== undefined) {
-    baseProps.fixedWidths = baseFixedWidths;
-  } else if (restProps && 'fixedWidths' in restProps) {
-    // 如果原 fixedWidths 是 null 或 undefined，也传递 null
-    baseProps.fixedWidths = null;
-  }
-
   return (
-    <Box sx={{ color: 'inherit' }}>
+    <Box sx={{ color: 'inherit', width: '100%', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box' }}>
       <BaseColumnsContainer
         props={baseProps}
         style={style}

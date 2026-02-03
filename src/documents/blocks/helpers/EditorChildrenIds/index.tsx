@@ -25,6 +25,7 @@ export type EditorChildrenIdsProps = {
   onChange: (val: EditorChildrenChange) => void;
   containerId?: string; // 当前容器的ID，用于跨容器拖拽
   allowReplace?: boolean; // 是否允许拖拽覆盖（替换）现有元素，默认 false
+  fillHeight?: boolean; // 分栏 stretch 或设高度时，列内块填满高度
 };
 
 // 从 window 对象获取当前拖拽的 blockId（因为在 dragOver 事件中无法读取 dataTransfer）
@@ -154,7 +155,17 @@ function removeBlockFromParentContainer(
   return newDocument;
 }
 
-export default function EditorChildrenIds({ childrenIds, onChange, containerId, allowReplace = false }: EditorChildrenIdsProps) {
+const fillHeightSx = {
+  flex: 1,
+  minHeight: 0,
+  width: '100%',
+  minWidth: 0,
+  display: 'flex' as const,
+  flexDirection: 'column' as const,
+  height: '100%',
+};
+
+export default function EditorChildrenIds({ childrenIds, onChange, containerId, allowReplace = false, fillHeight = false }: EditorChildrenIdsProps) {
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isDragNotAllowed, setIsDragNotAllowed] = useState(false); // 是否不允许拖入（嵌套检查）
@@ -541,6 +552,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
         sx={{
           position: 'relative',
           cursor: isDragNotAllowed ? 'no-drop' : 'default',
+          ...(fillHeight && { ...fillHeightSx, alignItems: 'flex-start' as const, width: '100%' }),
           ...(dragOverIndex === 0 && draggedBlockId !== null && !childrenIds?.includes(draggedBlockId)
             ? {
               outline: '2px solid',
@@ -564,8 +576,10 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
             }),
         }}
       >
-        {/* 空列表时，即使在 column 内部也显示占位符按钮，让用户可以添加第一个元素 */}
-        <AddBlockButton placeholder onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} containerType={containerType} />
+        {/* 空列表时，即使在 column 内部也显示占位符按钮；包一层 width:100% 使占位铺满列宽 */}
+        <Box sx={{ width: '100%', minWidth: 0 }}>
+          <AddBlockButton placeholder onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} containerType={containerType} />
+        </Box>
       </Box>
     );
   }
@@ -573,7 +587,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
   // 检查是否有子元素
   const hasChildren = childrenIds && childrenIds.length > 0;
 
-  return (
+  const content = (
     <>
       {childrenIds.map((childId, i) => {
         const isLastBlock = i === childrenIds.length - 1;
@@ -635,7 +649,11 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
 
         return (
           <Fragment key={childId}>
-            {!isInsideColumn && <AddBlockButton onSelect={(block) => insertBlock(block, i)} disableContainerBlocks={isContainerOrColumnsContainer} containerType={containerType} />}
+            {!isInsideColumn && (
+              <Box component="span" sx={{ flex: 'none', alignSelf: 'flex-start' }}>
+                <AddBlockButton onSelect={(block) => insertBlock(block, i)} disableContainerBlocks={isContainerOrColumnsContainer} containerType={containerType} />
+              </Box>
+            )}
             <Box
               onDragOver={(e) => {
                 e.preventDefault();
@@ -1824,6 +1842,7 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
               sx={{
                 position: 'relative',
                 cursor: isDragNotAllowed ? 'no-drop' : 'default',
+                ...(fillHeight && { width: '100%', minWidth: 0 }),
                 ...(showFullBorder
                   ? {
                     outline: '2px solid',
@@ -1890,7 +1909,13 @@ export default function EditorChildrenIds({ childrenIds, onChange, containerId, 
           </Fragment>
         );
       })}
-      {!isInsideColumn && <AddBlockButton onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} containerType={containerType} />}
+      {!isInsideColumn && (
+        <Box component="span" sx={{ flex: 'none', alignSelf: 'flex-start' }}>
+          <AddBlockButton onSelect={appendBlock} disableContainerBlocks={isContainerOrColumnsContainer} containerType={containerType} />
+        </Box>
+      )}
     </>
   );
+
+  return fillHeight ? <Box sx={fillHeightSx}>{content}</Box> : content;
 }

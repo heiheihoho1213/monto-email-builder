@@ -77,13 +77,14 @@ export default defineConfig(({ mode }) => {
     root: resolve(__dirname, 'docs'),
     // 支持通过环境变量设置 base 路径（用于 GitHub Pages）
     base: process.env.VITE_BASE_PATH || '/',
-    // resolve: {
-    //   alias: {
-    //     // 使用本地源码进行调试
-    //     // 'monto-email-core': resolve(__dirname, 'email-builder/src'),
-    //     'monto-email-block-html': resolve(__dirname, 'block-html/src'),
-    //   },
-    // },
+    resolve: {
+      alias: {
+        // 使用本地源码进行调试
+        // 'monto-email-core': resolve(__dirname, 'monto-email-core/src'),
+        // 'monto-email-block-html': resolve(__dirname, 'block-html/src'),
+        // 'monto-email-block-columns-container': resolve(__dirname, 'block-columns-container/src'),
+      },
+    },
     build: {
       outDir: resolve(__dirname, 'docs-dist'),
       emptyOutDir: true,

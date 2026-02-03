@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import {
   SpaceBarOutlined,
+  UnfoldMoreOutlined,
   VerticalAlignBottomOutlined,
   VerticalAlignCenterOutlined,
   VerticalAlignTopOutlined,
@@ -334,14 +335,17 @@ export default function ColumnsContainerPanel({ data, setData }: ColumnsContaine
           updateData({ ...data, props: { ...data.props, contentAlignment } });
         }}
       >
-        <ToggleButton value="top">
+        <ToggleButton value="top" title={t('columns.alignmentTop')}>
           <VerticalAlignTopOutlined fontSize="small" />
         </ToggleButton>
-        <ToggleButton value="middle">
+        <ToggleButton value="middle" title={t('columns.alignmentMiddle')}>
           <VerticalAlignCenterOutlined fontSize="small" />
         </ToggleButton>
-        <ToggleButton value="bottom">
+        <ToggleButton value="bottom" title={t('columns.alignmentBottom')}>
           <VerticalAlignBottomOutlined fontSize="small" />
+        </ToggleButton>
+        <ToggleButton value="stretch" title={t('columns.alignmentStretch')}>
+          <UnfoldMoreOutlined fontSize="small" />
         </ToggleButton>
       </RadioGroupInput>
 
