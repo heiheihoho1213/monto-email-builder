@@ -10,6 +10,14 @@ import EditorChildrenIds, { EditorChildrenChange } from '../helpers/EditorChildr
 
 import ColumnsContainerPropsSchema, { ColumnsContainerProps } from './ColumnsContainerPropsSchema';
 
+/** props 除 columns/columnsCount 外的其余字段，用于 restProps 类型 */
+type ColumnsContainerRestProps = Omit<NonNullable<ColumnsContainerProps['props']>, 'columns' | 'columnsCount'> & {
+  contentAlignment?: 'top' | 'middle' | 'bottom' | 'stretch';
+  columnHeights?: (number | null | undefined)[];
+};
+
+type ColumnItem = { childrenIds: string[] };
+
 const EMPTY_COLUMNS_1 = [{ childrenIds: [] }];
 const EMPTY_COLUMNS_2 = [{ childrenIds: [] }, { childrenIds: [] }];
 const EMPTY_COLUMNS_3 = [{ childrenIds: [] }, { childrenIds: [] }, { childrenIds: [] }];
@@ -19,7 +27,9 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
   const currentBlockId = useCurrentBlockId();
   const document = useDocument(); // 使用 hook 获取最新的 document
 
-  const { columns, columnsCount, ...restProps } = props ?? {};
+  const rawProps = (props ?? {}) as NonNullable<ColumnsContainerProps['props']>;
+  const { columns, columnsCount, ...rest } = rawProps;
+  const restProps = rest as ColumnsContainerRestProps;
   const count = columnsCount ?? 3;
 
   // 根据列数初始化 columns，使用useMemo确保使用最新的columns数据
@@ -29,7 +39,7 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
     }
     // 如果已有 columns，尝试保留现有的列
     if (columns && columns.length > 0) {
-      const newColumns = columns.slice(0, count).map(col => col || { childrenIds: [] });
+      const newColumns = columns.slice(0, count).map((col: ColumnItem) => col || { childrenIds: [] });
       // 如果需要的列数更多，添加空列
       while (newColumns.length < count) {
         newColumns.push({ childrenIds: [] });
@@ -165,7 +175,7 @@ export default function ColumnsContainerEditor({ style, props }: ColumnsContaine
     ...(isStretch && { flex: 1, minHeight: 0, display: 'flex' as const, flexDirection: 'column' as const }),
   };
 
-  const columnComponents = currentColumns.map((col, index) => {
+  const columnComponents = currentColumns.map((col: ColumnItem, index: number) => {
     const isColumnEmpty = !col?.childrenIds || col.childrenIds.length === 0;
     const allowReplace = isColumnEmpty;
     const columnHeightPx = columnHeights?.[index];
