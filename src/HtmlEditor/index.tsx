@@ -258,11 +258,12 @@ export default function HtmlEditor({
     }
   };
 
-  // 渲染代码编辑器
+  // 渲染代码编辑器（高度由父级 flex 约束，避免 100vh 导致溢出；minHeight: 0 让 flex 子项可收缩）
   const renderCodeEditor = () => (
     <Box
       sx={{
         height: codeEditorHeight,
+        minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
         borderRight: mode === 'split' ? '1px solid' : 'none',
@@ -272,12 +273,18 @@ export default function HtmlEditor({
       <Box
         sx={{
           flex: 1,
+          minHeight: 0,
           overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
           '& .cm-editor': {
             fontSize: '14px',
           },
           '& .cm-scroller': {
             fontFamily: 'monospace',
+          },
+          '& .cm-theme': {
+            height: '100%',
           },
           // 自定义光标样式，使其更粗、更显眼
           '& .cm-cursor': {
@@ -294,7 +301,7 @@ export default function HtmlEditor({
       >
         <CodeMirror
           value={internalValue}
-          height="calc(100vh - 60px)"
+          height="100%"
           extensions={[html()]}
           theme={themeMap[theme] || dracula}
           onChange={handleChangeDebounced}
@@ -355,6 +362,8 @@ export default function HtmlEditor({
         flexDirection: 'column',
         height: '100%',
         width: '100%',
+        minHeight: 0,
+        minWidth: 0,
         ...sx,
       }}
     >
@@ -451,21 +460,23 @@ export default function HtmlEditor({
       <Box
         sx={{
           flex: 1,
+          minHeight: 0,
+          minWidth: 0,
           display: 'flex',
           overflow: 'hidden',
         }}
       >
         {mode === 'split' && (
           <>
-            <Box sx={{ flex: 1, overflow: 'hidden' }}>{renderCodeEditor()}</Box>
-            <Box sx={{ flex: 1, overflow: 'hidden' }}>{renderPreview()}</Box>
+            <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{renderCodeEditor()}</Box>
+            <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{renderPreview()}</Box>
           </>
         )}
         {mode === 'code' && (
-          <Box sx={{ flex: 1, overflow: 'hidden' }}>{renderCodeEditor()}</Box>
+          <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{renderCodeEditor()}</Box>
         )}
         {mode === 'preview' && (
-          <Box sx={{ flex: 1, overflow: 'hidden' }}>{renderPreview()}</Box>
+          <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{renderPreview()}</Box>
         )}
       </Box>
     </Box>

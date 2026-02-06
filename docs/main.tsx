@@ -261,7 +261,7 @@ const Home = () => {
 
   return (
     <React.StrictMode>
-      <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+      <Box sx={{ position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
         {editorMode === 'email' ? (
           <EmailBuilder
             ref={emailBuilderRef}
@@ -269,6 +269,7 @@ const Home = () => {
             language={language}
             showJsonFeatures={showJsonFeatures}
             showSamplesDrawerTitle={showSamplesDrawerTitle}
+            // leftPanelSlot={<div onClick={() => console.log('Hello World')}>Hello World</div>}
             imageUploadHandler={exampleImageUploadHandler}
             videoUploadHandler={exampleVideoUploadHandler}
             onChange={(document, html) => {

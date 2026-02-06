@@ -2,7 +2,8 @@ import React from 'react';
 
 import { Button, Divider, Drawer, Stack, Typography } from '@mui/material';
 
-import { resetDocument, useSamplesDrawerOpen, setDocument, setSelectedBlockId, useDocument, editorStateStore, useShowSamplesDrawerTitle } from '../../documents/editor/EditorContext';
+import { resetDocument, useSamplesDrawerOpen, setDocument, setSelectedBlockId, useDocument, useShowSamplesDrawerTitle } from '../../documents/editor/EditorContext';
+import { useLeftPanelSlot } from '../../LeftPanelSlotContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { TEditorBlock } from '../../documents/editor/core';
 import EMPTY_EMAIL_MESSAGE from '../../getConfiguration/sample/empty-email-message';
@@ -21,6 +22,7 @@ export default function SamplesDrawer() {
   const samplesDrawerOpen = useSamplesDrawerOpen();
   const document = useDocument();
   const showSamplesDrawerTitle = useShowSamplesDrawerTitle();
+  const leftPanelSlot = useLeftPanelSlot();
 
   const handleNewDocumentClick = () => {
     resetDocument(EMPTY_EMAIL_MESSAGE);
@@ -133,13 +135,14 @@ export default function SamplesDrawer() {
             </>
           )}
 
+          {leftPanelSlot ? leftPanelSlot : null}
+
           <Stack spacing={1} sx={{ mt: showSamplesDrawerTitle ? 0 : '16px !important' }}>
             <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, fontWeight: 500 }}>
               {t('common.addContentBlocks')}
             </Typography>
             <BlocksGrid onSelect={handleBlockSelect} disableContainerBlocks={false} />
           </Stack>
-
           {/* <Divider /> */}
 
           {/* <Stack>

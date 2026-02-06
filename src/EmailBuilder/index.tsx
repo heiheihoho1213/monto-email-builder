@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, forwardRef, useRef } from 'react';
+import React, { useEffect, useImperativeHandle, forwardRef, useRef, memo } from 'react';
 
 import { Box, CssBaseline, ThemeProvider } from '@mui/material';
 import { renderToStaticMarkup } from 'monto-email-core';
@@ -16,11 +16,29 @@ import {
   setOnNameChange,
   editorStateStore,
 } from '../documents/editor/EditorContext';
+import { LeftPanelSlotProvider } from '../LeftPanelSlotContext';
 import { Language } from '../i18n';
 import { TEditorConfiguration } from '../documents/editor/core';
 import theme from '../theme';
 
 import App from '../App';
+
+const AppLayout = memo(function AppLayout() {
+  return (
+    <Box
+      sx={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      <App />
+    </Box>
+  );
+});
 
 export interface EmailBuilderProps {
   /**
@@ -83,6 +101,12 @@ export interface EmailBuilderProps {
    * @default true
    */
   showSamplesDrawerTitle?: boolean;
+
+  /**
+   * 左侧面板自定义插槽（在「添加内容块」下方渲染）
+   * 传入 React 节点，例如 <MyCustomPanel /> 或 <Box>...</Box>
+   */
+  leftPanelSlot?: React.ReactNode;
 }
 
 /**
@@ -141,6 +165,7 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   theme: customTheme,
   showJsonFeatures = true,
   showSamplesDrawerTitle = true,
+  leftPanelSlot,
 }, ref) => {
   // 初始化 store（包括历史记录管理器）
   // 关键点：这里要“同步初始化”，保证第三方集成时首屏就按 props 生效（避免抽屉/标题/语言闪一下）
@@ -225,18 +250,9 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   return (
     <ThemeProvider theme={customTheme || theme}>
       <CssBaseline />
-      <Box
-        sx={{
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
-      >
-        <App />
-      </Box>
+      <LeftPanelSlotProvider value={leftPanelSlot ?? null}>
+        <AppLayout />
+      </LeftPanelSlotProvider>
     </ThemeProvider>
   );
 });
