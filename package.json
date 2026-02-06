@@ -1,6 +1,6 @@
 {
   "name": "monto-email-builder",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "A powerful and customizable email template builder React component library with visual editing, internationalization, and image upload support",
   "keywords": [
     "email",
