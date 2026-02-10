@@ -29,6 +29,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./html-editor": {
+      "import": "./dist/html-editor.js",
+      "types": "./dist/html-editor.d.ts"
     }
   },
   "files": [

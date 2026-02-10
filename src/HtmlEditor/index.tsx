@@ -74,10 +74,11 @@ const themeNames: Record<string, string> = {
 };
 
 const HTML_EDITOR_THEME_STORAGE_KEY = 'html-editor-theme';
-const DEFAULT_THEME = 'xcodeLight';
+const DEFAULT_THEME = 'dracula';
 
-function getStoredTheme(): string {
-  if (typeof window === 'undefined') return DEFAULT_THEME;
+function getStoredTheme(fallback: string = DEFAULT_THEME): string {
+  const validFallback = fallback && themeMap[fallback] ? fallback : DEFAULT_THEME;
+  if (typeof window === 'undefined') return validFallback;
   try {
     const stored = localStorage.getItem(HTML_EDITOR_THEME_STORAGE_KEY);
     if (stored && themeMap[stored]) return stored;
@@ -85,7 +86,7 @@ function getStoredTheme(): string {
     // ignore
     console.error('Failed to get HTML Editor stored theme');
   }
-  return DEFAULT_THEME;
+  return validFallback;
 }
 
 function setStoredTheme(theme: string): void {
@@ -140,6 +141,11 @@ export interface HtmlEditorProps {
    * @default true
    */
   showToolbar?: boolean;
+  /**
+   * 初始代码编辑器主题（themeMap 中的 key）
+   * 若本地已有 localStorage 则优先用 localStorage；未传时默认 'dracula'
+   */
+  initialTheme?: string;
 }
 
 export default function HtmlEditor({
@@ -152,6 +158,7 @@ export default function HtmlEditor({
   previewHeight = '100%',
   sx,
   showToolbar = true,
+  initialTheme,
 }: HtmlEditorProps) {
   // 翻译函数
   const translate = (key: string, params?: Record<string, string | number>): string => {
@@ -159,7 +166,7 @@ export default function HtmlEditor({
   };
   const [mode, setMode] = useState<HtmlEditorMode>(initialMode);
   const [device, setDevice] = useState<HtmlEditorDevice>(initialDevice);
-  const [theme, setTheme] = useState<string>(getStoredTheme);
+  const [theme, setTheme] = useState<string>(() => getStoredTheme(initialTheme));
   const [internalValue, setInternalValue] = useState(value);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 

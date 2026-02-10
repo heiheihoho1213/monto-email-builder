@@ -1,6 +1,6 @@
 # Email Builder - 邮件模板编辑器组件库
 
-> node >= 18 + pnpm
+> node >= 18 + pnpm 10
 
 一个功能完整的邮件模板编辑器 React 组件，可以在其他 React 项目中使用。
 
