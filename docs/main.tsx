@@ -279,6 +279,12 @@ const Home = () => {
             onNameChange={(name) => {
               console.log('Name changed:', name);
             }}
+            onSamplesDrawerToggle={(isOpen) => {
+              console.log('Samples drawer toggled:', isOpen);
+            }}
+            onInspectorDrawerToggle={(isOpen) => {
+              console.log('Inspector drawer toggled:', isOpen);
+            }}
           />
         ) : (
           <HtmlEditor

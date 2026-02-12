@@ -210,6 +210,8 @@
       "mobile": "移动视图"
     },
     "theme": "主题",
+    "lightThemes": "浅色主题",
+    "darkThemes": "深色主题",
     "tooltips": {
       "splitView": "左右栏",
       "codeOnly": "仅代码",

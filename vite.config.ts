@@ -66,10 +66,9 @@ export default defineConfig(({ mode }) => {
               'react-dom': 'ReactDOM',
             },
             // 代码分割策略：将不同模块分离到独立的 chunk，减小单文件大小
+            // 注意：避免过度分割导致循环依赖，只分离真正独立的大型模块
             manualChunks: (id) => {
-              // 优先处理大型第三方依赖
-
-              // 1. CodeMirror 相关依赖分离（体积较大，仅在 HtmlEditor 中使用）
+              // 1. CodeMirror 相关依赖分离（体积较大，仅在 HtmlEditor 中使用，完全独立）
               if (
                 id.includes('@uiw/react-codemirror') ||
                 id.includes('@codemirror/') ||
@@ -78,51 +77,14 @@ export default defineConfig(({ mode }) => {
                 return 'codemirror';
               }
 
-              // 2. 示例模板分离（按需加载）
+              // 2. 示例模板分离（按需加载，完全独立）
               if (id.includes('getConfiguration/sample/')) {
                 return 'samples';
               }
 
-              // 3. 各个 block 组件分离（按需加载，减小初始包大小）
-              if (id.includes('documents/blocks/')) {
-                // 提取 block 名称，每个 block 独立 chunk
-                const blockMatch = id.match(/blocks\/([^/]+)\//);
-                if (blockMatch) {
-                  const blockName = blockMatch[1].toLowerCase();
-                  // 将相似的 block 合并，避免过度分割
-                  if (['button', 'image', 'text', 'heading', 'spacer', 'divider'].includes(blockName)) {
-                    return `blocks-basic`;
-                  }
-                  if (['container', 'columnscontainer', 'emaillayout'].includes(blockName)) {
-                    return `blocks-layout`;
-                  }
-                  return `block-${blockName}`;
-                }
-                return 'blocks-common';
-              }
-
-              // 4. 配置面板分离（按需加载）
-              if (id.includes('App/InspectorDrawer/ConfigurationPanel/')) {
-                return 'inspector-panel';
-              }
-
-              // 5. 模板面板分离（按需加载）
-              if (id.includes('App/TemplatePanel/')) {
-                return 'template-panel';
-              }
-
-              // 6. 其他 App 组件（UI 组件）
-              if (id.includes('App/')) {
-                return 'app-components';
-              }
-
-              // 7. 编辑器核心逻辑（较小，可以保留在主包中）
-              // 注意：editor-core 不分离，保持核心功能在主包
-
-              // 8. 工具函数和辅助模块
-              if (id.includes('documents/editor/helpers/') || id.includes('helpers/')) {
-                return 'editor-helpers';
-              }
+              // 注意：其他模块（blocks、helpers、App组件等）保留在主包中
+              // 因为它们之间存在相互依赖，分离会导致循环依赖
+              // 这样可以减小单文件大小，同时避免循环依赖问题
             },
             // 设置 chunk 文件命名格式
             chunkFileNames: (chunkInfo) => {

@@ -27,6 +27,7 @@ import {
   InputLabel,
   SxProps,
   Theme,
+  ListSubheader,
 } from '@mui/material';
 import {
   Code as CodeIcon,
@@ -58,14 +59,16 @@ const themeMap: Record<string, any> = {
 };
 
 // 主题显示名称（按类型分组）
-const themeNames: Record<string, string> = {
+const lightThemeNames: Record<string, string> = {
   xcodeLight: 'Xcode Light (Light)',
   vscodeLight: 'VSCode Light (Light)',
-  tokyoNightDay: 'Tokyo Night Day',
+  tokyoNightDay: 'Tokyo Night Day (Light)',
   gruvboxLight: 'Gruvbox Light (Light)',
   noctisLilac: 'Noctis Lilac (Light)',
   bbedit: 'BBEdit (Light)',
+};
 
+const darkThemeNames: Record<string, string> = {
   abcdef: 'ABCDEF (Dark)',
   basicDark: 'Basic Dark (Dark)',
   dracula: 'Dracula (Dark)',
@@ -430,7 +433,14 @@ export default function HtmlEditor({
                   },
                 }}
               >
-                {Object.entries(themeNames).map(([key, name]) => (
+                <ListSubheader>{translate('htmlEditor.lightThemes')}</ListSubheader>
+                {Object.entries(lightThemeNames).map(([key, name]) => (
+                  <MenuItem key={key} value={key}>
+                    {name}
+                  </MenuItem>
+                ))}
+                <ListSubheader>{translate('htmlEditor.darkThemes')}</ListSubheader>
+                {Object.entries(darkThemeNames).map(([key, name]) => (
                   <MenuItem key={key} value={key}>
                     {name}
                   </MenuItem>

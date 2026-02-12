@@ -210,6 +210,8 @@
       "mobile": "Mobile view"
     },
     "theme": "Theme",
+    "lightThemes": "Light Themes",
+    "darkThemes": "Dark Themes",
     "tooltips": {
       "splitView": "Split view",
       "codeOnly": "Code only",

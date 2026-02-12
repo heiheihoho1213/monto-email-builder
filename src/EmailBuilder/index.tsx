@@ -14,6 +14,8 @@ import {
   setName,
   setOnChange,
   setOnNameChange,
+  setOnSamplesDrawerToggle,
+  setOnInspectorDrawerToggle,
   editorStateStore,
 } from '../documents/editor/EditorContext';
 import { LeftPanelSlotProvider } from '../LeftPanelSlotContext';
@@ -107,6 +109,20 @@ export interface EmailBuilderProps {
    * 传入 React 节点，例如 <MyCustomPanel /> 或 <Box>...</Box>
    */
   leftPanelSlot?: React.ReactNode;
+
+  /**
+   * 左侧边栏切换时的回调函数
+   * 当用户点击左侧边栏的折叠/展开按钮时调用
+   * @param isOpen 侧边栏是否打开
+   */
+  onSamplesDrawerToggle?: (isOpen: boolean) => void;
+
+  /**
+   * 右侧边栏切换时的回调函数
+   * 当用户点击右侧边栏的折叠/展开按钮时调用
+   * @param isOpen 侧边栏是否打开
+   */
+  onInspectorDrawerToggle?: (isOpen: boolean) => void;
 }
 
 /**
@@ -166,6 +182,8 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   showJsonFeatures = true,
   showSamplesDrawerTitle = true,
   leftPanelSlot,
+  onSamplesDrawerToggle,
+  onInspectorDrawerToggle,
 }, ref) => {
   // 初始化 store（包括历史记录管理器）
   // 关键点：这里要“同步初始化”，保证第三方集成时首屏就按 props 生效（避免抽屉/标题/语言闪一下）
@@ -246,6 +264,16 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   useEffect(() => {
     setShowSamplesDrawerTitle(showSamplesDrawerTitle);
   }, [showSamplesDrawerTitle]);
+
+  // 当 onSamplesDrawerToggle 变化时，更新回调
+  useEffect(() => {
+    setOnSamplesDrawerToggle(onSamplesDrawerToggle);
+  }, [onSamplesDrawerToggle]);
+
+  // 当 onInspectorDrawerToggle 变化时，更新回调
+  useEffect(() => {
+    setOnInspectorDrawerToggle(onInspectorDrawerToggle);
+  }, [onInspectorDrawerToggle]);
 
   return (
     <ThemeProvider theme={customTheme || theme}>

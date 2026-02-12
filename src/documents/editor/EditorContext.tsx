@@ -47,6 +47,12 @@ type TValue = {
 
   // 是否显示左侧边栏标题
   showSamplesDrawerTitle: boolean;
+
+  // 左侧边栏切换回调
+  onSamplesDrawerToggle?: (isOpen: boolean) => void;
+
+  // 右侧边栏切换回调
+  onInspectorDrawerToggle?: (isOpen: boolean) => void;
 };
 
 // 初始化函数，支持外部传入初始值
@@ -125,6 +131,8 @@ const editorStateStore = create<TValue>((set, get) => ({
   onNameChange: undefined,
   showJsonFeatures: initialShowJsonFeatures,
   showSamplesDrawerTitle: initialShowSamplesDrawerTitle,
+  onSamplesDrawerToggle: undefined,
+  onInspectorDrawerToggle: undefined,
 }));
 
 export function useDocument() {
@@ -246,13 +254,25 @@ export function setOnChange(onChange: TValue['onChange']) {
 }
 
 export function toggleInspectorDrawerOpen() {
-  const inspectorDrawerOpen = !editorStateStore.getState().inspectorDrawerOpen;
-  return editorStateStore.setState({ inspectorDrawerOpen });
+  const state = editorStateStore.getState();
+  const inspectorDrawerOpen = !state.inspectorDrawerOpen;
+  editorStateStore.setState({ inspectorDrawerOpen });
+
+  // 调用回调函数
+  if (state.onInspectorDrawerToggle) {
+    state.onInspectorDrawerToggle(inspectorDrawerOpen);
+  }
 }
 
 export function toggleSamplesDrawerOpen() {
-  const samplesDrawerOpen = !editorStateStore.getState().samplesDrawerOpen;
-  return editorStateStore.setState({ samplesDrawerOpen });
+  const state = editorStateStore.getState();
+  const samplesDrawerOpen = !state.samplesDrawerOpen;
+  editorStateStore.setState({ samplesDrawerOpen });
+
+  // 调用回调函数
+  if (state.onSamplesDrawerToggle) {
+    state.onSamplesDrawerToggle(samplesDrawerOpen);
+  }
 }
 
 export function setSelectedScreenSize(selectedScreenSize: TValue['selectedScreenSize']) {
@@ -332,6 +352,14 @@ export function setName(name: string) {
 
 export function setOnNameChange(handler: TValue['onNameChange']) {
   return editorStateStore.setState({ onNameChange: handler });
+}
+
+export function setOnSamplesDrawerToggle(handler: TValue['onSamplesDrawerToggle']) {
+  return editorStateStore.setState({ onSamplesDrawerToggle: handler });
+}
+
+export function setOnInspectorDrawerToggle(handler: TValue['onInspectorDrawerToggle']) {
+  return editorStateStore.setState({ onInspectorDrawerToggle: handler });
 }
 
 export function useShowJsonFeatures() {
