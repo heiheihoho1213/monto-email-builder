@@ -28,7 +28,7 @@ export default function MainTabsGroup() {
       <Tab
         value="editor"
         label={
-          <Tooltip title={t('tabs.edit')}>
+          <Tooltip title={t('tabs.edit')} arrow>
             <EditOutlined fontSize="small" />
           </Tooltip>
         }
@@ -36,7 +36,7 @@ export default function MainTabsGroup() {
       <Tab
         value="preview"
         label={
-          <Tooltip title={t('tabs.preview')}>
+          <Tooltip title={t('tabs.preview')} arrow>
             <PreviewOutlined fontSize="small" />
           </Tooltip>
         }
@@ -44,7 +44,7 @@ export default function MainTabsGroup() {
       <Tab
         value="html"
         label={
-          <Tooltip title={t('tabs.htmlOutput')}>
+          <Tooltip title={t('tabs.htmlOutput')} arrow>
             <CodeOutlined fontSize="small" />
           </Tooltip>
         }
@@ -53,7 +53,7 @@ export default function MainTabsGroup() {
         <Tab
           value="json"
           label={
-            <Tooltip title={t('tabs.jsonOutput')}>
+            <Tooltip title={t('tabs.jsonOutput')} arrow>
               <DataObjectOutlined fontSize="small" />
             </Tooltip>
           }

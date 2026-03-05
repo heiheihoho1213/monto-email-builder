@@ -397,17 +397,17 @@ export default function HtmlEditor({
               size="small"
               aria-label={translate('htmlEditor.mode.split')}
             >
-              <Tooltip title={translate('htmlEditor.tooltips.splitView')}>
+              <Tooltip title={translate('htmlEditor.tooltips.splitView')} arrow>
                 <ToggleButton value="split" aria-label={translate('htmlEditor.mode.split')}>
                   <ViewColumnIcon fontSize="small" />
                 </ToggleButton>
               </Tooltip>
-              <Tooltip title={translate('htmlEditor.tooltips.codeOnly')}>
+              <Tooltip title={translate('htmlEditor.tooltips.codeOnly')} arrow>
                 <ToggleButton value="code" aria-label={translate('htmlEditor.mode.code')}>
                   <CodeIcon fontSize="small" />
                 </ToggleButton>
               </Tooltip>
-              <Tooltip title={translate('htmlEditor.tooltips.previewOnly')}>
+              <Tooltip title={translate('htmlEditor.tooltips.previewOnly')} arrow>
                 <ToggleButton value="preview" aria-label={translate('htmlEditor.mode.preview')}>
                   <VisibilityIcon fontSize="small" />
                 </ToggleButton>
@@ -458,12 +458,12 @@ export default function HtmlEditor({
                 size="small"
                 aria-label={translate('htmlEditor.device.desktop')}
               >
-                <Tooltip title={translate('htmlEditor.tooltips.desktopView')}>
+                <Tooltip title={translate('htmlEditor.tooltips.desktopView')} arrow>
                   <ToggleButton value="desktop" aria-label={translate('htmlEditor.device.desktop')}>
                     <DesktopIcon fontSize="small" />
                   </ToggleButton>
                 </Tooltip>
-                <Tooltip title={translate('htmlEditor.tooltips.mobileView')}>
+                <Tooltip title={translate('htmlEditor.tooltips.mobileView')} arrow>
                   <ToggleButton value="mobile" aria-label={translate('htmlEditor.device.mobile')}>
                     <MobileIcon fontSize="small" />
                   </ToggleButton>

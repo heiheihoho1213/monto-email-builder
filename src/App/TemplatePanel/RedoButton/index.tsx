@@ -11,7 +11,7 @@ export default function RedoButton() {
   const canRedo = useCanRedo();
 
   return (
-    <Tooltip title={t('common.redoTooltip')}>
+    <Tooltip title={t('common.redoTooltip')} arrow>
       <span>
         <IconButton onClick={redo} disabled={!canRedo} size="small">
           <RedoOutlined fontSize="small" />

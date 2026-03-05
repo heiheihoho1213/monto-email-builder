@@ -33,7 +33,7 @@ export default function SaveAndExitButton() {
   };
 
   return (
-    <Tooltip title={t('common.saveAndExit')}>
+    <Tooltip title={t('common.saveAndExit')} arrow>
       <span>
         <IconButton
           color='primary'

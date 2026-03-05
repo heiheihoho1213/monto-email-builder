@@ -117,6 +117,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         // 使用本地源码进行调试
+        // 'monto-email-block-socials': resolve(__dirname, 'monto-email-block-socials/src'),
         // 'monto-email-core': resolve(__dirname, 'monto-email-core/src'),
         // 'monto-email-block-html': resolve(__dirname, 'block-html/src'),
         // 'monto-email-block-columns-container': resolve(__dirname, 'block-columns-container/src'),

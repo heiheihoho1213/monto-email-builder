@@ -316,20 +316,20 @@ export default function TuneMenu({ blockId }: Props) {
     <Paper sx={sx} onClick={(ev) => ev.stopPropagation()}>
       <Stack>
         {canMove.canMoveUp && (
-          <Tooltip title="Move up" placement="left-start">
+          <Tooltip title="Move up" placement="left" arrow>
             <IconButton onClick={() => handleMoveClick('up')} sx={{ color: 'text.primary' }}>
               <ArrowUpwardOutlined fontSize="small" />
             </IconButton>
           </Tooltip>
         )}
         {canMove.canMoveDown && (
-          <Tooltip title="Move down" placement="left-start">
+          <Tooltip title="Move down" placement="left" arrow>
             <IconButton onClick={() => handleMoveClick('down')} sx={{ color: 'text.primary' }}>
               <ArrowDownwardOutlined fontSize="small" />
             </IconButton>
           </Tooltip>
         )}
-        <Tooltip title="Delete" placement="left-start">
+        <Tooltip title="Delete" placement="left" arrow>
           <IconButton onClick={handleDeleteClick} sx={{ color: 'text.primary' }}>
             <DeleteOutlined color="error" fontSize="small" />
           </IconButton>

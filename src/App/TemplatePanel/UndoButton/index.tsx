@@ -11,7 +11,7 @@ export default function UndoButton() {
   const canUndo = useCanUndo();
 
   return (
-    <Tooltip title={t('common.undoTooltip')}>
+    <Tooltip title={t('common.undoTooltip')} arrow>
       <span>
         <IconButton onClick={undo} disabled={!canUndo} size="small">
           <UndoOutlined fontSize="small" />

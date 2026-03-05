@@ -214,6 +214,9 @@ const THEME = createTheme(BASE_THEME, {
           fontSize: BASE_THEME.typography.pxToRem(12),
           backgroundColor: alpha(BASE_THEME.palette.text.primary, 0.9),
         },
+        arrow: {
+          color: alpha(BASE_THEME.palette.text.primary, 0.9),
+        },
       },
     },
     MuiSlider: {

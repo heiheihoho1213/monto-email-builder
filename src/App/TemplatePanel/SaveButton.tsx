@@ -27,7 +27,7 @@ export default function SaveButton() {
   };
 
   return (
-    <Tooltip title={t('common.save')}>
+    <Tooltip title={t('common.save')} arrow>
       <span>
         <IconButton
           color='primary'

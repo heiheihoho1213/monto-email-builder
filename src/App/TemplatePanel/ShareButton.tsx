@@ -22,7 +22,7 @@ export default function ShareButton() {
   return (
     <>
       <IconButton onClick={onClick}>
-        <Tooltip title="Share current template">
+        <Tooltip title="Share current template" arrow>
           <IosShareOutlined fontSize="small" />
         </Tooltip>
       </IconButton>

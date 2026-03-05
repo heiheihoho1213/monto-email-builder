@@ -13,7 +13,7 @@ export default function DownloadJson() {
     return `data:text/plain,${encodeURIComponent(JSON.stringify(doc, null, '  '))}`;
   }, [doc]);
   return (
-    <Tooltip title={t('common.downloadJson')}>
+    <Tooltip title={t('common.downloadJson')} arrow>
       <IconButton href={href} download="emailTemplate.json">
         <FileDownloadOutlined fontSize="small" />
       </IconButton>

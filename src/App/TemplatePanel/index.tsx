@@ -121,12 +121,12 @@ export default function TemplatePanel() {
             <SaveAndExitButton /> */}
             <ToggleButtonGroup size="small" value={selectedScreenSize} exclusive onChange={handleScreenSizeChange}>
               <ToggleButton value="desktop">
-                <Tooltip title={t('common.desktopView')}>
+                <Tooltip title={t('common.desktopView')} arrow>
                   <MonitorOutlined fontSize="small" />
                 </Tooltip>
               </ToggleButton>
               <ToggleButton value="mobile">
-                <Tooltip title={t('common.mobileView')}>
+                <Tooltip title={t('common.mobileView')} arrow>
                   <PhoneIphoneOutlined fontSize="small" />
                 </Tooltip>
               </ToggleButton>

@@ -17,7 +17,7 @@ export default function ImportJson() {
 
   return (
     <>
-      <Tooltip title={t('common.importJson')}>
+      <Tooltip title={t('common.importJson')} arrow>
         <IconButton onClick={() => setOpen(true)}>
           <FileUploadOutlined fontSize="small" />
         </IconButton>
