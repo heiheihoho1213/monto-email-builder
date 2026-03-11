@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 
 import { ArrowRightOutlined } from '@mui/icons-material';
-import { Button, Divider, Drawer, Stack, Typography, Popover, Paper, Box } from '@mui/material';
+import { Button, Divider, Drawer, Stack, Typography, Popover, Paper, Box, Link } from '@mui/material';
 
 import { resetDocument, useSamplesDrawerOpen, setDocument, setSelectedBlockId, useDocument, useShowSamplesDrawerTitle } from '../../documents/editor/EditorContext';
 import { useLeftPanelSlot } from '../../LeftPanelSlotContext';
@@ -166,6 +166,15 @@ export default function SamplesDrawer() {
                       <ArrowRightOutlined />
                     </Button>
                   </Box>
+                  <Link
+                    href="https://uspeedo.com/email"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="caption"
+                    sx={{ px: 0.75, display: 'block', mt: 0.5 }}
+                  >
+                    {t('common.moreTemplatesAtUspeedo')}
+                  </Link>
                   <Popover
                     open={Boolean(moreAnchorEl)}
                     anchorEl={moreAnchorEl}
