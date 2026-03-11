@@ -12,6 +12,13 @@ const sampleTemplates: Record<string, () => Promise<any>> = {
   'respond-to-message': () => import('./sample/respond-to-message').then(m => m.default),
   'subscription-receipt': () => import('./sample/subscription-receipt').then(m => m.default),
   'basic-template': () => import('./sample/basic-template').then(m => m.default),
+
+  'uspeedo-invite-to-event': () => import('./sample/uspeedo-invite-to-event').then(m => m.default),
+  'uspeedo-new-product-launch': () => import('./sample/uspeedo-new-product-launch').then(m => m.default),
+  'uspeedo-education': () => import('./sample/uspeedo-education').then(m => m.default),
+  'uspeedo-welcome': () => import('./sample/uspeedo-welcome').then(m => m.default),
+  'uspeedo-mothers-day': () => import('./sample/uspeedo-mothers-day').then(m => m.default),
+  'uspeedo-shopping-cart': () => import('./sample/uspeedo-shopping-cart').then(m => m.default),
 };
 
 // 缓存已加载的模板
@@ -56,12 +63,12 @@ export async function loadSampleTemplate(sampleName: string): Promise<any> {
   if (!loader) {
     return EMPTY_EMAIL_MESSAGE;
   }
-  
+
   // 如果已缓存，直接返回
   if (templateCache[sampleName]) {
     return templateCache[sampleName];
   }
-  
+
   // 动态加载模板
   const template = await loader();
   templateCache[sampleName] = template;
@@ -76,7 +83,7 @@ export async function loadSampleTemplate(sampleName: string): Promise<any> {
  */
 export function configToHash(config: any, format: 'json' | 'code' = 'json'): string {
   const jsonString = JSON.stringify(config);
-  
+
   if (format === 'code') {
     // base64 编码（更短，但需要编码）
     const encoded = btoa(encodeURIComponent(jsonString));

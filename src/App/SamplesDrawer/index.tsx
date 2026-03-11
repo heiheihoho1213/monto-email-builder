@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 
-import { Button, Divider, Drawer, Stack, Typography } from '@mui/material';
+import { ArrowRightOutlined } from '@mui/icons-material';
+import { Button, Divider, Drawer, Stack, Typography, Popover, Paper, Box } from '@mui/material';
 
 import { resetDocument, useSamplesDrawerOpen, setDocument, setSelectedBlockId, useDocument, useShowSamplesDrawerTitle } from '../../documents/editor/EditorContext';
 import { useLeftPanelSlot } from '../../LeftPanelSlotContext';
@@ -39,6 +40,23 @@ export default function SamplesDrawer() {
   };
 
   // 处理从侧边栏添加块
+  const [moreAnchorEl, setMoreAnchorEl] = useState<HTMLElement | null>(null);
+  const moreCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMoreOpen = (e: React.MouseEvent<HTMLElement>) => {
+    if (moreCloseTimeoutRef.current) clearTimeout(moreCloseTimeoutRef.current);
+    setMoreAnchorEl(e.currentTarget);
+  };
+  const handleMoreClose = (delay = 0) => {
+    if (moreCloseTimeoutRef.current) clearTimeout(moreCloseTimeoutRef.current);
+    if (delay) {
+      moreCloseTimeoutRef.current = setTimeout(() => setMoreAnchorEl(null), delay);
+    } else {
+      moreCloseTimeoutRef.current = null;
+      setMoreAnchorEl(null);
+    }
+  };
+
   const handleBlockSelect = (block: TEditorBlock) => {
     const rootId = findRootEmailLayoutId();
     if (!rootId) {
@@ -127,7 +145,52 @@ export default function SamplesDrawer() {
                 <Stack alignItems="flex-start">
                   <SidebarButton sampleName="basic-template">{t('samples.quickStart')}</SidebarButton>
                   <SidebarButton sampleName="welcome">{t('samples.welcomeEmail')}</SidebarButton>
+                  <SidebarButton sampleName="one-time-password">{t('samples.oneTimePasscode')}</SidebarButton>
+                  <SidebarButton sampleName="reset-password">{t('samples.resetPassword')}</SidebarButton>
+                  <SidebarButton sampleName="order-ecomerce">{t('samples.orderEcommerce')}</SidebarButton>
+                  <SidebarButton sampleName="subscription-receipt">{t('samples.subscriptionReceipt')}</SidebarButton>
                   <SidebarButton sampleName="reservation-reminder">{t('samples.reservationReminder')}</SidebarButton>
+                  <SidebarButton sampleName="post-metrics-report">{t('samples.postMetrics')}</SidebarButton>
+                  <SidebarButton sampleName="respond-to-message">{t('samples.respondToMessage')}</SidebarButton>
+
+                  <Box
+                    onMouseEnter={handleMoreOpen}
+                    onMouseLeave={() => handleMoreClose(180)}
+                    sx={{ width: '100%' }}
+                  >
+                    <Button
+                      size="small"
+                      sx={{ cursor: 'default', width: '100%', justifyContent: 'space-between' }}
+                    >
+                      <span>{t('common.more')}</span>
+                      <ArrowRightOutlined />
+                    </Button>
+                  </Box>
+                  <Popover
+                    open={Boolean(moreAnchorEl)}
+                    anchorEl={moreAnchorEl}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                    slotProps={{
+                      paper: {
+                        onMouseEnter: () => { if (moreCloseTimeoutRef.current) clearTimeout(moreCloseTimeoutRef.current); },
+                        onMouseLeave: () => handleMoreClose(180),
+                      },
+                    }}
+                    disableRestoreFocus
+                    sx={{ pointerEvents: moreAnchorEl ? 'auto' : 'none' }}
+                  >
+                    <Paper elevation={8} sx={{ py: 0.5, minWidth: 200 }}>
+                      <Stack py={0.5}>
+                        <SidebarButton sampleName="uspeedo-invite-to-event">{'uspeedo invite to event'}</SidebarButton>
+                        <SidebarButton sampleName="uspeedo-new-product-launch">{'uspeedo new product launch'}</SidebarButton>
+                        <SidebarButton sampleName="uspeedo-education">{'uspeedo education'}</SidebarButton>
+                        <SidebarButton sampleName="uspeedo-welcome">{'uspeedo welcome'}</SidebarButton>
+                        <SidebarButton sampleName="uspeedo-mothers-day">{'uspeedo mother\'s day'}</SidebarButton>
+                        <SidebarButton sampleName="uspeedo-shopping-cart">{'uspeedo shopping cart'}</SidebarButton>
+                      </Stack>
+                    </Paper>
+                  </Popover>
                 </Stack>
               </Stack>
 

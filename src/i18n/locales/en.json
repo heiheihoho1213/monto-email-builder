@@ -16,6 +16,7 @@
     "import": "Import",
     "cancel": "Cancel",
     "addContentBlocks": "Add Content Blocks",
+    "more": "More",
     "undo": "Undo",
     "undoTooltip": "Undo (Ctrl/Cmd + Z)",
     "redo": "Redo",
