@@ -6,7 +6,7 @@ import {
   LinkOutlined,
 } from '@mui/icons-material';
 import { Box, Button, CircularProgress, Stack, TextField, ToggleButton, Typography } from '@mui/material';
-import { Image, ImageProps } from '@usewaypoint/block-image';
+import { Image, ImageProps } from 'monto-email-block-image';
 
 import { useCurrentBlockId } from '../../editor/EditorBlock';
 import { setDocument, editorStateStore, useImageUploadHandler } from '../../editor/EditorContext';

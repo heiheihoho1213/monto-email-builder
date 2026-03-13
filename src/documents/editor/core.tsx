@@ -1,18 +1,18 @@
 import React from 'react';
 import { z } from 'zod';
 
-import { Button, ButtonPropsSchema } from '@usewaypoint/block-button';
-import { Divider, DividerPropsSchema } from '@usewaypoint/block-divider';
-import { Heading, HeadingPropsSchema } from '@usewaypoint/block-heading';
+import { Button, ButtonPropsSchema } from 'monto-email-block-button';
+import { Divider, DividerPropsSchema } from 'monto-email-block-divider';
+import { Heading, HeadingPropsSchema } from 'monto-email-block-heading';
 import { Html, HtmlPropsSchema } from 'monto-email-block-html';
-import { ImagePropsSchema } from '@usewaypoint/block-image';
-import { Spacer, SpacerPropsSchema } from '@usewaypoint/block-spacer';
-import { Text, TextPropsSchema } from '@usewaypoint/block-text';
+import { ImagePropsSchema } from 'monto-email-block-image';
+import { Spacer, SpacerPropsSchema } from 'monto-email-block-spacer';
+import { Text, TextPropsSchema } from 'monto-email-block-text';
 import {
   buildBlockComponent,
   buildBlockConfigurationDictionary,
   buildBlockConfigurationSchema,
-} from '@usewaypoint/document-core';
+} from 'monto-email-document-core';
 
 import ColumnsContainerEditor from '../blocks/ColumnsContainer/ColumnsContainerEditor';
 import ColumnsContainerPropsSchema from '../blocks/ColumnsContainer/ColumnsContainerPropsSchema';

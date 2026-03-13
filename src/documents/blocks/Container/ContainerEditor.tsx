@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Container as BaseContainer } from '@usewaypoint/block-container';
+import { Container as BaseContainer } from 'monto-email-block-container';
 
 import { useCurrentBlockId } from '../../editor/EditorBlock';
 import { setDocument, setSelectedBlockId, useDocument, editorStateStore } from '../../editor/EditorContext';

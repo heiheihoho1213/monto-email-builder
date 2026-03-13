@@ -48,7 +48,7 @@ const USPEEDO_SHOPPING_CART: TEditorConfiguration = {
         "props": {
           "width": 160,
           "height": 27,
-          "url": "https://social-media-marketing-test.sg.ufileos.com/38d1877e-c9cf-4683-af4f-aa25ffd218bf?Expires=2085808297&Signature=2RAJQC3A59m3ZRUnr8KaKPIsnUg%3D&UCloudPublicKey=TOKEN_8d2a1be4-ca78-4495-aa18-4d1325bcaee7",
+          "url": "https://social-media-marketing-test.sg.ufileos.com/61e73c38-d613-4a1a-a4dc-b0f13178eaed?Expires=2086152870&Signature=OToH7Mf2vZKHvwBRXJmZv7BKQ1E%3D&UCloudPublicKey=TOKEN_8d2a1be4-ca78-4495-aa18-4d1325bcaee7",
           "alt": "Sample product",
           "linkHref": null,
           "contentAlignment": "middle"

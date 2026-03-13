@@ -129,4 +129,4 @@ function App() {
 
 1. 组件需要父容器有明确的高度才能正常显示
 2. 代码变化会通过防抖（300ms）处理，避免频繁触发 onChange
-3. 预览使用 `@usewaypoint/block-html` 组件渲染，确保 HTML 代码符合该组件的规范
+3. 预览使用 `monto-email-block-html` 组件渲染，确保 HTML 代码符合该组件的规范

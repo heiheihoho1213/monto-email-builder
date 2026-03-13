@@ -215,16 +215,6 @@ export default function SamplesDrawer() {
             </Typography>
             <BlocksGrid onSelect={handleBlockSelect} disableContainerBlocks={false} />
           </Stack>
-          {/* <Divider /> */}
-
-          {/* <Stack>
-            <Button size="small" href="https://www.usewaypoint.com/open-source/emailbuilderjs" target="_blank">
-              Learn more
-            </Button>
-            <Button size="small" href="https://github.com/usewaypoint/email-builder-js" target="_blank">
-              View on GitHub
-            </Button>
-          </Stack> */}
         </Stack>
       </Stack>
     </Drawer>

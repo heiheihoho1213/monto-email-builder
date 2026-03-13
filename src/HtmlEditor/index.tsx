@@ -171,7 +171,7 @@ export default function HtmlEditor({
   const [device, setDevice] = useState<HtmlEditorDevice>(initialDevice);
   const [theme, setTheme] = useState<string>(() => getStoredTheme(initialTheme));
   const [internalValue, setInternalValue] = useState(value);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // iframe ref 必须在组件顶层声明，不能在 renderPreview 函数内部
   const iframeRef = useRef<HTMLIFrameElement>(null);

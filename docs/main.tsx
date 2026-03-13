@@ -12,7 +12,7 @@ import {
 import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Button } from '@mui/material';
 
 import EmailBuilder, { EmailBuilderRef } from '../src/EmailBuilder';
-import { HtmlEditor } from '../src';
+import HtmlEditor from '../src/HtmlEditor';
 import { Language } from '../src/i18n';
 import { TEditorConfiguration } from '../src/documents/editor/core';
 

@@ -23,13 +23,18 @@ export default defineConfig(({ mode }) => {
           name: 'EmailBuilder',
           formats: ['es'],
         },
-        minify: 'terser',
-        terserOptions: {
-          compress: {
-            drop_console: true,
-            drop_debugger: true,
-            pure_funcs: ['console.log', 'console.info', 'console.debug'],
-          },
+        // minify: 'terser',
+        // terserOptions: {
+        //   compress: {
+        //     drop_console: true,
+        //     drop_debugger: true,
+        //     pure_funcs: ['console.log', 'console.info', 'console.debug'],
+        //   },
+        // },
+        minify: 'esbuild',
+        // esbuild 级别的压缩配置
+        esbuild: {
+          drop: ['console', 'debugger'],
         },
         // 启用代码分割（lib 模式下需要明确启用）
         cssCodeSplit: true,

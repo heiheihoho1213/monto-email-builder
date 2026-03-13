@@ -52,13 +52,14 @@ npm install @mui/material @mui/icons-material
 npm install @emotion/react @emotion/styled
 npm install zustand zod react-colorful
 
-# @usewaypoint 系列包
-npm install @usewaypoint/block-button \
-  monto-email-block-columns-container @usewaypoint/block-container \
-  @usewaypoint/block-divider @usewaypoint/block-heading \
-  @usewaypoint/block-html @usewaypoint/block-image \
-  @usewaypoint/block-spacer @usewaypoint/block-text \
-  @usewaypoint/document-core @usewaypoint/email-builder
+# monto-email 系列包
+npm install monto-email-block-button \
+  monto-email-block-columns-container monto-email-block-container \
+  monto-email-block-divider monto-email-block-heading \
+  monto-email-block-html monto-email-block-image \
+  monto-email-block-spacer monto-email-block-text \
+  monto-email-document-core monto-email-core \
+  monto-email-block-video monto-email-block-socials
 
 # 可选依赖（用于代码高亮功能，HTML/JSON 输出预览）
 # 如果使用代码高亮功能，需要安装 react-syntax-highlighter
@@ -70,10 +71,10 @@ npm install react-syntax-highlighter
 
 ```bash
 # yarn
-yarn add react react-dom @mui/material @mui/icons-material @emotion/react @emotion/styled zustand zod react-colorful @usewaypoint/block-avatar @usewaypoint/block-button monto-email-block-columns-container @usewaypoint/block-container @usewaypoint/block-divider @usewaypoint/block-heading @usewaypoint/block-html @usewaypoint/block-image @usewaypoint/block-spacer @usewaypoint/block-text @usewaypoint/document-core @usewaypoint/email-builder
+yarn add react react-dom @mui/material @mui/icons-material @emotion/react @emotion/styled zustand zod react-colorful monto-email-block-button monto-email-block-columns-container monto-email-block-container monto-email-block-divider monto-email-block-heading monto-email-block-html monto-email-block-image monto-email-block-spacer monto-email-block-text monto-email-document-core monto-email-core monto-email-block-video monto-email-block-socials
 
 # pnpm
-pnpm add react react-dom @mui/material @mui/icons-material @emotion/react @emotion/styled zustand zod react-colorful @usewaypoint/block-avatar @usewaypoint/block-button monto-email-block-columns-container @usewaypoint/block-container @usewaypoint/block-divider @usewaypoint/block-heading @usewaypoint/block-html @usewaypoint/block-image @usewaypoint/block-spacer @usewaypoint/block-text @usewaypoint/document-core @usewaypoint/email-builder
+pnpm add react react-dom @mui/material @mui/icons-material @emotion/react @emotion/styled zustand zod react-colorful monto-email-block-button monto-email-block-columns-container monto-email-block-container monto-email-block-divider monto-email-block-heading monto-email-block-html monto-email-block-image monto-email-block-spacer monto-email-block-text monto-email-document-core monto-email-core monto-email-block-video monto-email-block-socials
 ```
 
 ## 基本使用

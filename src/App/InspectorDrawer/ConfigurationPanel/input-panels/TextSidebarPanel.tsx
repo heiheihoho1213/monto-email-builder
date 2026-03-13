@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { TextProps, TextPropsSchema } from '@usewaypoint/block-text';
+import { TextProps, TextPropsSchema } from 'monto-email-block-text';
 import { ZodError } from 'zod';
 import { useTranslation } from '../../../../i18n/useTranslation';
 

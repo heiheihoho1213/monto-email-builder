@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import { Text, TextProps } from '@usewaypoint/block-text';
+import { Text, TextProps } from 'monto-email-block-text';
 import { Box } from '@mui/material';
 import { useCurrentBlockId } from '../../editor/EditorBlock';
 import { useDocument, setDocument, useSelectedBlockId, editorStateStore } from '../../editor/EditorContext';

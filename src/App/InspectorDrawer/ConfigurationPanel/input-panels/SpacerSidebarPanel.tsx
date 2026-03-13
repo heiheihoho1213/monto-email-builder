@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 import { HeightOutlined } from '@mui/icons-material';
-import { SpacerProps, SpacerPropsDefaults, SpacerPropsSchema } from '@usewaypoint/block-spacer';
+import { SpacerProps, SpacerPropsDefaults, SpacerPropsSchema } from 'monto-email-block-spacer';
 import { ZodError } from 'zod';
 import { useTranslation } from '../../../../i18n/useTranslation';
 

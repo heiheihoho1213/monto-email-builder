@@ -8,7 +8,7 @@ import {
   VerticalAlignTopOutlined,
 } from '@mui/icons-material';
 import { Button, CircularProgress, Stack, ToggleButton, Typography } from '@mui/material';
-import { ImageProps, ImagePropsSchema } from '@usewaypoint/block-image';
+import { ImageProps, ImagePropsSchema } from 'monto-email-block-image';
 import { ZodError } from 'zod';
 
 import { useImageUploadHandler } from '../../../../documents/editor/EditorContext';

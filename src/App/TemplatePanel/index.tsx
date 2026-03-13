@@ -44,7 +44,7 @@ export default function TemplatePanel() {
 
   let mainBoxSx: SxProps = {
     flex: 1,
-    overflow: 'auto',
+    overflow: 'visible',
   };
   if (selectedScreenSize === 'mobile') {
     mainBoxSx = {
