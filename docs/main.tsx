@@ -9,9 +9,10 @@ import {
   Code as CodeIcon,
   Email as EmailIcon,
 } from '@mui/icons-material';
-import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Button } from '@mui/material';
+import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Button, ThemeProvider } from '@mui/material';
 
 import EmailBuilder, { EmailBuilderRef } from '../src/EmailBuilder';
+import theme from '../src/theme';
 import HtmlEditor from '../src/HtmlEditor';
 import { Language } from '../src/i18n';
 import { TEditorConfiguration } from '../src/documents/editor/core';
@@ -261,8 +262,9 @@ const Home = () => {
 
   return (
     <React.StrictMode>
-      <Box sx={{ position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
-        {editorMode === 'email' ? (
+      <ThemeProvider theme={theme}>
+        <Box sx={{ position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
+          {editorMode === 'email' ? (
           <EmailBuilder
             ref={emailBuilderRef}
             initialDocument={initialDocument}
@@ -336,7 +338,8 @@ const Home = () => {
             onClick={handleToggleEditorMode}
           />
         </SpeedDial>
-      </Box>
+        </Box>
+      </ThemeProvider>
     </React.StrictMode>
   );
 };

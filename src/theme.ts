@@ -211,7 +211,7 @@ const THEME = createTheme(BASE_THEME, {
     MuiTooltip: {
       styleOverrides: {
         tooltip: {
-          fontSize: BASE_THEME.typography.pxToRem(12),
+          // fontSize: BASE_THEME.typography.pxToRem(12),
           backgroundColor: alpha(BASE_THEME.palette.text.primary, 0.9),
         },
         arrow: {

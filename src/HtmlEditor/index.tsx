@@ -19,7 +19,6 @@ import {
   Box,
   ToggleButton,
   ToggleButtonGroup,
-  IconButton,
   Tooltip,
   Select,
   MenuItem,
@@ -28,13 +27,14 @@ import {
   SxProps,
   Theme,
   ListSubheader,
+  useTheme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import {
   Code as CodeIcon,
   Visibility as VisibilityIcon,
   ViewColumn as ViewColumnIcon,
-  DesktopWindowsOutlined as DesktopIcon,
-  PhoneAndroid as MobileIcon,
+  MonitorOutlined, PhoneIphoneOutlined
 } from '@mui/icons-material';
 import { Language, t } from '../i18n';
 
@@ -263,9 +263,29 @@ export default function HtmlEditor({
   };
 
   const handleDeviceChange = (_: React.MouseEvent<HTMLElement>, newDevice: HtmlEditorDevice | null) => {
-    if (newDevice !== null) {
-      setDevice(newDevice);
-    }
+    if (newDevice === 'desktop' || newDevice === 'mobile') setDevice(newDevice);
+  };
+
+  const hostTheme = useTheme();
+  const deviceValue = device === 'desktop' || device === 'mobile' ? device : 'desktop';
+  const selectedSx: SxProps<Theme> = {
+    backgroundColor: hostTheme.palette?.action?.selected ?? 'rgba(25, 118, 210, 0.12)',
+    color: hostTheme.palette?.primary?.main ?? '#1976d2',
+    '&:hover': { backgroundColor: hostTheme.palette?.action?.selected ?? 'rgba(25, 118, 210, 0.12)' },
+  };
+  // 与 theme.ts MuiTooltip 一致，显式 slotProps 避免与邮件编辑器 Tooltip 样式不一致（同 ThemeProvider 下仍可能因注入顺序等不同）
+  const tooltipSlotProps = {
+    tooltip: {
+      sx: {
+        fontSize: '11px',
+        fontWeight: 300,
+        backgroundColor: alpha(hostTheme.palette?.text?.primary ?? '#1F1F21', 0.9),
+        color: hostTheme.palette?.common?.white ?? '#fff',
+      },
+    },
+    arrow: {
+      sx: { color: alpha(hostTheme.palette?.text?.primary ?? '#1F1F21', 0.9) },
+    },
   };
 
   // 渲染代码编辑器（高度由父级 flex 约束，避免 100vh 导致溢出；minHeight: 0 让 flex 子项可收缩）
@@ -367,17 +387,17 @@ export default function HtmlEditor({
 
   return (
     <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        width: '100%',
-        minHeight: 0,
-        minWidth: 0,
-        ...sx,
-      }}
-    >
-      {showToolbar && (
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          width: '100%',
+          minHeight: 0,
+          minWidth: 0,
+          ...sx,
+        }}
+      >
+        {showToolbar && (
         <Box
           sx={{
             display: 'flex',
@@ -397,17 +417,17 @@ export default function HtmlEditor({
               size="small"
               aria-label={translate('htmlEditor.mode.split')}
             >
-              <Tooltip title={translate('htmlEditor.tooltips.splitView')} arrow>
+              <Tooltip title={translate('htmlEditor.tooltips.splitView')} arrow slotProps={tooltipSlotProps}>
                 <ToggleButton value="split" aria-label={translate('htmlEditor.mode.split')}>
                   <ViewColumnIcon fontSize="small" />
                 </ToggleButton>
               </Tooltip>
-              <Tooltip title={translate('htmlEditor.tooltips.codeOnly')} arrow>
+              <Tooltip title={translate('htmlEditor.tooltips.codeOnly')} arrow slotProps={tooltipSlotProps}>
                 <ToggleButton value="code" aria-label={translate('htmlEditor.mode.code')}>
                   <CodeIcon fontSize="small" />
                 </ToggleButton>
               </Tooltip>
-              <Tooltip title={translate('htmlEditor.tooltips.previewOnly')} arrow>
+              <Tooltip title={translate('htmlEditor.tooltips.previewOnly')} arrow slotProps={tooltipSlotProps}>
                 <ToggleButton value="preview" aria-label={translate('htmlEditor.mode.preview')}>
                   <VisibilityIcon fontSize="small" />
                 </ToggleButton>
@@ -427,7 +447,7 @@ export default function HtmlEditor({
                   setStoredTheme(next);
                 }}
                 sx={{
-                  fontSize: '0.875rem',
+                  // fontSize: '0.875rem',
                   '& .MuiSelect-select': {
                     py: 0.5,
                   },
@@ -452,20 +472,28 @@ export default function HtmlEditor({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {mode !== 'code' && (
               <ToggleButtonGroup
-                value={device}
+                value={deviceValue}
                 exclusive
                 onChange={handleDeviceChange}
                 size="small"
                 aria-label={translate('htmlEditor.device.desktop')}
               >
-                <Tooltip title={translate('htmlEditor.tooltips.desktopView')} arrow>
-                  <ToggleButton value="desktop" aria-label={translate('htmlEditor.device.desktop')}>
-                    <DesktopIcon fontSize="small" />
+                <Tooltip title={translate('htmlEditor.tooltips.desktopView')} arrow slotProps={tooltipSlotProps}>
+                  <ToggleButton
+                    value="desktop"
+                    aria-label={translate('htmlEditor.device.desktop')}
+                    sx={deviceValue === 'desktop' ? selectedSx : undefined}
+                  >
+                    <MonitorOutlined fontSize="small" />
                   </ToggleButton>
                 </Tooltip>
-                <Tooltip title={translate('htmlEditor.tooltips.mobileView')} arrow>
-                  <ToggleButton value="mobile" aria-label={translate('htmlEditor.device.mobile')}>
-                    <MobileIcon fontSize="small" />
+                <Tooltip title={translate('htmlEditor.tooltips.mobileView')} arrow slotProps={tooltipSlotProps}>
+                  <ToggleButton
+                    value="mobile"
+                    aria-label={translate('htmlEditor.device.mobile')}
+                    sx={deviceValue === 'mobile' ? selectedSx : undefined}
+                  >
+                    <PhoneIphoneOutlined fontSize="small" />
                   </ToggleButton>
                 </Tooltip>
               </ToggleButtonGroup>
@@ -496,6 +524,6 @@ export default function HtmlEditor({
           <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{renderPreview()}</Box>
         )}
       </Box>
-    </Box>
+      </Box>
   );
 }
