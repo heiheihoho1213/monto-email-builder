@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { MonitorOutlined, PhoneIphoneOutlined } from '@mui/icons-material';
-import { Box, Stack, SxProps, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
+import { Box, Stack, SxProps, Theme, ToggleButton, ToggleButtonGroup, Tooltip, useTheme } from '@mui/material';
 import { Reader } from 'monto-email-core';
 
 import EditorBlock from '../../documents/editor/EditorBlock';
@@ -58,14 +58,16 @@ export default function TemplatePanel() {
   }
 
   const handleScreenSizeChange = (_: unknown, value: unknown) => {
-    switch (value) {
-      case 'mobile':
-      case 'desktop':
-        setSelectedScreenSize(value);
-        return;
-      default:
-        setSelectedScreenSize('desktop');
-    }
+    if (value === 'mobile' || value === 'desktop') setSelectedScreenSize(value);
+    else setSelectedScreenSize('desktop');
+  };
+
+  const theme = useTheme();
+  const screenSizeValue = selectedScreenSize === 'desktop' || selectedScreenSize === 'mobile' ? selectedScreenSize : 'desktop';
+  const selectedSx: SxProps<Theme> = {
+    backgroundColor: theme.palette?.action?.selected ?? 'rgba(25, 118, 210, 0.12)',
+    color: theme.palette?.primary?.main ?? '#1976d2',
+    '&:hover': { backgroundColor: theme.palette?.action?.selected ?? 'rgba(25, 118, 210, 0.12)' },
   };
 
   const renderMainPanel = () => {
@@ -119,14 +121,14 @@ export default function TemplatePanel() {
             {showJsonFeatures && <ImportJson />}
             {/* <SaveButton />
             <SaveAndExitButton /> */}
-            <ToggleButtonGroup size="small" value={selectedScreenSize} exclusive onChange={handleScreenSizeChange}>
+            <ToggleButtonGroup size="small" value={screenSizeValue} exclusive onChange={handleScreenSizeChange}>
               <Tooltip title={t('common.desktopView')} arrow>
-                <ToggleButton value="desktop">
+                <ToggleButton value="desktop" sx={screenSizeValue === 'desktop' ? selectedSx : undefined}>
                   <MonitorOutlined fontSize="small" />
                 </ToggleButton>
               </Tooltip>
               <Tooltip title={t('common.mobileView')} arrow>
-                <ToggleButton value="mobile">
+                <ToggleButton value="mobile" sx={screenSizeValue === 'mobile' ? selectedSx : undefined}>
                   <PhoneIphoneOutlined fontSize="small" />
                 </ToggleButton>
               </Tooltip>

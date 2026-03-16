@@ -268,11 +268,20 @@ export default function HtmlEditor({
 
   const hostTheme = useTheme();
   const deviceValue = device === 'desktop' || device === 'mobile' ? device : 'desktop';
+  const modeValue = mode === 'split' || mode === 'code' || mode === 'preview' ? mode : 'split';
   const selectedSx: SxProps<Theme> = {
     backgroundColor: hostTheme.palette?.action?.selected ?? 'rgba(25, 118, 210, 0.12)',
     color: hostTheme.palette?.primary?.main ?? '#1976d2',
     '&:hover': { backgroundColor: hostTheme.palette?.action?.selected ?? 'rgba(25, 118, 210, 0.12)' },
   };
+  const toggleButtonBaseSx: SxProps<Theme> = {
+    backgroundColor: hostTheme.palette?.background?.paper ?? '#fff',
+    color: hostTheme.palette?.text?.primary ?? '#1F1F21',
+    '&:hover': {
+      backgroundColor: hostTheme.palette?.action?.hover ?? 'rgba(0, 0, 0, 0.04)',
+    },
+  };
+
   // 与 theme.ts MuiTooltip 一致，显式 slotProps 避免与邮件编辑器 Tooltip 样式不一致（同 ThemeProvider 下仍可能因注入顺序等不同）
   const tooltipSlotProps = {
     tooltip: {
@@ -411,24 +420,36 @@ export default function HtmlEditor({
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ToggleButtonGroup
-              value={mode}
+              value={modeValue}
               exclusive
               onChange={handleModeChange}
               size="small"
               aria-label={translate('htmlEditor.mode.split')}
             >
               <Tooltip title={translate('htmlEditor.tooltips.splitView')} arrow slotProps={tooltipSlotProps}>
-                <ToggleButton value="split" aria-label={translate('htmlEditor.mode.split')}>
+                <ToggleButton
+                  value="split"
+                  aria-label={translate('htmlEditor.mode.split')}
+                  // sx={[toggleButtonBaseSx, ...(modeValue === 'split' ? [selectedSx] : [])]}
+                >
                   <ViewColumnIcon fontSize="small" />
                 </ToggleButton>
               </Tooltip>
               <Tooltip title={translate('htmlEditor.tooltips.codeOnly')} arrow slotProps={tooltipSlotProps}>
-                <ToggleButton value="code" aria-label={translate('htmlEditor.mode.code')}>
+                <ToggleButton
+                  value="code"
+                  aria-label={translate('htmlEditor.mode.code')}
+                  // sx={[toggleButtonBaseSx, ...(modeValue === 'code' ? [selectedSx] : [])]}
+                >
                   <CodeIcon fontSize="small" />
                 </ToggleButton>
               </Tooltip>
               <Tooltip title={translate('htmlEditor.tooltips.previewOnly')} arrow slotProps={tooltipSlotProps}>
-                <ToggleButton value="preview" aria-label={translate('htmlEditor.mode.preview')}>
+                <ToggleButton
+                  value="preview"
+                  aria-label={translate('htmlEditor.mode.preview')}
+                  // sx={[toggleButtonBaseSx, ...(modeValue === 'preview' ? [selectedSx] : [])]}
+                >
                   <VisibilityIcon fontSize="small" />
                 </ToggleButton>
               </Tooltip>
@@ -482,7 +503,7 @@ export default function HtmlEditor({
                   <ToggleButton
                     value="desktop"
                     aria-label={translate('htmlEditor.device.desktop')}
-                    sx={deviceValue === 'desktop' ? selectedSx : undefined}
+                    // sx={[toggleButtonBaseSx, ...(deviceValue === 'desktop' ? [selectedSx] : [])]}
                   >
                     <MonitorOutlined fontSize="small" />
                   </ToggleButton>
@@ -491,7 +512,7 @@ export default function HtmlEditor({
                   <ToggleButton
                     value="mobile"
                     aria-label={translate('htmlEditor.device.mobile')}
-                    sx={deviceValue === 'mobile' ? selectedSx : undefined}
+                    // sx={[toggleButtonBaseSx, ...(deviceValue === 'mobile' ? [selectedSx] : [])]}
                   >
                     <PhoneIphoneOutlined fontSize="small" />
                   </ToggleButton>
