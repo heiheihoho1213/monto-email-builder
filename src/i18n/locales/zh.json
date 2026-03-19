@@ -129,7 +129,8 @@
     "linkUrl": "URL",
     "linkPlaceholderUrl": "请输入 URL",
     "linkInvalid": "请输入有效的链接",
-    "linkTargetBlank": "在新标签页打开"
+    "linkTargetBlank": "在新标签页打开",
+    "editLink": "编辑链接"
   },
   "button": {
     "title": "按钮块",

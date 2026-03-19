@@ -129,7 +129,8 @@
     "linkUrl": "URL",
     "linkPlaceholderUrl": "Enter URL here",
     "linkInvalid": "Please enter a valid link",
-    "linkTargetBlank": "Open in new tab"
+    "linkTargetBlank": "Open in new tab",
+    "editLink": "Edit Link"
   },
   "button": {
     "title": "Button block",

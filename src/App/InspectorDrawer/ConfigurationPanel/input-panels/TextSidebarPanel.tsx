@@ -375,22 +375,35 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
           </IconButton>
         </Stack>
       )}
+      <Stack direction="row" alignItems="start" flexDirection="column" justifyContent="space-between">
+        <InputLabel shrink>{t('text.link')}</InputLabel>
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={handleOpenLink}
+          disabled={!linkEnabled}
+          aria-label={t('text.link')}
+          startIcon={<LinkOutlined fontSize="small" />}
+          sx={{
+            alignSelf: 'flex-start',
+            mt: 0.5,
+            color: 'text.secondary',
+            borderColor: 'divider',
+            '& .MuiButton-startIcon': { color: 'text.secondary' },
+            '&:hover': {
+              borderColor: 'text.disabled',
+              backgroundColor: 'action.hover',
+            },
+          }}
+        >
+          {t('text.editLink')}
+        </Button>
+      </Stack>
       <MultiStylePropertyPanel
         names={SELECTION_AWARE_NAMES}
         value={displayStyle}
         onChange={handleStyleChange}
       />
-      <Stack direction="row" alignItems="center" justifyContent="space-between">
-        <InputLabel shrink>{t('text.link')}</InputLabel>
-        <IconButton
-          size="small"
-          onClick={handleOpenLink}
-          disabled={!linkEnabled}
-          aria-label={t('text.link')}
-        >
-          <LinkOutlined fontSize="small" />
-        </IconButton>
-      </Stack>
       {/* divider 以下的字段统一按全局配置（不写 inlineRuns） */}
       <Divider sx={{ my: 2 }} />
       <MultiStylePropertyPanel names={GLOBAL_NAMES} value={displayStyle} onChange={handleStyleChange} />
