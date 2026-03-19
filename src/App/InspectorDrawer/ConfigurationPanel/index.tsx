@@ -68,7 +68,14 @@ export default function ConfigurationPanel() {
     case 'Spacer':
       return <SpacerSidebarPanel key={selectedBlockId} data={data} setData={(data) => setBlock({ type, data })} />;
     case 'Text':
-      return <TextSidebarPanel key={selectedBlockId} data={data} setData={(data) => setBlock({ type, data })} />;
+      return (
+        <TextSidebarPanel
+          key={selectedBlockId}
+          blockId={selectedBlockId}
+          data={data}
+          setData={(data) => setBlock({ type, data })}
+        />
+      );
     case 'Socials':
       return <SocialsSidebarPanel key={selectedBlockId} data={data} setData={(data) => setBlock({ type, data })} />;
     default:

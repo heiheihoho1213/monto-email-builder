@@ -7,10 +7,18 @@ import { HistoryManager } from './HistoryManager';
 
 import { getLanguage, Language, setLanguage as setI18nLanguage } from '../../i18n';
 
+export type TextSelectionRange = { blockId: string; start: number; end: number };
+
 type TValue = {
   document: TEditorConfiguration;
 
   selectedBlockId: string | null;
+  /** 当前 Text 块内字符选区，用于右侧属性栏「跟随选区」 */
+  textSelection: TextSelectionRange | null;
+  /** 最近一次在面板中应用选区样式的时间戳；用于避免 re-render 导致选区折叠后误清空 textSelection */
+  lastInlineStyleApplyAt: number;
+  /** 更新选区时同步的当前块文本快照，用于右侧「选中」预览（未 blur 前 document 未更新） */
+  lastTextBlockContent: { blockId: string; text: string } | null;
   selectedSidebarTab: 'block-configuration' | 'styles';
   selectedMainTab: 'editor' | 'preview' | 'json' | 'html';
   selectedScreenSize: 'desktop' | 'mobile';
@@ -115,6 +123,9 @@ if (!historyManager) {
 const editorStateStore = create<TValue>((set, get) => ({
   document: initialDocument || EMPTY_EMAIL_MESSAGE,
   selectedBlockId: null,
+  textSelection: null,
+  lastInlineStyleApplyAt: 0,
+  lastTextBlockContent: null,
   selectedSidebarTab: 'styles',
   selectedMainTab: 'editor',
   selectedScreenSize: 'desktop',
@@ -175,9 +186,43 @@ export function setSelectedBlockId(selectedBlockId: TValue['selectedBlockId']) {
   }
   return editorStateStore.setState({
     selectedBlockId,
+    textSelection: null,
+    lastTextBlockContent: null,
     selectedSidebarTab,
     ...options,
   });
+}
+
+export function setTextSelection(range: TValue['textSelection']) {
+  return editorStateStore.setState({ textSelection: range });
+}
+
+export function useTextSelection() {
+  return editorStateStore((s) => s.textSelection);
+}
+
+/** 在右侧面板应用选区样式后调用，避免随后 re-render 导致选区折叠时误清空 textSelection */
+export function markLastInlineStyleApply() {
+  return editorStateStore.setState({ lastInlineStyleApplyAt: Date.now() });
+}
+
+const INLINE_STYLE_APPLY_GRACE_MS = 400;
+
+export function shouldIgnoreCollapsedSelectionForClear(): boolean {
+  const t = editorStateStore.getState().lastInlineStyleApplyAt;
+  return t > 0 && Date.now() - t < INLINE_STYLE_APPLY_GRACE_MS;
+}
+
+export function setLastTextBlockContent(payload: { blockId: string; text: string } | null) {
+  return editorStateStore.setState({ lastTextBlockContent: payload });
+}
+
+export function useLastTextBlockContent() {
+  return editorStateStore((s) => s.lastTextBlockContent);
+}
+
+export function useLastInlineStyleApplyAt() {
+  return editorStateStore((s) => s.lastInlineStyleApplyAt);
 }
 
 export function setSidebarTab(selectedSidebarTab: TValue['selectedSidebarTab']) {
@@ -204,6 +249,8 @@ export function resetDocument(document: TValue['document']) {
     document,
     selectedSidebarTab: 'styles',
     selectedBlockId: null,
+    textSelection: null,
+    lastTextBlockContent: null,
   });
 
   const onChange = editorStateStore.getState().onChange;

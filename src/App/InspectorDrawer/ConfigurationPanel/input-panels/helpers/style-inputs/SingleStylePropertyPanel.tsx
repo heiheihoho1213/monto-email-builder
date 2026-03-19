@@ -7,10 +7,14 @@ import { useTranslation } from '../../../../../../i18n/useTranslation';
 import { NullableColorInput } from '../inputs/ColorInput';
 import { NullableFontFamily } from '../inputs/FontFamily';
 import FontSizeInput from '../inputs/FontSizeInput';
+import FontStyleInput from '../inputs/FontStyleInput';
 import FontWeightInput from '../inputs/FontWeightInput';
+import LetterSpacingInput from '../inputs/LetterSpacingInput';
+import LineHeightInput from '../inputs/LineHeightInput';
 import PaddingInput from '../inputs/PaddingInput';
 import SliderInput from '../inputs/SliderInput';
 import TextAlignInput from '../inputs/TextAlignInput';
+import TextDecorationInput from '../inputs/TextDecorationInput';
 
 type StylePropertyPanelProps = {
   name: keyof TStyle;
@@ -52,6 +56,14 @@ export default function SingleStylePropertyPanel({ name, value, onChange }: Styl
       return <FontSizeInput label={t('style.fontSize')} defaultValue={defaultValue} onChange={handleChange} />;
     case 'fontWeight':
       return <FontWeightInput label={t('style.fontWeight')} defaultValue={defaultValue} onChange={handleChange} />;
+    case 'fontStyle':
+      return <FontStyleInput label={t('style.fontStyle')} defaultValue={defaultValue} onChange={handleChange} />;
+    case 'textDecoration':
+      return <TextDecorationInput label={t('style.textDecoration')} defaultValue={defaultValue} onChange={handleChange} />;
+    case 'lineHeight':
+      return <LineHeightInput label={t('style.lineHeight')} defaultValue={defaultValue} onChange={handleChange} />;
+    case 'letterSpacing':
+      return <LetterSpacingInput label={t('style.letterSpacing')} defaultValue={defaultValue} onChange={handleChange} />;
     case 'textAlign':
       return <TextAlignInput label={t('style.alignment')} defaultValue={defaultValue} onChange={handleChange} />;
     case 'padding':

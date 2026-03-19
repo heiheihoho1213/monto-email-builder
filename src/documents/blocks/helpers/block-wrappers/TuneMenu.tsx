@@ -1,11 +1,54 @@
 import React from 'react';
 
-import { ArrowDownwardOutlined, ArrowUpwardOutlined, DeleteOutlined } from '@mui/icons-material';
-import { IconButton, Paper, Stack, SxProps, Tooltip } from '@mui/material';
+import { ArrowDownwardOutlined, ArrowUpwardOutlined, ContentCopyOutlined, DeleteOutlined } from '@mui/icons-material';
+import { Divider, IconButton, Paper, Stack, SxProps, Tooltip } from '@mui/material';
 
 import { TEditorBlock, TEditorConfiguration } from '../../../editor/core';
 import { resetDocument, setSelectedBlockId, useDocument } from '../../../editor/EditorContext';
 import { ColumnsContainerProps } from '../../ColumnsContainer/ColumnsContainerPropsSchema';
+
+function generateId() {
+  return `block-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+// 递归复制块及其子块，返回新 document 和新块 id
+function duplicateBlockInDocument(
+  doc: TEditorConfiguration,
+  blockId: string
+): { newDocument: TEditorConfiguration; newBlockId: string } {
+  const block = doc[blockId];
+  if (!block) {
+    return { newDocument: doc, newBlockId: blockId };
+  }
+  const newId = generateId();
+  const clone = JSON.parse(JSON.stringify(block)) as TEditorBlock;
+  let newDoc = { ...doc };
+
+  if (clone.type === 'Container' && clone.data?.props?.childrenIds) {
+    const newChildIds: string[] = [];
+    for (const childId of clone.data.props.childrenIds) {
+      const { newDocument: nextDoc, newBlockId: newChildId } = duplicateBlockInDocument(newDoc, childId);
+      newDoc = nextDoc;
+      newChildIds.push(newChildId);
+    }
+    clone.data.props.childrenIds = newChildIds;
+  } else if (clone.type === 'ColumnsContainer' && clone.data?.props?.columns) {
+    const newColumns = clone.data.props.columns.map((col: { childrenIds?: string[] }) => {
+      const ids = col.childrenIds ?? [];
+      const newChildIds: string[] = [];
+      for (const childId of ids) {
+        const { newDocument: nextDoc, newBlockId: newChildId } = duplicateBlockInDocument(newDoc, childId);
+        newDoc = nextDoc;
+        newChildIds.push(newChildId);
+      }
+      return { ...col, childrenIds: newChildIds };
+    });
+    clone.data.props.columns = newColumns;
+  }
+
+  newDoc = { ...newDoc, [newId]: clone };
+  return { newDocument: newDoc, newBlockId: newId };
+}
 
 // 查找block所在的父容器ID和列索引（如果是ColumnsContainer）
 function findParentContainerId(document: TEditorConfiguration, blockId: string): { containerId: string | null; columnIndex: number | null } {
@@ -244,6 +287,57 @@ export default function TuneMenu({ blockId }: Props) {
     resetDocument(nDocument);
   };
 
+  const handleDuplicateClick = () => {
+    if (blockId === 'root' || !parentInfo.containerId) return;
+    const container = document[parentInfo.containerId];
+    if (!container) return;
+    let childrenIds: string[] | null = null;
+    if (container.type === 'EmailLayout') {
+      childrenIds = container.data.childrenIds ?? null;
+    } else if (container.type === 'Container') {
+      childrenIds = container.data.props?.childrenIds ?? null;
+    } else if (container.type === 'ColumnsContainer' && parentInfo.columnIndex !== null) {
+      const col = container.data.props?.columns?.[parentInfo.columnIndex];
+      childrenIds = col?.childrenIds ?? null;
+    }
+    if (!childrenIds) return;
+    const index = childrenIds.indexOf(blockId);
+    if (index < 0) return;
+
+    const { newDocument: nDoc, newBlockId } = duplicateBlockInDocument(document, blockId);
+    const newChildrenIds = [...childrenIds];
+    newChildrenIds.splice(index + 1, 0, newBlockId);
+
+    const nDocument = { ...nDoc };
+    const parentId = parentInfo.containerId;
+    const parentBlock = nDocument[parentId];
+    if (!parentBlock) return;
+    if (parentBlock.type === 'EmailLayout') {
+      nDocument[parentId] = { ...parentBlock, data: { ...parentBlock.data, childrenIds: newChildrenIds } };
+    } else if (parentBlock.type === 'Container') {
+      nDocument[parentId] = {
+        ...parentBlock,
+        data: {
+          ...parentBlock.data,
+          props: { ...parentBlock.data.props, childrenIds: newChildrenIds },
+        },
+      };
+    } else if (parentBlock.type === 'ColumnsContainer' && parentInfo.columnIndex !== null) {
+      const columns = (parentBlock.data.props?.columns ?? []).map((c: { childrenIds: string[] }, i: number) =>
+        i === parentInfo.columnIndex! ? { ...c, childrenIds: newChildrenIds } : c
+      );
+      nDocument[parentId] = {
+        ...parentBlock,
+        data: {
+          ...parentBlock.data,
+          props: { ...parentBlock.data.props, columns },
+        },
+      } as TEditorBlock;
+    }
+    resetDocument(nDocument);
+    setSelectedBlockId(newBlockId);
+  };
+
   const handleMoveClick = (direction: 'up' | 'down') => {
     const moveChildrenIds = (ids: string[] | null | undefined) => {
       if (!ids) {
@@ -326,6 +420,18 @@ export default function TuneMenu({ blockId }: Props) {
           <Tooltip title="Move down" placement="left" arrow>
             <IconButton onClick={() => handleMoveClick('down')} sx={{ color: 'text.primary' }}>
               <ArrowDownwardOutlined fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+
+        {(canMove.canMoveUp || canMove.canMoveDown) && (
+          <Divider sx={{ my: 1, mx: 1 }} />
+        )}
+
+        {blockId !== 'root' && (
+          <Tooltip title="Duplicate" placement="left" arrow>
+            <IconButton onClick={handleDuplicateClick} sx={{ color: 'text.primary' }}>
+              <ContentCopyOutlined sx={{ fontSize: '16px' }} />
             </IconButton>
           </Tooltip>
         )}

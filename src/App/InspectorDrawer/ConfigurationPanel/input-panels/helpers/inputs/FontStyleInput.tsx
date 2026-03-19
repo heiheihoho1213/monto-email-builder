@@ -10,9 +10,9 @@ type Props = {
   defaultValue: string;
   onChange: (value: string) => void;
 };
-export default function FontWeightInput({ label, defaultValue, onChange }: Props) {
+export default function FontStyleInput({ label, defaultValue, onChange }: Props) {
   const { t } = useTranslation();
-  const normalized = defaultValue ?? 'normal';
+  const normalized = defaultValue || 'normal';
   const [value, setValue] = useState(normalized);
   useEffect(() => {
     setValue(normalized);
@@ -21,13 +21,13 @@ export default function FontWeightInput({ label, defaultValue, onChange }: Props
     <RadioGroupInput
       label={label}
       defaultValue={value}
-      onChange={(fontWeight) => {
-        setValue(fontWeight);
-        onChange(fontWeight);
+      onChange={(fontStyle) => {
+        setValue(fontStyle);
+        onChange(fontStyle);
       }}
     >
-      <ToggleButton value="normal">{t('style.regular')}</ToggleButton>
-      <ToggleButton value="bold">{t('style.bold')}</ToggleButton>
+      <ToggleButton value="normal">{t('style.normal')}</ToggleButton>
+      <ToggleButton value="italic">{t('style.italic')}</ToggleButton>
     </RadioGroupInput>
   );
 }

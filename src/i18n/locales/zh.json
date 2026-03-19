@@ -118,7 +118,18 @@
     "title": "文本块",
     "name": "文本",
     "content": "内容",
-    "markdown": "Markdown"
+    "markdown": "Markdown",
+    "selectionRange": "已选中部分文字",
+    "selectedSnippet": "选中: {{snippet}}",
+    "clearSelection": "取消选中",
+    "link": "链接",
+    "linkType": "类型",
+    "linkTypeWeb": "Web",
+    "linkTypeEmail": "E-mail",
+    "linkUrl": "URL",
+    "linkPlaceholderUrl": "请输入 URL",
+    "linkInvalid": "请输入有效的链接",
+    "linkTargetBlank": "在新标签页打开"
   },
   "button": {
     "title": "按钮块",
@@ -198,8 +209,22 @@
     "fontFamily": "字体",
     "fontSize": "字号",
     "fontWeight": "字重",
+    "fontStyle": "字体样式",
+    "textDecoration": "文字装饰",
+    "lineHeight": "行间距",
+    "letterSpacing": "字间距",
     "alignment": "对齐方式",
-    "padding": "内边距"
+    "padding": "内边距",
+    "regular": "常规",
+    "bold": "粗体",
+    "normal": "常规",
+    "italic": "斜体",
+    "none": "无",
+    "underline": "下划线",
+    "strikethrough": "删除线",
+    "both": "两者",
+    "default": "默认",
+    "formatGroup": "样式"
   },
   "htmlEditor": {
     "mode": {

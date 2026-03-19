@@ -1,4 +1,3 @@
-import React from 'react';
 import { z } from 'zod';
 
 import { Button, ButtonPropsSchema } from 'monto-email-block-button';

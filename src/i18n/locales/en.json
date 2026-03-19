@@ -118,7 +118,18 @@
     "title": "Text block",
     "name": "Text",
     "content": "Content",
-    "markdown": "Markdown"
+    "markdown": "Markdown",
+    "selectionRange": "Text selected",
+    "selectedSnippet": "Selected: {{snippet}}",
+    "clearSelection": "Clear selection",
+    "link": "Link",
+    "linkType": "Type",
+    "linkTypeWeb": "Web",
+    "linkTypeEmail": "E-mail",
+    "linkUrl": "URL",
+    "linkPlaceholderUrl": "Enter URL here",
+    "linkInvalid": "Please enter a valid link",
+    "linkTargetBlank": "Open in new tab"
   },
   "button": {
     "title": "Button block",
@@ -198,8 +209,22 @@
     "fontFamily": "Font family",
     "fontSize": "Font size",
     "fontWeight": "Font weight",
+    "fontStyle": "Font style",
+    "textDecoration": "Text decoration",
+    "lineHeight": "Line height",
+    "letterSpacing": "Letter spacing",
     "alignment": "Alignment",
-    "padding": "Padding"
+    "padding": "Padding",
+    "regular": "Regular",
+    "bold": "Bold",
+    "normal": "Normal",
+    "italic": "Italic",
+    "none": "None",
+    "underline": "Underline",
+    "strikethrough": "Strikethrough",
+    "both": "Both",
+    "default": "Default",
+    "formatGroup": "Style"
   },
   "htmlEditor": {
     "mode": {

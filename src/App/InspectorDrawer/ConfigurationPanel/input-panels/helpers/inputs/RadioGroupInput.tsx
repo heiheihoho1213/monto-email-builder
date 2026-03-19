@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { InputLabel, Stack, ToggleButtonGroup } from '@mui/material';
 
@@ -10,6 +10,9 @@ type Props = {
 };
 export default function RadioGroupInput({ label, children, defaultValue, onChange }: Props) {
   const [value, setValue] = useState(defaultValue);
+  useEffect(() => {
+    setValue(defaultValue);
+  }, [defaultValue]);
   return (
     <Stack alignItems="flex-start">
       <InputLabel shrink>{label}</InputLabel>
