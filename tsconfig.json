@@ -3,6 +3,11 @@
     "target": "es2015",
     "module": "esnext",
     "lib": ["es2017", "dom", "dom.iterable"],
+    "baseUrl": ".",
+    "paths": {
+      "monto-email-block-text": ["monto-email-block-text/src/index.tsx"],
+      "monto-email-block-text/*": ["monto-email-block-text/src/*"]
+    },
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "strict": true,

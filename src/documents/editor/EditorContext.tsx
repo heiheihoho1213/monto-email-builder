@@ -7,7 +7,33 @@ import { HistoryManager } from './HistoryManager';
 
 import { getLanguage, Language, setLanguage as setI18nLanguage } from '../../i18n';
 
+import type { TStyle } from '../blocks/helpers/TStyle';
+
 export type TextSelectionRange = { blockId: string; start: number; end: number };
+export type TextCaret = { blockId: string; offset: number };
+
+export type ContactAttribute = {
+  Id: number;
+  IsSystem?: number | boolean;
+  CompanyId?: number;
+  Name?: string;
+  AttrField: string;
+  AttrType?: number;
+  AttrComment?: string;
+  Enable?: number | boolean;
+  CreateTime?: number;
+  UpdateTime?: number;
+  Categories?: unknown;
+};
+
+export type TextDomApplyKind =
+  | { kind: 'style'; style: Partial<TStyle> }
+  | { kind: 'link'; href: string; targetBlank: boolean }
+  | { kind: 'variable'; token: string };
+
+export type TextDomApplyRequest = { blockId: string; id: number } & TextDomApplyKind;
+
+let textDomApplyId = 0;
 
 type TValue = {
   document: TEditorConfiguration;
@@ -15,10 +41,14 @@ type TValue = {
   selectedBlockId: string | null;
   /** 当前 Text 块内字符选区，用于右侧属性栏「跟随选区」 */
   textSelection: TextSelectionRange | null;
+  /** 当前 Text 块内折叠光标位置（无选区时也要记住，用于插入变量等） */
+  textCaret: TextCaret | null;
   /** 最近一次在面板中应用选区样式的时间戳；用于避免 re-render 导致选区折叠后误清空 textSelection */
   lastInlineStyleApplyAt: number;
   /** 更新选区时同步的当前块文本快照，用于右侧「选中」预览（未 blur 前 document 未更新） */
-  lastTextBlockContent: { blockId: string; text: string } | null;
+  lastTextBlockContent: { blockId: string; text: string; styleSnapshot?: Partial<TStyle> } | null;
+  /** 右侧面板触发的 DOM 级样式/链接应用（由 TextEditor 消费） */
+  textDomApplyRequest: TextDomApplyRequest | null;
   selectedSidebarTab: 'block-configuration' | 'styles';
   selectedMainTab: 'editor' | 'preview' | 'json' | 'html';
   selectedScreenSize: 'desktop' | 'mobile';
@@ -34,6 +64,9 @@ type TValue = {
 
   // 语言设置
   language: Language;
+
+  /** 外部传入的联系人属性（用于变量面板） */
+  contactAttributes: ContactAttribute[];
 
   // 文档变化回调，第二个参数为当前 document 渲染出的 HTML（与 document 一一对应，避免用户再调 getData 产生竞态）
   onChange?: (document: TEditorConfiguration, html: string) => void;
@@ -72,7 +105,13 @@ let initialShowSamplesDrawerTitle: boolean = true; // 默认显示标题
 // 历史记录管理器实例
 let historyManager: HistoryManager | null = null;
 
-export function initializeStore(config?: { document?: TEditorConfiguration; language?: Language; showJsonFeatures?: boolean; showSamplesDrawerTitle?: boolean }) {
+export function initializeStore(config?: {
+  document?: TEditorConfiguration;
+  language?: Language;
+  showJsonFeatures?: boolean;
+  showSamplesDrawerTitle?: boolean;
+  contactAttributes?: ContactAttribute[];
+}) {
   // 1) 先把“初始值”落到模块级变量（用于 create() 默认值兜底）
   if (config?.document) initialDocument = config.document;
   if (config?.language) initialLanguage = config.language;
@@ -84,6 +123,7 @@ export function initializeStore(config?: { document?: TEditorConfiguration; lang
   const lang = config?.language ?? initialLanguage ?? getLanguage();
   const showJson = config?.showJsonFeatures ?? initialShowJsonFeatures;
   const showTitle = config?.showSamplesDrawerTitle ?? initialShowSamplesDrawerTitle;
+  const attrs = config?.contactAttributes ?? [];
 
   // 3) 初始化 / 重置历史记录（让撤销栈与初始文档一致）
   if (historyManager) {
@@ -98,9 +138,11 @@ export function initializeStore(config?: { document?: TEditorConfiguration; lang
     language: lang,
     showJsonFeatures: showJson,
     showSamplesDrawerTitle: showTitle,
+    contactAttributes: Array.isArray(attrs) ? attrs : [],
 
     // 这些是 UI 初始态：按经典设计，初始化时应可预测、可复现
     selectedBlockId: null,
+    textDomApplyRequest: null,
     selectedSidebarTab: 'styles',
     selectedMainTab: 'editor',
     selectedScreenSize: 'desktop',
@@ -124,8 +166,10 @@ const editorStateStore = create<TValue>((set, get) => ({
   document: initialDocument || EMPTY_EMAIL_MESSAGE,
   selectedBlockId: null,
   textSelection: null,
+  textCaret: null,
   lastInlineStyleApplyAt: 0,
   lastTextBlockContent: null,
+  textDomApplyRequest: null,
   selectedSidebarTab: 'styles',
   selectedMainTab: 'editor',
   selectedScreenSize: 'desktop',
@@ -134,6 +178,7 @@ const editorStateStore = create<TValue>((set, get) => ({
   samplesDrawerOpen: true,
 
   language: initialLanguage || getLanguage(),
+  contactAttributes: [],
 
   onChange: undefined,
   saveHandler: undefined,
@@ -145,6 +190,14 @@ const editorStateStore = create<TValue>((set, get) => ({
   onSamplesDrawerToggle: undefined,
   onInspectorDrawerToggle: undefined,
 }));
+
+export function setContactAttributes(attrs: ContactAttribute[] | null | undefined) {
+  return editorStateStore.setState({ contactAttributes: Array.isArray(attrs) ? attrs : [] });
+}
+
+export function useContactAttributes() {
+  return editorStateStore((s) => s.contactAttributes);
+}
 
 export function useDocument() {
   return editorStateStore((s) => s.document);
@@ -187,7 +240,9 @@ export function setSelectedBlockId(selectedBlockId: TValue['selectedBlockId']) {
   return editorStateStore.setState({
     selectedBlockId,
     textSelection: null,
+    textCaret: null,
     lastTextBlockContent: null,
+    textDomApplyRequest: null,
     selectedSidebarTab,
     ...options,
   });
@@ -197,10 +252,17 @@ export function setTextSelection(range: TValue['textSelection']) {
   return editorStateStore.setState({ textSelection: range });
 }
 
+export function setTextCaret(textCaret: TValue['textCaret']) {
+  return editorStateStore.setState({ textCaret });
+}
+
 export function useTextSelection() {
   return editorStateStore((s) => s.textSelection);
 }
 
+export function useTextCaret() {
+  return editorStateStore((s) => s.textCaret);
+}
 /** 在右侧面板应用选区样式后调用，避免随后 re-render 导致选区折叠时误清空 textSelection */
 export function markLastInlineStyleApply() {
   return editorStateStore.setState({ lastInlineStyleApplyAt: Date.now() });
@@ -213,8 +275,26 @@ export function shouldIgnoreCollapsedSelectionForClear(): boolean {
   return t > 0 && Date.now() - t < INLINE_STYLE_APPLY_GRACE_MS;
 }
 
-export function setLastTextBlockContent(payload: { blockId: string; text: string } | null) {
+export function setLastTextBlockContent(payload: { blockId: string; text: string; styleSnapshot?: Partial<TStyle> } | null) {
   return editorStateStore.setState({ lastTextBlockContent: payload });
+}
+
+export function queueTextDomApply(blockId: string, payload: TextDomApplyKind) {
+  editorStateStore.setState({
+    textDomApplyRequest: {
+      blockId,
+      id: ++textDomApplyId,
+      ...payload,
+    },
+  });
+}
+
+export function clearTextDomApplyRequest() {
+  return editorStateStore.setState({ textDomApplyRequest: null });
+}
+
+export function useTextDomApplyRequest() {
+  return editorStateStore((s) => s.textDomApplyRequest);
 }
 
 export function useLastTextBlockContent() {
@@ -251,6 +331,7 @@ export function resetDocument(document: TValue['document']) {
     selectedBlockId: null,
     textSelection: null,
     lastTextBlockContent: null,
+    textDomApplyRequest: null,
   });
 
   const onChange = editorStateStore.getState().onChange;

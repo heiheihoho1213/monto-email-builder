@@ -5,13 +5,13 @@ import {
   LanguageOutlined,
   DataObjectOutlined,
   TitleOutlined,
-  FileUploadOutlined,
+  FileDownloadOutlined,
   Code as CodeIcon,
   Email as EmailIcon,
 } from '@mui/icons-material';
 import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Button } from '@mui/material';
 
-import EmailBuilder, { EmailBuilderRef } from '../src/EmailBuilder';
+import EmailBuilder, { EmailBuilderRef, EmailBuilderVariableInput } from '../src/EmailBuilder';
 import HtmlEditor from '../src/HtmlEditor';
 import { Language } from '../src/i18n';
 import { TEditorConfiguration } from '../src/documents/editor/core';
@@ -55,8 +55,12 @@ const testJSON = {
     "type": "Text",
     "data": {
       "props": {
-        "text": "My new text block",
-        "markdown": false
+        "markdown": false,
+        "message": "My new text block {{first_name}} {{first_name}}",
+        "variables": [
+          { "attribute": "first_name", "variable": "{{first_name}}" },
+          { "attribute": "first_name", "variable": "{{first_name}}" }
+        ]
       },
       "style": {
         "padding": {
@@ -73,7 +77,7 @@ const testJSON = {
     "type": "Text",
     "data": {
       "props": {
-        "text": "My new text block",
+        "text": "My new text block {{email}}",
         "markdown": false
       },
       "style": {
@@ -229,6 +233,8 @@ const Home = () => {
   const [initialDocument, setInitialDocument] = useState<TEditorConfiguration | undefined>(undefined);
   const [editorMode, setEditorMode] = useState<'email' | 'html'>('email');
   const [htmlCode, setHtmlCode] = useState('<p>Hello World</p>\n<h1>HTML Editor Test</h1>\n<p>这是一个 HTML 编辑器测试</p>');
+  const [variables, setVariables] = useState<EmailBuilderVariableInput[]>([]);
+
   const emailBuilderRef = useRef<EmailBuilderRef>(null);
 
   const handleToggleLanguage = () => {
@@ -246,6 +252,20 @@ const Home = () => {
   const handleLoadTestJSON = () => {
     // 深拷贝 testJSON，确保每次都是新的对象引用，触发 React 的变更检测
     setInitialDocument(JSON.parse(JSON.stringify(testJSON)) as TEditorConfiguration);
+    setVariables([
+      {
+        id: 1,
+        variable: '{{first_name}}',
+        attribute: 'first_name',
+        default: 'John',
+      },
+      {
+        id: 2,
+        variable: '{{first_name}}',
+        attribute: 'first_name',
+        default: '哈哈',
+      },
+    ]);
   };
 
   const handleToggleEditorMode = () => {
@@ -256,6 +276,9 @@ const Home = () => {
     emailBuilderRef.current?.getData((json, html) => {
       console.log('JSON:', json);
       console.log('HTML:', html);
+    });
+    emailBuilderRef.current?.getVariables((vars) => {
+      console.log('Variables:', vars);
     });
   };
 
@@ -269,12 +292,53 @@ const Home = () => {
             language={language}
             showJsonFeatures={showJsonFeatures}
             showSamplesDrawerTitle={showSamplesDrawerTitle}
+            variables={variables}
+            contactAttributes={[
+              {
+                Id: 7,
+                IsSystem: 1,
+                CompanyId: 0,
+                Name: 'WhatsApp',
+                AttrField: 'whatsapp',
+                AttrType: 2,
+                AttrComment: 'WhatsApp',
+                Enable: 1,
+                CreateTime: 0,
+                UpdateTime: 0,
+                Categories: null,
+              },
+              {
+                Id: 6,
+                IsSystem: 1,
+                CompanyId: 0,
+                Name: 'Phone',
+                AttrField: 'phone',
+                AttrType: 2,
+                AttrComment: 'Phone',
+                Enable: 1,
+                CreateTime: 0,
+                UpdateTime: 0,
+                Categories: null,
+              },
+              {
+                Id: 52,
+                IsSystem: 0,
+                CompanyId: 60013,
+                Name: 'Birthday',
+                AttrField: 'Birthday',
+                AttrType: 5,
+                AttrComment: '',
+                Enable: 1,
+                CreateTime: 1772091265,
+                UpdateTime: 0,
+                Categories: null,
+              },
+            ]}
             // leftPanelSlot={<div onClick={() => console.log('Hello World')}>Hello World</div>}
             imageUploadHandler={exampleImageUploadHandler}
             videoUploadHandler={exampleVideoUploadHandler}
-            onChange={(document, html) => {
-              console.log('HTML changed:', html);
-              console.log('Document changed:', document);
+            onChange={() => {
+              // 文档高频更新时勿打印整份 html/document，会拖垮主线程与控制台
             }}
             onNameChange={(name) => {
               console.log('Name changed:', name);
@@ -312,6 +376,18 @@ const Home = () => {
             onClick={handleToggleLanguage}
           />
           <SpeedDialAction
+            key="saveData"
+            icon={<FileDownloadOutlined />}
+            tooltipTitle="获取保存数据"
+            onClick={handleSave}
+          />
+          <SpeedDialAction
+            key="loadTestJSON"
+            icon={<FileDownloadOutlined />}
+            tooltipTitle="加载测试数据"
+            onClick={handleLoadTestJSON}
+          />
+          <SpeedDialAction
             key="json"
             icon={<DataObjectOutlined />}
             tooltipTitle={`JSON功能: ${showJsonFeatures ? '显示' : '隐藏'}`}
@@ -322,12 +398,6 @@ const Home = () => {
             icon={<TitleOutlined />}
             tooltipTitle={`左侧边栏标题: ${showSamplesDrawerTitle ? '显示' : '隐藏'}`}
             onClick={handleToggleSamplesDrawerTitle}
-          />
-          <SpeedDialAction
-            key="loadTestJSON"
-            icon={<FileUploadOutlined />}
-            tooltipTitle="加载测试 JSON"
-            onClick={handleLoadTestJSON}
           />
           <SpeedDialAction
             key="toggleEditor"

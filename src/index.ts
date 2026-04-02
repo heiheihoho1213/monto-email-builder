@@ -13,13 +13,19 @@
 
 // 命名导出
 export { default as EmailBuilder } from './EmailBuilder';
-export type { EmailBuilderProps, EmailBuilderRef } from './EmailBuilder';
+export type {
+  EmailBuilderProps,
+  EmailBuilderRef,
+  EmailBuilderVariableInput,
+  EmailTemplateVariableItem,
+} from './EmailBuilder';
 
 // 默认导出（支持 import EmailBuilder from 'monto-email-builder'）
 export { default } from './EmailBuilder';
 
 // 导出类型
 export type { TEditorConfiguration, TEditorBlock } from './documents/editor/core';
+export type { TextTemplateVariableEntry } from 'monto-email-block-text';
 export type { Language } from './i18n';
 
 // 导出工具函数（可选）

@@ -57,6 +57,7 @@ export default function TextFormatGroup({ value, onChange }: Props) {
     <Stack alignItems="flex-start">
       <ToggleButtonGroup
         size="small"
+        exclusive={false}
         value={selected}
         onChange={handleChange}
         sx={{ flexWrap: 'nowrap' }}

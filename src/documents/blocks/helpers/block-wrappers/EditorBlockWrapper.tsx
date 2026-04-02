@@ -16,6 +16,7 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
   const [mouseInside, setMouseInside] = useState(false);
   const [mouseOnChild, setMouseOnChild] = useState(false); // 跟踪鼠标是否在子元素上
   const [isDragging, setIsDragging] = useState(false);
+  const [dragEnabled, setDragEnabled] = useState(false);
   const blockId = useCurrentBlockId();
   const isHandlerClickedRef = useRef<boolean>(false); // 跟踪是否点击了 handler
 
@@ -86,6 +87,7 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
   // Handler 鼠标按下事件
   const handleHandlerMouseDown = () => {
     isHandlerClickedRef.current = true;
+    setDragEnabled(true);
     // 如果当前 block 被选中，取消选中，避免拖拽阴影偏移问题
     if (selectedBlockId === blockId) {
       setSelectedBlockId(null);
@@ -96,6 +98,7 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
   useEffect(() => {
     const handleMouseUp = () => {
       isHandlerClickedRef.current = false;
+      setDragEnabled(false);
     };
 
     if (typeof window !== 'undefined' && window.document) {
@@ -108,6 +111,7 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
 
   const handleDragEnd = () => {
     setIsDragging(false);
+    setDragEnabled(false);
     (window as any).__currentDraggedBlockId = null;
     (window as any).__currentDraggedBlock = null;
     isHandlerClickedRef.current = false; // 重置标记
@@ -115,7 +119,7 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
 
   return (
     <Box
-      draggable={isDraggable}
+      draggable={isDraggable && dragEnabled}
       data-editor-block-wrapper="true"
       sx={{
         position: 'relative',
@@ -152,10 +156,38 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
           }
         }
       }}
+      onMouseDown={(ev) => {
+        const rawTarget = ev.target as Node | null;
+        const target =
+          rawTarget && rawTarget.nodeType === Node.ELEMENT_NODE
+            ? (rawTarget as Element)
+            : (rawTarget?.parentElement ?? null);
+        if (!target) return;
+        // 拖拽手柄/菜单按钮不参与普通选中流程
+        if (target.closest('button,[role="button"]')) return;
+        // 提前在 mousedown 选中，避免 click 阶段才切到可编辑态导致首次点击无法落 caret
+        if (selectedBlockId !== blockId) {
+          setSelectedBlockId(blockId);
+        }
+      }}
       onClick={(ev) => {
-        setSelectedBlockId(blockId);
+        const rawTarget = ev.target as Node | null;
+        const target =
+          rawTarget && rawTarget.nodeType === Node.ELEMENT_NODE
+            ? (rawTarget as Element)
+            : (rawTarget?.parentElement ?? null);
+        if (!target) return;
+        const clickedEditable = target.closest('[contenteditable="true"]');
+        // 已选中当前 block 时不要重复 setSelectedBlockId；
+        // 该方法会清空 textSelection，导致右侧面板无法跟随当前选区变化。
+        if (selectedBlockId !== blockId) {
+          setSelectedBlockId(blockId);
+        }
         ev.stopPropagation();
-        ev.preventDefault();
+        // 点击富文本内容时保留浏览器默认行为，避免首次点击无法把 caret 放到点击位置
+        if (!clickedEditable) {
+          ev.preventDefault();
+        }
       }}
     >
       {/* 拖拽 Handler - 鼠标悬停时显示，但如果鼠标在子元素上则不显示（针对 Container 和 ColumnsContainer） */}

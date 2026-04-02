@@ -16,11 +16,20 @@ import {
   setOnNameChange,
   setOnSamplesDrawerToggle,
   setOnInspectorDrawerToggle,
+  setContactAttributes,
   editorStateStore,
 } from '../documents/editor/EditorContext';
 import { LeftPanelSlotProvider } from '../LeftPanelSlotContext';
 import { Language } from '../i18n';
+import {
+  applyExternalVariableDefaultsToDocument,
+  collectTemplateVariablesFromDocument,
+  type EmailBuilderVariableInput,
+  type EmailTemplateVariableItem,
+} from '../documents/editor/collectTemplateVariables';
+import { flushActiveTextEditorToDocument } from '../documents/editor/flushActiveTextEditorToDocument';
 import { TEditorConfiguration } from '../documents/editor/core';
+import EMPTY_EMAIL_MESSAGE from '../getConfiguration/sample/empty-email-message';
 import theme from '../theme';
 
 import App from '../App';
@@ -123,6 +132,17 @@ export interface EmailBuilderProps {
    * @param isOpen 侧边栏是否打开
    */
   onInspectorDrawerToggle?: (isOpen: boolean) => void;
+
+  /** 联系人属性列表：用于 Text 变量面板动态扩展 Contacts 变量 */
+  contactAttributes?: import('../documents/editor/EditorContext').ContactAttribute[];
+
+  /**
+   * 已有模板的变量默认值。集成方只需传 `attribute` + `default`（或 `variable: "{{name}}"`），
+   * 组件会按正文内插入式变量匹配 `variableInstanceId`；也可选传 `variableInstanceId` 精确写入一条。
+   * 仅更新 `variableDefaults`；未在正文中出现的变量名会被忽略。
+   * 仅 `variables` 变化时会在当前文档上合并，不替换整份文档。
+   */
+  variables?: EmailBuilderVariableInput[];
 }
 
 /**
@@ -134,7 +154,15 @@ export interface EmailBuilderRef {
    * @param callback 回调函数，接收 json 和 html 作为参数
    */
   getData: (callback: (json: TEditorConfiguration, html: string) => void) => void;
+
+  /**
+   * 获取模板中插入式联系人变量列表（Text 块 `{{attribute}}` + 侧栏默认值）
+   * @param callback 接收形如 `[{ id, variableInstanceId, variable: "{{email}}", attribute: "email", default: "..." }]`（variableDefaults 按 variableInstanceId 存）
+   */
+  getVariables: (callback: (items: EmailTemplateVariableItem[]) => void) => void;
 }
+
+export type { EmailBuilderVariableInput, EmailTemplateVariableItem };
 
 /**
  * EmailBuilder 组件
@@ -184,26 +212,36 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   leftPanelSlot,
   onSamplesDrawerToggle,
   onInspectorDrawerToggle,
+  contactAttributes,
+  variables,
 }, ref) => {
   // 初始化 store（包括历史记录管理器）
   // 关键点：这里要“同步初始化”，保证第三方集成时首屏就按 props 生效（避免抽屉/标题/语言闪一下）
   const initializedRef = useRef(false);
   if (!initializedRef.current) {
     initializeStore({
-      document: initialDocument,
+      document: applyExternalVariableDefaultsToDocument(initialDocument ?? EMPTY_EMAIL_MESSAGE, variables),
       language: language,
       showJsonFeatures: showJsonFeatures,
       showSamplesDrawerTitle: showSamplesDrawerTitle,
+      contactAttributes: contactAttributes,
     });
     initializedRef.current = true;
   }
 
-  // 当 initialDocument 变化时，更新文档
+  // 当 initialDocument 变化时，整份替换并合并 variables
   useEffect(() => {
     if (initialDocument !== undefined) {
-      resetDocument(initialDocument);
+      resetDocument(applyExternalVariableDefaultsToDocument(initialDocument, variables));
     }
   }, [initialDocument]);
+
+  // 仅 variables 变化：在当前文档上合并默认值（保留用户编辑）
+  useEffect(() => {
+    if (variables === undefined || variables.length === 0) return;
+    const doc = editorStateStore.getState().document;
+    resetDocument(applyExternalVariableDefaultsToDocument(doc, variables));
+  }, [variables]);
 
   // 当 language 变化时，更新语言
   // 注意：这里不依赖 currentLanguage，避免循环更新
@@ -232,6 +270,7 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   // 暴露 ref API
   useImperativeHandle(ref, () => ({
     getData: (callback: (json: TEditorConfiguration, html: string) => void) => {
+      flushActiveTextEditorToDocument();
       const document = editorStateStore.getState().document;
       try {
         const html = renderToStaticMarkup(document, { rootBlockId: 'root' });
@@ -240,6 +279,11 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
         // 如果生成 HTML 失败，仍然返回 JSON
         callback(document, '<!-- Error rendering HTML -->');
       }
+    },
+    getVariables: (callback: (items: EmailTemplateVariableItem[]) => void) => {
+      flushActiveTextEditorToDocument();
+      const document = editorStateStore.getState().document;
+      callback(collectTemplateVariablesFromDocument(document));
     },
   }));
 
@@ -274,6 +318,10 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   useEffect(() => {
     setOnInspectorDrawerToggle(onInspectorDrawerToggle);
   }, [onInspectorDrawerToggle]);
+
+  useEffect(() => {
+    setContactAttributes(contactAttributes);
+  }, [contactAttributes]);
 
   return (
     <ThemeProvider theme={customTheme || theme}>
