@@ -6,6 +6,7 @@ import {
   DataObjectOutlined,
   TitleOutlined,
   FileDownloadOutlined,
+  FileUploadOutlined,
   Code as CodeIcon,
   Email as EmailIcon,
 } from '@mui/icons-material';
@@ -56,10 +57,11 @@ const testJSON = {
     "data": {
       "props": {
         "markdown": false,
-        "message": "My new text block {{first_name}} {{first_name}}",
+        "message": "My new text block {{first_name}} {{first_name}} {%unsubscribe_link%}",
         "variables": [
           { "attribute": "first_name", "variable": "{{first_name}}" },
-          { "attribute": "first_name", "variable": "{{first_name}}" }
+          { "attribute": "first_name", "variable": "{{first_name}}" },
+          { "attribute": "unsubscribe_link", "variable": "{%unsubscribe_link%}" },
         ]
       },
       "style": {
@@ -383,7 +385,7 @@ const Home = () => {
           />
           <SpeedDialAction
             key="loadTestJSON"
-            icon={<FileDownloadOutlined />}
+            icon={<FileUploadOutlined />}
             tooltipTitle="加载测试数据"
             onClick={handleLoadTestJSON}
           />

@@ -134,6 +134,11 @@ function createVariableSpan(tokenText: string): HTMLSpanElement {
   span.style.display = 'inline-block';
   span.style.overflowWrap = 'normal';
   span.style.wordBreak = 'normal';
+  applyEditorVariableDecoration(span);
+  return span;
+}
+
+function applyEditorVariableDecoration(span: HTMLElement): void {
   // 选择行为：任何触达都“整体选中”，避免变量被部分选中后套样式破坏结构
   (span.style as any).userSelect = 'all';
   (span.style as any).webkitUserSelect = 'all';
@@ -142,7 +147,6 @@ function createVariableSpan(tokenText: string): HTMLSpanElement {
   span.style.borderRadius = '4px';
   span.style.padding = '0 4px';
   span.style.boxShadow = 'inset 0 -999px 0 rgba(25, 118, 210, 0.08)';
-  return span;
 }
 
 function ensureVariableSpanAttrs(el: HTMLElement): void {
@@ -223,12 +227,21 @@ function insertVariableTokenAtCaret(margin: HTMLElement, token: string): void {
     r2.startContainer.nodeType === Node.ELEMENT_NODE
       ? (r2.startContainer as Element)
       : (r2.startContainer.parentElement as Element | null);
-  if (startEl?.closest('[data-text-variable]')) return;
+  const inVariable = startEl?.closest('[data-text-variable]') as HTMLElement | null;
+  if (inVariable) {
+    // 若恢复的 caret 落在变量原子内部，自动移到变量后继续插入，避免“点击插入无反应”。
+    const rr = document.createRange();
+    rr.setStartAfter(inVariable);
+    rr.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(rr);
+  }
 
-  r2.deleteContents();
+  const current = sel.getRangeAt(0);
+  current.deleteContents();
   // 变量以“span 原子节点”插入（用于稳定识别与禁止内部换行）
   const span = createVariableSpan(token);
-  r2.insertNode(span);
+  current.insertNode(span);
 
   const after = document.createRange();
   after.setStartAfter(span);
@@ -446,6 +459,7 @@ export default function TextEditor(props: TextProps) {
     // 防御：历史内容/外部灌入的 HTML 可能缺少变量的 contenteditable attribute
     for (const v of Array.from(margin.querySelectorAll('[data-text-variable]')) as HTMLElement[]) {
       ensureVariableSpanAttrs(v);
+      applyEditorVariableDecoration(v);
     }
 
     const selectionNormalizeLockRef = { current: false };

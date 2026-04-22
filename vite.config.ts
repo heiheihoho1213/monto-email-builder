@@ -125,6 +125,8 @@ export default defineConfig(({ mode }) => {
         // 'monto-email-block-socials': resolve(__dirname, 'monto-email-block-socials/src'),
         // 'monto-email-core': resolve(__dirname, 'monto-email-core/src'),
         // 'monto-email-block-text': resolve(__dirname, 'monto-email-block-text/src'),
+        // 'monto-email-block-button': resolve(__dirname, 'block-button/src'),
+        // 'monto-email-block-heading': resolve(__dirname, 'block-heading/src'),
         // 'monto-email-block-columns-container': resolve(__dirname, 'block-columns-container/src'),
       },
     },

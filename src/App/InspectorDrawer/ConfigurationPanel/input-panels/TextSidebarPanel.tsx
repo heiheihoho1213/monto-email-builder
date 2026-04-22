@@ -18,7 +18,7 @@ import {
 } from '../../../../documents/editor/EditorContext';
 import {
   extractInsertedVariableOccurrencesFromHtmlString,
-  getLinkAtOffsetFromHtmlString,
+  getLinkInRangeFromHtmlString,
   readInlineStyleInRangeFromHtmlString,
 } from '../../../../documents/blocks/Text/textDom';
 import { BASE_VARIABLE_GROUPS, VariableGroup } from '../../../../documents/blocks/Text/variableCatalog';
@@ -258,6 +258,25 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   const [linkTargetBlank, setLinkTargetBlank] = useState<boolean>(true);
   const linkUrlInputRef = useRef<HTMLInputElement | null>(null);
 
+  const RFC5322_EMAIL_RE =
+    /^(?:[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-zA-Z0-9-]*[a-zA-Z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/;
+
+  const RFC3986_HOST_RE = /^(?:\[(?:[A-Fa-f0-9:.]+)\]|(?:[A-Za-z0-9\-._~!$&'()*+,;=]|%[0-9A-Fa-f]{2})+)$/;
+
+  const extractAuthorityHost = (urlLike: string): string | null => {
+    const m = urlLike.match(/^[A-Za-z][A-Za-z0-9+.-]*:\/\/([^/?#]*)/);
+    if (!m) return null;
+    const authority = m[1];
+    const hostPort = authority.replace(/^.*@/, '');
+    if (!hostPort) return null;
+    if (hostPort.startsWith('[')) {
+      const close = hostPort.indexOf(']');
+      if (close <= 0) return null;
+      return hostPort.slice(0, close + 1);
+    }
+    return hostPort.split(':')[0] || null;
+  };
+
   const getSafeHref = (kind: LinkKind, raw: string): string | null => {
     const v = raw.trim();
     if (!v) return null;
@@ -267,34 +286,33 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
     }
     if (kind === 'email') {
       const email = v.replace(/^mailto:/i, '').trim();
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) return null;
+      if (!RFC5322_EMAIL_RE.test(email)) return null;
       return `mailto:${email}`;
     }
     const normalized = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+    const rawHost = extractAuthorityHost(normalized);
+    if (!rawHost) return null;
+    if (!RFC3986_HOST_RE.test(rawHost)) return null;
+    // 禁止纯数字 host 被 URL 规范化为 IPv4（例如 134230 => 0.2.13.86）。
+    if (/^\d+$/.test(rawHost)) return null;
     try {
       const parsed = new URL(normalized);
       if (!/^https?:$/i.test(parsed.protocol)) return null;
       if (!parsed.hostname) return null;
-      const host = parsed.hostname.trim();
-      const isIpv4 = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/.test(host);
-      const isIpv6 = host.includes(':');
-      const isDomain = host.includes('.');
-      if (!isDomain && !isIpv4 && !isIpv6) return null;
       return parsed.toString();
     } catch {
       return null;
     }
   };
 
-  const getExistingLinkAt = (offset: number) => {
+  const getExistingLinkInRange = (start: number, end: number) => {
     const html = getResolvedTextBodyHtml(data.props ?? null);
-    return getLinkAtOffsetFromHtmlString(html, offset);
+    return getLinkInRangeFromHtmlString(html, start, end);
   };
 
   const handleOpenLink = (e: React.MouseEvent<HTMLElement>) => {
     if (!linkEnabled || !textSelection) return;
-    const existing = getExistingLinkAt(textSelection.start);
+    const existing = getExistingLinkInRange(textSelection.start, textSelection.end);
     if (existing) {
       if (/^mailto:/i.test(existing.href)) {
         setLinkKind('email');

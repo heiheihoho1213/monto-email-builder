@@ -11,6 +11,8 @@ export type EmailTemplateVariableItem = {
   variableInstanceId: string;
   /** 完整 token：`{{name}}` 或 `{%name%}` */
   variable: string;
+  /** 变量类型：`{{}}` -> user，`{% %}` -> system */
+  type: 'user' | 'system';
   /** 变量名（不含分隔符） */
   attribute: string;
   /** 用户变量为 variableDefaults[variableInstanceId]；内置变量固定为 `''` */
@@ -136,6 +138,7 @@ export function collectTemplateVariablesFromDocument(
         id: idCounter,
         variableInstanceId: instanceId,
         variable: builtin ? `{%${name}%}` : `{{${name}}}`,
+        type: builtin ? 'system' : 'user',
         attribute: name,
         default: def,
       });

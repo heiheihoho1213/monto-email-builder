@@ -157,7 +157,7 @@ export interface EmailBuilderRef {
 
   /**
    * 获取模板中插入式联系人变量列表（Text 块 `{{attribute}}` + 侧栏默认值）
-   * @param callback 接收形如 `[{ id, variableInstanceId, variable: "{{email}}", attribute: "email", default: "..." }]`（variableDefaults 按 variableInstanceId 存）
+   * @param callback 接收形如 `[{ id, variableInstanceId, variable: "{{email}}", type: "user", attribute: "email", default: "..." }]`（variableDefaults 按 variableInstanceId 存）
    */
   getVariables: (callback: (items: EmailTemplateVariableItem[]) => void) => void;
 }

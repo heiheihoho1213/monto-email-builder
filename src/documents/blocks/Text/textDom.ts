@@ -627,6 +627,19 @@ function normalizeInlineDom(root: HTMLElement): void {
   walk(root);
 }
 
+function stripEditorVariableDecoration(root: HTMLElement): void {
+  const vars = Array.from(root.querySelectorAll('[data-text-variable]')) as HTMLElement[];
+  for (const el of vars) {
+    // 仅移除编辑态可视化壳样式，保留用户设置的文本样式（如 color/fontSize/backgroundColor）。
+    el.style.removeProperty('border');
+    el.style.removeProperty('border-radius');
+    el.style.removeProperty('padding');
+    el.style.removeProperty('box-shadow');
+    el.style.removeProperty('user-select');
+    el.style.removeProperty('-webkit-user-select');
+  }
+}
+
 /** 侧栏传入的增量；global 为块级默认样式，用于首次包 span 时的初始行内表现 */
 export type ApplyInlineStyleInput = {
   patch: Partial<TStyle>;
@@ -789,6 +802,26 @@ export function getLinkAtOffsetFromHtmlString(html: string, offset: number): { h
   const root = doc.body.firstElementChild as HTMLElement | null;
   if (!root) return null;
   return getLinkAtOffset(root, offset);
+}
+
+export function getLinkInRangeFromHtmlString(
+  html: string,
+  start: number,
+  end: number
+): { href: string; targetBlank: boolean } | null {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const root = doc.body.firstElementChild as HTMLElement | null;
+  if (!root) return null;
+  const len = getFlattenedLength(root);
+  if (len === 0) return null;
+  const s = Math.max(0, Math.min(start, len - 1));
+  const e = Math.max(s + 1, Math.min(end, len));
+  // 选区内逐字符探测，命中任意一个链接字符即回填该链接。
+  for (let i = s; i < e; i++) {
+    const link = getLinkAtOffset(root, i);
+    if (link) return link;
+  }
+  return null;
 }
 
 export function readInlineStyleAtOffsetFromHtmlString(html: string, offset: number): Partial<TStyle> {
@@ -1134,9 +1167,11 @@ export function getFlattenedTextForCopy(root: Node): string {
 }
 
 export function serializeBodyHtml(marginRoot: HTMLElement): string {
-  ensureParagraphStructure(marginRoot);
-  for (const p of getParagraphChildren(marginRoot)) {
+  const cloned = marginRoot.cloneNode(true) as HTMLElement;
+  ensureParagraphStructure(cloned);
+  for (const p of getParagraphChildren(cloned)) {
     normalizeInlineDom(p);
   }
-  return marginRoot.outerHTML;
+  stripEditorVariableDecoration(cloned);
+  return cloned.outerHTML;
 }
