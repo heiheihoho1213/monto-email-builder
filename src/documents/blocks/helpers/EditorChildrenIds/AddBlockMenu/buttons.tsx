@@ -1,19 +1,33 @@
 import React from 'react';
 
-import AccountCircleOutlined from '@mui/icons-material/AccountCircleOutlined';
-import Crop32Outlined from '@mui/icons-material/Crop32Outlined';
-import HMobiledataOutlined from '@mui/icons-material/HMobiledataOutlined';
-import HorizontalRuleOutlined from '@mui/icons-material/HorizontalRuleOutlined';
-import HtmlOutlined from '@mui/icons-material/HtmlOutlined';
-import ImageOutlined from '@mui/icons-material/ImageOutlined';
-import LibraryAddOutlined from '@mui/icons-material/LibraryAddOutlined';
-import NotesOutlined from '@mui/icons-material/NotesOutlined';
-import ShareOutlined from '@mui/icons-material/ShareOutlined';
-import SmartButtonOutlined from '@mui/icons-material/SmartButtonOutlined';
-import ViewColumnOutlined from '@mui/icons-material/ViewColumnOutlined';
-import VideocamOutlined from '@mui/icons-material/VideocamOutlined';
-
+import * as AccountCircleOutlinedModule from '@mui/icons-material/AccountCircleOutlined';
+import * as Crop32OutlinedModule from '@mui/icons-material/Crop32Outlined';
+import * as HMobiledataOutlinedModule from '@mui/icons-material/HMobiledataOutlined';
+import * as HorizontalRuleOutlinedModule from '@mui/icons-material/HorizontalRuleOutlined';
+import * as HtmlOutlinedModule from '@mui/icons-material/HtmlOutlined';
+import * as ImageOutlinedModule from '@mui/icons-material/ImageOutlined';
+import * as LibraryAddOutlinedModule from '@mui/icons-material/LibraryAddOutlined';
+import * as NotesOutlinedModule from '@mui/icons-material/NotesOutlined';
+import * as ShareOutlinedModule from '@mui/icons-material/ShareOutlined';
+import * as SmartButtonOutlinedModule from '@mui/icons-material/SmartButtonOutlined';
+import * as ViewColumnOutlinedModule from '@mui/icons-material/ViewColumnOutlined';
+import * as VideocamOutlinedModule from '@mui/icons-material/VideocamOutlined';
 import { TEditorBlock } from '../../../../editor/core';
+
+import { resolveMuiIcon } from '../../../../../utils/resolveMuiIcon';
+
+const AccountCircleOutlined = resolveMuiIcon(AccountCircleOutlinedModule);
+const Crop32Outlined = resolveMuiIcon(Crop32OutlinedModule);
+const HMobiledataOutlined = resolveMuiIcon(HMobiledataOutlinedModule);
+const HorizontalRuleOutlined = resolveMuiIcon(HorizontalRuleOutlinedModule);
+const HtmlOutlined = resolveMuiIcon(HtmlOutlinedModule);
+const ImageOutlined = resolveMuiIcon(ImageOutlinedModule);
+const LibraryAddOutlined = resolveMuiIcon(LibraryAddOutlinedModule);
+const NotesOutlined = resolveMuiIcon(NotesOutlinedModule);
+const ShareOutlined = resolveMuiIcon(ShareOutlinedModule);
+const SmartButtonOutlined = resolveMuiIcon(SmartButtonOutlinedModule);
+const ViewColumnOutlined = resolveMuiIcon(ViewColumnOutlinedModule);
+const VideocamOutlined = resolveMuiIcon(VideocamOutlinedModule);
 
 type TButtonProps = {
   label: string;

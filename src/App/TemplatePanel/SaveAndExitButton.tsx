@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 
-import ExitToAppOutlined from '@mui/icons-material/ExitToAppOutlined';
+import * as ExitToAppOutlinedModule from '@mui/icons-material/ExitToAppOutlined';
 import { CircularProgress, IconButton, Tooltip } from '@mui/material';
 
 import { saveAndExitDocument, saveDocument, useSaveAndExitHandler, useSaveHandler } from '../../documents/editor/EditorContext';
 import { useTranslation } from '../../i18n/useTranslation';
+
+import { resolveMuiIcon } from '../../utils/resolveMuiIcon';
+
+const ExitToAppOutlined = resolveMuiIcon(ExitToAppOutlinedModule);
 
 export default function SaveAndExitButton() {
   const { t } = useTranslation();

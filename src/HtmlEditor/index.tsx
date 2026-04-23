@@ -15,27 +15,24 @@ import {
   tomorrowNightBlue,
   xcodeDark
 } from '@uiw/codemirror-themes-all';
-import {
-  Box,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  SxProps,
-  Theme,
-  ListSubheader,
-  useTheme,
-} from '@mui/material';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import { Box, Tooltip, Select, MenuItem, FormControl, InputLabel, SxProps, Theme, ListSubheader, useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import CodeIcon from '@mui/icons-material/Code';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import ViewColumnIcon from '@mui/icons-material/ViewColumn';
-import MonitorOutlined from '@mui/icons-material/MonitorOutlined';
-import PhoneIphoneOutlined from '@mui/icons-material/PhoneIphoneOutlined';
+import * as CodeIconModule from '@mui/icons-material/Code';
+import * as VisibilityIconModule from '@mui/icons-material/Visibility';
+import * as ViewColumnIconModule from '@mui/icons-material/ViewColumn';
+import * as MonitorOutlinedModule from '@mui/icons-material/MonitorOutlined';
+import * as PhoneIphoneOutlinedModule from '@mui/icons-material/PhoneIphoneOutlined';
 import { Language, t } from '../i18n';
+
+import { resolveMuiIcon } from '../utils/resolveMuiIcon';
+
+const CodeIcon = resolveMuiIcon(CodeIconModule);
+const VisibilityIcon = resolveMuiIcon(VisibilityIconModule);
+const ViewColumnIcon = resolveMuiIcon(ViewColumnIconModule);
+const MonitorOutlined = resolveMuiIcon(MonitorOutlinedModule);
+const PhoneIphoneOutlined = resolveMuiIcon(PhoneIphoneOutlinedModule);
 
 export type HtmlEditorMode = 'split' | 'code' | 'preview';
 export type HtmlEditorDevice = 'desktop' | 'mobile';

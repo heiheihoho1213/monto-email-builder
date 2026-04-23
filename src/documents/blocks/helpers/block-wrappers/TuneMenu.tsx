@@ -1,14 +1,21 @@
 import React from 'react';
 
-import ArrowDownwardOutlined from '@mui/icons-material/ArrowDownwardOutlined';
-import ArrowUpwardOutlined from '@mui/icons-material/ArrowUpwardOutlined';
-import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined';
-import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
+import * as ArrowDownwardOutlinedModule from '@mui/icons-material/ArrowDownwardOutlined';
+import * as ArrowUpwardOutlinedModule from '@mui/icons-material/ArrowUpwardOutlined';
+import * as ContentCopyOutlinedModule from '@mui/icons-material/ContentCopyOutlined';
+import * as DeleteOutlinedModule from '@mui/icons-material/DeleteOutlined';
 import { Divider, IconButton, Paper, Stack, SxProps, Tooltip } from '@mui/material';
 
 import { TEditorBlock, TEditorConfiguration } from '../../../editor/core';
 import { resetDocument, setSelectedBlockId, useDocument } from '../../../editor/EditorContext';
 import { ColumnsContainerProps } from '../../ColumnsContainer/ColumnsContainerPropsSchema';
+
+import { resolveMuiIcon } from '../../../../utils/resolveMuiIcon';
+
+const ArrowDownwardOutlined = resolveMuiIcon(ArrowDownwardOutlinedModule);
+const ArrowUpwardOutlined = resolveMuiIcon(ArrowUpwardOutlinedModule);
+const ContentCopyOutlined = resolveMuiIcon(ContentCopyOutlinedModule);
+const DeleteOutlined = resolveMuiIcon(DeleteOutlinedModule);
 
 function generateId() {
   return `block-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;

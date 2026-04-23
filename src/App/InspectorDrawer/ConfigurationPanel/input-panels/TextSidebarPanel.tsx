@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import CloseOutlined from '@mui/icons-material/CloseOutlined';
-import DataObjectOutlined from '@mui/icons-material/DataObjectOutlined';
-import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
-import LinkOutlined from '@mui/icons-material/LinkOutlined';
+import * as CloseOutlinedModule from '@mui/icons-material/CloseOutlined';
+import * as DataObjectOutlinedModule from '@mui/icons-material/DataObjectOutlined';
+import * as ExpandMoreOutlinedModule from '@mui/icons-material/ExpandMoreOutlined';
+import * as LinkOutlinedModule from '@mui/icons-material/LinkOutlined';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Checkbox, Divider, FormControlLabel, IconButton, InputLabel, MenuItem, Popover, Select, SelectChangeEvent, Stack, TextField, Typography } from '@mui/material';
 import { TextProps, TextPropsSchema, getResolvedTextBodyHtml } from 'monto-email-block-text';
 import { ZodError } from 'zod';
@@ -28,6 +28,13 @@ import { TStyle } from '../../../../documents/blocks/helpers/TStyle';
 
 import BaseSidebarPanel from './helpers/BaseSidebarPanel';
 import MultiStylePropertyPanel from './helpers/style-inputs/MultiStylePropertyPanel';
+
+import { resolveMuiIcon } from '../../../../utils/resolveMuiIcon';
+
+const CloseOutlined = resolveMuiIcon(CloseOutlinedModule);
+const DataObjectOutlined = resolveMuiIcon(DataObjectOutlinedModule);
+const ExpandMoreOutlined = resolveMuiIcon(ExpandMoreOutlinedModule);
+const LinkOutlined = resolveMuiIcon(LinkOutlinedModule);
 
 /** 跟随选区的 7 项：显示/应用以选区首字或整段选区为准；其余为全局 */
 const SELECTION_AWARE_KEYS: (keyof TStyle)[] = [

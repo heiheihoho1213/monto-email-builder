@@ -1,8 +1,10 @@
 import React from 'react';
 
-import MonitorOutlined from '@mui/icons-material/MonitorOutlined';
-import PhoneIphoneOutlined from '@mui/icons-material/PhoneIphoneOutlined';
-import { Box, Stack, SxProps, Theme, ToggleButton, ToggleButtonGroup, Tooltip, useTheme } from '@mui/material';
+import * as MonitorOutlinedModule from '@mui/icons-material/MonitorOutlined';
+import * as PhoneIphoneOutlinedModule from '@mui/icons-material/PhoneIphoneOutlined';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import { Box, Stack, SxProps, Theme, Tooltip, useTheme } from '@mui/material';
 import { Reader } from 'monto-email-core';
 
 import EditorBlock from '../../documents/editor/EditorBlock';
@@ -28,6 +30,11 @@ import RedoButton from './RedoButton';
 import SaveAndExitButton from './SaveAndExitButton';
 import SaveButton from './SaveButton';
 import UndoButton from './UndoButton';
+
+import { resolveMuiIcon } from '../../utils/resolveMuiIcon';
+
+const MonitorOutlined = resolveMuiIcon(MonitorOutlinedModule);
+const PhoneIphoneOutlined = resolveMuiIcon(PhoneIphoneOutlinedModule);
 
 export default function TemplatePanel() {
   const { t } = useTranslation();

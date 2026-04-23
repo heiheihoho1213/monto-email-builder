@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
 
-import AlignHorizontalLeftOutlined from '@mui/icons-material/AlignHorizontalLeftOutlined';
-import AlignHorizontalRightOutlined from '@mui/icons-material/AlignHorizontalRightOutlined';
-import AlignVerticalBottomOutlined from '@mui/icons-material/AlignVerticalBottomOutlined';
-import AlignVerticalTopOutlined from '@mui/icons-material/AlignVerticalTopOutlined';
+import * as AlignHorizontalLeftOutlinedModule from '@mui/icons-material/AlignHorizontalLeftOutlined';
+import * as AlignHorizontalRightOutlinedModule from '@mui/icons-material/AlignHorizontalRightOutlined';
+import * as AlignVerticalBottomOutlinedModule from '@mui/icons-material/AlignVerticalBottomOutlined';
+import * as AlignVerticalTopOutlinedModule from '@mui/icons-material/AlignVerticalTopOutlined';
 import { InputLabel, Stack } from '@mui/material';
 
 import RawSliderInput from './raw/RawSliderInput';
+
+import { resolveMuiIcon } from '../../../../../../utils/resolveMuiIcon';
+
+const AlignHorizontalLeftOutlined = resolveMuiIcon(AlignHorizontalLeftOutlinedModule);
+const AlignHorizontalRightOutlined = resolveMuiIcon(AlignHorizontalRightOutlinedModule);
+const AlignVerticalBottomOutlined = resolveMuiIcon(AlignVerticalBottomOutlinedModule);
+const AlignVerticalTopOutlined = resolveMuiIcon(AlignVerticalTopOutlinedModule);
 
 type TPaddingValue = {
   top: number;

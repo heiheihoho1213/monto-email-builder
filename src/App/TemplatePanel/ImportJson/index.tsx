@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 
-import FileUploadOutlined from '@mui/icons-material/FileUploadOutlined';
+import * as FileUploadOutlinedModule from '@mui/icons-material/FileUploadOutlined';
 import { IconButton, Tooltip } from '@mui/material';
 
 import { useTranslation } from '../../../i18n/useTranslation';
 import ImportJsonDialog from './ImportJsonDialog';
+
+import { resolveMuiIcon } from '../../../utils/resolveMuiIcon';
+
+const FileUploadOutlined = resolveMuiIcon(FileUploadOutlinedModule);
 
 export default function ImportJson() {
   const { t } = useTranslation();

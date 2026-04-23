@@ -1,14 +1,21 @@
 import React, { useRef, useState } from 'react';
 
-import Check from '@mui/icons-material/Check';
-import CloudUploadOutlined from '@mui/icons-material/CloudUploadOutlined';
-import LinkOutlined from '@mui/icons-material/LinkOutlined';
-import { Box, Button, CircularProgress, Stack, TextField, ToggleButton, Typography } from '@mui/material';
+import * as CheckModule from '@mui/icons-material/Check';
+import * as CloudUploadOutlinedModule from '@mui/icons-material/CloudUploadOutlined';
+import * as LinkOutlinedModule from '@mui/icons-material/LinkOutlined';
+import ToggleButton from '@mui/material/ToggleButton';
+import { Box, Button, CircularProgress, Stack, TextField, Typography } from '@mui/material';
 import { Video, VideoProps } from 'monto-email-block-video';
 
 import { useCurrentBlockId } from '../../editor/EditorBlock';
 import { setDocument, editorStateStore, useVideoUploadHandler } from '../../editor/EditorContext';
 import { useTranslation } from '../../../i18n/useTranslation';
+
+import { resolveMuiIcon } from '../../../utils/resolveMuiIcon';
+
+const Check = resolveMuiIcon(CheckModule);
+const CloudUploadOutlined = resolveMuiIcon(CloudUploadOutlinedModule);
+const LinkOutlined = resolveMuiIcon(LinkOutlinedModule);
 
 type VideoEditorProps = VideoProps;
 

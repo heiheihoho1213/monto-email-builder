@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
-import TextFieldsOutlined from '@mui/icons-material/TextFieldsOutlined';
+import * as TextFieldsOutlinedModule from '@mui/icons-material/TextFieldsOutlined';
 import { InputLabel, Stack } from '@mui/material';
 
 import RawSliderInput from './raw/RawSliderInput';
+
+import { resolveMuiIcon } from '../../../../../../utils/resolveMuiIcon';
+
+const TextFieldsOutlined = resolveMuiIcon(TextFieldsOutlinedModule);
 
 type Props = {
   label: string;

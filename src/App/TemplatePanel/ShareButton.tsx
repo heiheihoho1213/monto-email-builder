@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 
-import IosShareOutlined from '@mui/icons-material/IosShareOutlined';
+import * as IosShareOutlinedModule from '@mui/icons-material/IosShareOutlined';
 import { IconButton, Snackbar, Tooltip } from '@mui/material';
 
 import { useDocument } from '../../documents/editor/EditorContext';
+
+import { resolveMuiIcon } from '../../utils/resolveMuiIcon';
+
+const IosShareOutlined = resolveMuiIcon(IosShareOutlinedModule);
 
 export default function ShareButton() {
   const document = useDocument();

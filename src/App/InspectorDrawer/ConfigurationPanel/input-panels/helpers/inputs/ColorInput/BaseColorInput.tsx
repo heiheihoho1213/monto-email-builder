@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 
-import AddOutlined from '@mui/icons-material/AddOutlined';
-import CloseOutlined from '@mui/icons-material/CloseOutlined';
+import * as AddOutlinedModule from '@mui/icons-material/AddOutlined';
+import * as CloseOutlinedModule from '@mui/icons-material/CloseOutlined';
 import { Box, ButtonBase, InputLabel, Menu, Stack, Typography } from '@mui/material';
 
 import Picker from './Picker';
+
+import { resolveMuiIcon } from '../../../../../../../utils/resolveMuiIcon';
+
+const AddOutlined = resolveMuiIcon(AddOutlinedModule);
+const CloseOutlined = resolveMuiIcon(CloseOutlinedModule);
 
 const SWATCH_SIZE = 24;
 

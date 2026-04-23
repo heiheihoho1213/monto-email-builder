@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { ToggleButton } from '@mui/material';
+import ToggleButton from '@mui/material/ToggleButton';
 
 import { useTranslation } from '../../../../../../i18n/useTranslation';
 import RadioGroupInput from './RadioGroupInput';

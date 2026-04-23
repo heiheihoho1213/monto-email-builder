@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 
-import SaveOutlined from '@mui/icons-material/SaveOutlined';
+import * as SaveOutlinedModule from '@mui/icons-material/SaveOutlined';
 import { CircularProgress, IconButton, Tooltip } from '@mui/material';
 
 import { saveDocument, useSaveHandler } from '../../documents/editor/EditorContext';
 import { useTranslation } from '../../i18n/useTranslation';
+
+import { resolveMuiIcon } from '../../utils/resolveMuiIcon';
+
+const SaveOutlined = resolveMuiIcon(SaveOutlinedModule);
 
 export default function SaveButton() {
   const { t } = useTranslation();

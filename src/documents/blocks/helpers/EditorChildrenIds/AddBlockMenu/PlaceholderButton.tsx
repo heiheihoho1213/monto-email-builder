@@ -1,7 +1,11 @@
 import React from 'react';
 
-import AddOutlined from '@mui/icons-material/AddOutlined';
+import * as AddOutlinedModule from '@mui/icons-material/AddOutlined';
 import { ButtonBase } from '@mui/material';
+
+import { resolveMuiIcon } from '../../../../../utils/resolveMuiIcon';
+
+const AddOutlined = resolveMuiIcon(AddOutlinedModule);
 
 type Props = {
   onClick: () => void;

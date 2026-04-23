@@ -1,10 +1,15 @@
 import React from 'react';
 
-import FirstPageOutlined from '@mui/icons-material/FirstPageOutlined';
-import MenuOutlined from '@mui/icons-material/MenuOutlined';
+import * as FirstPageOutlinedModule from '@mui/icons-material/FirstPageOutlined';
+import * as MenuOutlinedModule from '@mui/icons-material/MenuOutlined';
 import { IconButton } from '@mui/material';
 
 import { toggleSamplesDrawerOpen, useSamplesDrawerOpen } from '../../documents/editor/EditorContext';
+
+import { resolveMuiIcon } from '../../utils/resolveMuiIcon';
+
+const FirstPageOutlined = resolveMuiIcon(FirstPageOutlinedModule);
+const MenuOutlined = resolveMuiIcon(MenuOutlinedModule);
 
 function useIcon() {
   const samplesDrawerOpen = useSamplesDrawerOpen();

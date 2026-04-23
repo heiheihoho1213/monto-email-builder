@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 
-import ArrowRightOutlined from '@mui/icons-material/ArrowRightOutlined';
+import * as ArrowRightOutlinedModule from '@mui/icons-material/ArrowRightOutlined';
 import { Button, Divider, Drawer, Stack, Typography, Popover, Paper, Box, Link } from '@mui/material';
 
 import { resetDocument, useSamplesDrawerOpen, setDocument, setSelectedBlockId, useDocument, useShowSamplesDrawerTitle } from '../../documents/editor/EditorContext';
@@ -11,6 +11,10 @@ import EMPTY_EMAIL_MESSAGE from '../../getConfiguration/sample/empty-email-messa
 
 import SidebarButton from './SidebarButton';
 import BlocksGrid from '../../documents/blocks/helpers/EditorChildrenIds/AddBlockMenu/BlocksGrid';
+
+import { resolveMuiIcon } from '../../utils/resolveMuiIcon';
+
+const ArrowRightOutlined = resolveMuiIcon(ArrowRightOutlinedModule);
 
 export const SAMPLES_DRAWER_WIDTH = 240;
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
-import { InputLabel, Stack, ToggleButtonGroup } from '@mui/material';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import { InputLabel, Stack } from '@mui/material';
 
 type Props = {
   label: string | JSX.Element;

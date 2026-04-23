@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-import { Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import { Stack, TextField, Typography } from '@mui/material';
 import { useTranslation } from '../../../../../../i18n/useTranslation';
 
 type TWidthValue = number | null | undefined;

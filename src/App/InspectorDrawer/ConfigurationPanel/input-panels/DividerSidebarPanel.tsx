@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import HeightOutlined from '@mui/icons-material/HeightOutlined';
+import * as HeightOutlinedModule from '@mui/icons-material/HeightOutlined';
 import { DividerProps, DividerPropsDefaults, DividerPropsSchema } from 'monto-email-block-divider';
 import { ZodError } from 'zod';
 import { useTranslation } from '../../../../i18n/useTranslation';
@@ -9,6 +9,10 @@ import BaseSidebarPanel from './helpers/BaseSidebarPanel';
 import ColorInput from './helpers/inputs/ColorInput';
 import SliderInput from './helpers/inputs/SliderInput';
 import MultiStylePropertyPanel from './helpers/style-inputs/MultiStylePropertyPanel';
+
+import { resolveMuiIcon } from '../../../../utils/resolveMuiIcon';
+
+const HeightOutlined = resolveMuiIcon(HeightOutlinedModule);
 
 type DividerSidebarPanelProps = {
   data: DividerProps;

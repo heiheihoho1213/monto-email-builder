@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 
-import AspectRatioOutlined from '@mui/icons-material/AspectRatioOutlined';
-import RoundedCornerOutlined from '@mui/icons-material/RoundedCornerOutlined';
-
+import * as AspectRatioOutlinedModule from '@mui/icons-material/AspectRatioOutlined';
+import * as RoundedCornerOutlinedModule from '@mui/icons-material/RoundedCornerOutlined';
 import EmailLayoutPropsSchema, {
   EmailLayoutProps,
 } from '../../../../documents/blocks/EmailLayout/EmailLayoutPropsSchema';
@@ -13,6 +12,11 @@ import BaseSidebarPanel from './helpers/BaseSidebarPanel';
 import ColorInput, { NullableColorInput } from './helpers/inputs/ColorInput';
 import { NullableFontFamily } from './helpers/inputs/FontFamily';
 import SliderInput from './helpers/inputs/SliderInput';
+
+import { resolveMuiIcon } from '../../../../utils/resolveMuiIcon';
+
+const AspectRatioOutlined = resolveMuiIcon(AspectRatioOutlinedModule);
+const RoundedCornerOutlined = resolveMuiIcon(RoundedCornerOutlinedModule);
 
 type EmailLayoutSidebarFieldsProps = {
   data: EmailLayoutProps;

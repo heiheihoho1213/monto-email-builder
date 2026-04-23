@@ -1,7 +1,6 @@
 import React from 'react';
 
-import RoundedCornerOutlined from '@mui/icons-material/RoundedCornerOutlined';
-
+import * as RoundedCornerOutlinedModule from '@mui/icons-material/RoundedCornerOutlined';
 import { TStyle } from '../../../../../../documents/blocks/helpers/TStyle';
 import { useTranslation } from '../../../../../../i18n/useTranslation';
 import { NullableColorInput } from '../inputs/ColorInput';
@@ -15,6 +14,10 @@ import PaddingInput from '../inputs/PaddingInput';
 import SliderInput from '../inputs/SliderInput';
 import TextAlignInput from '../inputs/TextAlignInput';
 import TextDecorationInput from '../inputs/TextDecorationInput';
+
+import { resolveMuiIcon } from '../../../../../../utils/resolveMuiIcon';
+
+const RoundedCornerOutlined = resolveMuiIcon(RoundedCornerOutlinedModule);
 
 type StylePropertyPanelProps = {
   name: keyof TStyle;

@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-import SpaceBarOutlined from '@mui/icons-material/SpaceBarOutlined';
-import UnfoldMoreOutlined from '@mui/icons-material/UnfoldMoreOutlined';
-import VerticalAlignBottomOutlined from '@mui/icons-material/VerticalAlignBottomOutlined';
-import VerticalAlignCenterOutlined from '@mui/icons-material/VerticalAlignCenterOutlined';
-import VerticalAlignTopOutlined from '@mui/icons-material/VerticalAlignTopOutlined';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  ToggleButton,
-  Typography,
-} from '@mui/material';
+import * as SpaceBarOutlinedModule from '@mui/icons-material/SpaceBarOutlined';
+import * as UnfoldMoreOutlinedModule from '@mui/icons-material/UnfoldMoreOutlined';
+import * as VerticalAlignBottomOutlinedModule from '@mui/icons-material/VerticalAlignBottomOutlined';
+import * as VerticalAlignCenterOutlinedModule from '@mui/icons-material/VerticalAlignCenterOutlined';
+import * as VerticalAlignTopOutlinedModule from '@mui/icons-material/VerticalAlignTopOutlined';
+import ToggleButton from '@mui/material/ToggleButton';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
 
 import ColumnsContainerPropsSchema, {
   ColumnsContainerProps,
@@ -27,6 +19,14 @@ import BaseSidebarPanel from './helpers/BaseSidebarPanel';
 import RadioGroupInput from './helpers/inputs/RadioGroupInput';
 import SliderInput from './helpers/inputs/SliderInput';
 import MultiStylePropertyPanel from './helpers/style-inputs/MultiStylePropertyPanel';
+
+import { resolveMuiIcon } from '../../../../utils/resolveMuiIcon';
+
+const SpaceBarOutlined = resolveMuiIcon(SpaceBarOutlinedModule);
+const UnfoldMoreOutlined = resolveMuiIcon(UnfoldMoreOutlinedModule);
+const VerticalAlignBottomOutlined = resolveMuiIcon(VerticalAlignBottomOutlinedModule);
+const VerticalAlignCenterOutlined = resolveMuiIcon(VerticalAlignCenterOutlinedModule);
+const VerticalAlignTopOutlined = resolveMuiIcon(VerticalAlignTopOutlinedModule);
 
 type ColumnsContainerPanelProps = {
   data: ColumnsContainerProps;

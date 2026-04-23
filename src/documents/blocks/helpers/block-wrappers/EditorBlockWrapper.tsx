@@ -1,11 +1,14 @@
 import React, { CSSProperties, useState, useRef, useEffect } from 'react';
 
 import { Box, IconButton } from '@mui/material';
-import DragIndicator from '@mui/icons-material/DragIndicator';
-
+import * as DragIndicatorModule from '@mui/icons-material/DragIndicator';
 import { useCurrentBlockId } from '../../../editor/EditorBlock';
 import { setSelectedBlockId, useSelectedBlockId, editorStateStore } from '../../../editor/EditorContext';
 import TuneMenu from './TuneMenu';
+
+import { resolveMuiIcon } from '../../../../utils/resolveMuiIcon';
+
+const DragIndicator = resolveMuiIcon(DragIndicatorModule);
 
 type TEditorBlockWrapperProps = {
   children: JSX.Element;

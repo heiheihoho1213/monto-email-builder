@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography, Stack, Divider, IconButton, Select, MenuItem, Button, Paper } from '@mui/material';
-import AspectRatioOutlined from '@mui/icons-material/AspectRatioOutlined';
-import DragIndicator from '@mui/icons-material/DragIndicator';
-import DeleteOutline from '@mui/icons-material/DeleteOutline';
-import Add from '@mui/icons-material/Add';
+import * as AspectRatioOutlinedModule from '@mui/icons-material/AspectRatioOutlined';
+import * as DragIndicatorModule from '@mui/icons-material/DragIndicator';
+import * as DeleteOutlineModule from '@mui/icons-material/DeleteOutline';
+import * as AddModule from '@mui/icons-material/Add';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import SocialsPropsSchema, { SocialsProps, SOCIAL_PLATFORMS, ICON_STYLES, SocialPlatform, IconStyle } from '../../../../documents/blocks/Socials/SocialsPropsSchema';
 import BaseSidebarPanel from './helpers/BaseSidebarPanel';
@@ -12,6 +12,13 @@ import TextInput from './helpers/inputs/TextInput';
 import SliderInput from './helpers/inputs/SliderInput';
 import MultiStylePropertyPanel from './helpers/style-inputs/MultiStylePropertyPanel';
 import { ZodError } from 'zod';
+
+import { resolveMuiIcon } from '../../../../utils/resolveMuiIcon';
+
+const AspectRatioOutlined = resolveMuiIcon(AspectRatioOutlinedModule);
+const DragIndicator = resolveMuiIcon(DragIndicatorModule);
+const DeleteOutline = resolveMuiIcon(DeleteOutlineModule);
+const Add = resolveMuiIcon(AddModule);
 
 // 平台显示名称映射
 const PLATFORM_NAMES: Record<SocialPlatform, { zh: string; en: string }> = {

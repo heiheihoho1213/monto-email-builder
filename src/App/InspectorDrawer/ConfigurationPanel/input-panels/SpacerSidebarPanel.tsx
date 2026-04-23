@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 
-import HeightOutlined from '@mui/icons-material/HeightOutlined';
+import * as HeightOutlinedModule from '@mui/icons-material/HeightOutlined';
 import { SpacerProps, SpacerPropsDefaults, SpacerPropsSchema } from 'monto-email-block-spacer';
 import { ZodError } from 'zod';
 import { useTranslation } from '../../../../i18n/useTranslation';
 
 import BaseSidebarPanel from './helpers/BaseSidebarPanel';
 import SliderInput from './helpers/inputs/SliderInput';
+
+import { resolveMuiIcon } from '../../../../utils/resolveMuiIcon';
+
+const HeightOutlined = resolveMuiIcon(HeightOutlinedModule);
 
 type SpacerSidebarPanelProps = {
   data: SpacerProps;

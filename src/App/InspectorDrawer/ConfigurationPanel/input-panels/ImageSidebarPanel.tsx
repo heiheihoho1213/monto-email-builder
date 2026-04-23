@@ -1,11 +1,12 @@
 import React, { useRef, useState } from 'react';
 
-import CloudUploadOutlined from '@mui/icons-material/CloudUploadOutlined';
-import LinkOutlined from '@mui/icons-material/LinkOutlined';
-import VerticalAlignBottomOutlined from '@mui/icons-material/VerticalAlignBottomOutlined';
-import VerticalAlignCenterOutlined from '@mui/icons-material/VerticalAlignCenterOutlined';
-import VerticalAlignTopOutlined from '@mui/icons-material/VerticalAlignTopOutlined';
-import { Button, CircularProgress, Stack, ToggleButton, Typography } from '@mui/material';
+import * as CloudUploadOutlinedModule from '@mui/icons-material/CloudUploadOutlined';
+import * as LinkOutlinedModule from '@mui/icons-material/LinkOutlined';
+import * as VerticalAlignBottomOutlinedModule from '@mui/icons-material/VerticalAlignBottomOutlined';
+import * as VerticalAlignCenterOutlinedModule from '@mui/icons-material/VerticalAlignCenterOutlined';
+import * as VerticalAlignTopOutlinedModule from '@mui/icons-material/VerticalAlignTopOutlined';
+import ToggleButton from '@mui/material/ToggleButton';
+import { Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { ImageProps, ImagePropsSchema } from 'monto-email-block-image';
 import { ZodError } from 'zod';
 
@@ -17,6 +18,14 @@ import RadioGroupInput from './helpers/inputs/RadioGroupInput';
 import TextDimensionInput from './helpers/inputs/TextDimensionInput';
 import TextInput from './helpers/inputs/TextInput';
 import MultiStylePropertyPanel from './helpers/style-inputs/MultiStylePropertyPanel';
+
+import { resolveMuiIcon } from '../../../../utils/resolveMuiIcon';
+
+const CloudUploadOutlined = resolveMuiIcon(CloudUploadOutlinedModule);
+const LinkOutlined = resolveMuiIcon(LinkOutlinedModule);
+const VerticalAlignBottomOutlined = resolveMuiIcon(VerticalAlignBottomOutlinedModule);
+const VerticalAlignCenterOutlined = resolveMuiIcon(VerticalAlignCenterOutlinedModule);
+const VerticalAlignTopOutlined = resolveMuiIcon(VerticalAlignTopOutlinedModule);
 
 type ImageSidebarPanelProps = {
   data: ImageProps;

@@ -1,12 +1,20 @@
 import React from 'react';
 
-import { Stack, ToggleButton, ToggleButtonGroup } from '@mui/material';
-import FormatBoldOutlined from '@mui/icons-material/FormatBoldOutlined';
-import FormatItalicOutlined from '@mui/icons-material/FormatItalicOutlined';
-import FormatUnderlinedOutlined from '@mui/icons-material/FormatUnderlinedOutlined';
-import StrikethroughSOutlined from '@mui/icons-material/StrikethroughSOutlined';
-
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import { Stack } from '@mui/material';
+import * as FormatBoldOutlinedModule from '@mui/icons-material/FormatBoldOutlined';
+import * as FormatItalicOutlinedModule from '@mui/icons-material/FormatItalicOutlined';
+import * as FormatUnderlinedOutlinedModule from '@mui/icons-material/FormatUnderlinedOutlined';
+import * as StrikethroughSOutlinedModule from '@mui/icons-material/StrikethroughSOutlined';
 import { TStyle } from '../../../../../../documents/blocks/helpers/TStyle';
+
+import { resolveMuiIcon } from '../../../../../../utils/resolveMuiIcon';
+
+const FormatBoldOutlined = resolveMuiIcon(FormatBoldOutlinedModule);
+const FormatItalicOutlined = resolveMuiIcon(FormatItalicOutlinedModule);
+const FormatUnderlinedOutlined = resolveMuiIcon(FormatUnderlinedOutlinedModule);
+const StrikethroughSOutlined = resolveMuiIcon(StrikethroughSOutlinedModule);
 
 type TextDecorationValue = string | null | undefined;
 

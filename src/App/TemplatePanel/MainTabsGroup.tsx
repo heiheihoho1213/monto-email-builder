@@ -1,13 +1,20 @@
 import React from 'react';
 
-import CodeOutlined from '@mui/icons-material/CodeOutlined';
-import DataObjectOutlined from '@mui/icons-material/DataObjectOutlined';
-import EditOutlined from '@mui/icons-material/EditOutlined';
-import PreviewOutlined from '@mui/icons-material/PreviewOutlined';
+import * as CodeOutlinedModule from '@mui/icons-material/CodeOutlined';
+import * as DataObjectOutlinedModule from '@mui/icons-material/DataObjectOutlined';
+import * as EditOutlinedModule from '@mui/icons-material/EditOutlined';
+import * as PreviewOutlinedModule from '@mui/icons-material/PreviewOutlined';
 import { Tab, Tabs, Tooltip } from '@mui/material';
 
 import { setSelectedMainTab, useSelectedMainTab, useShowJsonFeatures } from '../../documents/editor/EditorContext';
 import { useTranslation } from '../../i18n/useTranslation';
+
+import { resolveMuiIcon } from '../../utils/resolveMuiIcon';
+
+const CodeOutlined = resolveMuiIcon(CodeOutlinedModule);
+const DataObjectOutlined = resolveMuiIcon(DataObjectOutlinedModule);
+const EditOutlined = resolveMuiIcon(EditOutlinedModule);
+const PreviewOutlined = resolveMuiIcon(PreviewOutlinedModule);
 
 export default function MainTabsGroup() {
   const { t } = useTranslation();

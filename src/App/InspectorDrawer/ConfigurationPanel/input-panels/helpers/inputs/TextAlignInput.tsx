@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 
-import FormatAlignCenterOutlined from '@mui/icons-material/FormatAlignCenterOutlined';
-import FormatAlignLeftOutlined from '@mui/icons-material/FormatAlignLeftOutlined';
-import FormatAlignRightOutlined from '@mui/icons-material/FormatAlignRightOutlined';
-import { ToggleButton } from '@mui/material';
+import * as FormatAlignCenterOutlinedModule from '@mui/icons-material/FormatAlignCenterOutlined';
+import * as FormatAlignLeftOutlinedModule from '@mui/icons-material/FormatAlignLeftOutlined';
+import * as FormatAlignRightOutlinedModule from '@mui/icons-material/FormatAlignRightOutlined';
+import ToggleButton from '@mui/material/ToggleButton';
 
 import RadioGroupInput from './RadioGroupInput';
+
+import { resolveMuiIcon } from '../../../../../../utils/resolveMuiIcon';
+
+const FormatAlignCenterOutlined = resolveMuiIcon(FormatAlignCenterOutlinedModule);
+const FormatAlignLeftOutlined = resolveMuiIcon(FormatAlignLeftOutlinedModule);
+const FormatAlignRightOutlined = resolveMuiIcon(FormatAlignRightOutlinedModule);
 
 type Props = {
   label: string;

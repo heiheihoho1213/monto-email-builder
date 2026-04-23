@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
-import TitleOutlined from '@mui/icons-material/TitleOutlined';
+import * as TitleOutlinedModule from '@mui/icons-material/TitleOutlined';
 import { InputLabel, Stack } from '@mui/material';
 
 import RawSliderInput from './raw/RawSliderInput';
+
+import { resolveMuiIcon } from '../../../../../../utils/resolveMuiIcon';
+
+const TitleOutlined = resolveMuiIcon(TitleOutlinedModule);
 
 const MIN = -5;
 const MAX = 50;

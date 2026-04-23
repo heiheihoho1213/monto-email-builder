@@ -1,10 +1,14 @@
 import React from 'react';
 
-import LanguageOutlined from '@mui/icons-material/LanguageOutlined';
+import * as LanguageOutlinedModule from '@mui/icons-material/LanguageOutlined';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 
 import { setLanguage, useLanguage } from '../../documents/editor/EditorContext';
 import { Language } from '../../i18n';
+
+import { resolveMuiIcon } from '../../utils/resolveMuiIcon';
+
+const LanguageOutlined = resolveMuiIcon(LanguageOutlinedModule);
 
 export default function LanguageSwitcher() {
   const language = useLanguage();
