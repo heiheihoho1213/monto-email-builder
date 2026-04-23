@@ -49,6 +49,78 @@ export type EmailBuilderVariableInput = {
   default: string;
 };
 
+/**
+ * 从 Text `props.variables[].default` 预填到 `props.variableDefaults`：
+ * - 有 `variableInstanceId`：按实例写入；
+ * - 无实例 id：按 attribute 作为 legacy 键写入（后续会在编辑器内迁移到实例 id）。
+ */
+export function hydrateVariableDefaultsFromEmbeddedVariables(
+  document: TEditorConfiguration,
+  rootBlockId = 'root',
+): TEditorConfiguration {
+  const nextDoc: TEditorConfiguration = { ...document };
+  let docChanged = false;
+
+  const visit = (blockId: string, block: TEditorBlock) => {
+    if (block.type !== 'Text') return;
+    const data = block.data as TextProps;
+    const vars = (data.props as any)?.variables;
+    if (!Array.isArray(vars) || vars.length === 0) return;
+
+    const vd = { ...(data.props?.variableDefaults ?? {}) } as Record<string, string>;
+    let blockChanged = false;
+
+    for (const item of vars as Array<Record<string, unknown>>) {
+      if (!item || typeof item !== 'object') continue;
+      if (!Object.prototype.hasOwnProperty.call(item, 'default')) continue;
+      const rawDefault = item.default;
+      if (rawDefault == null) continue;
+      const def = String(rawDefault);
+
+      const iid = typeof item.variableInstanceId === 'string' ? item.variableInstanceId.trim() : '';
+      if (iid) {
+        if (vd[iid] !== def) {
+          vd[iid] = def;
+          blockChanged = true;
+        }
+        continue;
+      }
+
+      const key = resolveAttributeKeyFromInput({
+        attribute: typeof item.attribute === 'string' ? item.attribute : undefined,
+        variable: typeof item.variable === 'string' ? item.variable : undefined,
+        default: def,
+      });
+      if (!key) continue;
+      if (vd[key] !== def) {
+        vd[key] = def;
+        blockChanged = true;
+      }
+    }
+
+    if (blockChanged) {
+      docChanged = true;
+      nextDoc[blockId] = {
+        ...block,
+        data: {
+          ...data,
+          props: {
+            ...(data.props as object),
+            variableDefaults: vd,
+          },
+        },
+      } as TEditorBlock;
+    }
+  };
+
+  const seen = new Set<string>();
+  if (document[rootBlockId]) {
+    walkFrom(document, rootBlockId, visit, seen);
+  }
+
+  return docChanged ? nextDoc : document;
+}
+
 function getChildBlockIds(block: TEditorBlock): string[] {
   const data = block.data as Record<string, unknown> | null | undefined;
   if (!data || typeof data !== 'object') return [];

@@ -266,6 +266,7 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   const [linkKind, setLinkKind] = useState<LinkKind>('web');
   const [linkUrl, setLinkUrl] = useState<string>('');
   const [linkTargetBlank, setLinkTargetBlank] = useState<boolean>(true);
+  const [linkUrlTouched, setLinkUrlTouched] = useState<boolean>(false);
   const linkUrlInputRef = useRef<HTMLInputElement | null>(null);
 
   const RFC5322_EMAIL_RE =
@@ -337,11 +338,13 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
       setLinkUrl('');
       setLinkTargetBlank(true);
     }
+    setLinkUrlTouched(false);
     setLinkAnchorEl(e.currentTarget);
   };
 
   const handleCloseLink = () => {
     setLinkAnchorEl(null);
+    setLinkUrlTouched(false);
   };
 
   const linkVars = useMemo(() => {
@@ -442,7 +445,10 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   const handleSaveLink = () => {
     if (!textSelection) return;
     const safeHref = getSafeHref(linkKind, linkUrl);
-    if (!safeHref) return;
+    if (!safeHref) {
+      setLinkUrlTouched(true);
+      return;
+    }
 
     markLastInlineStyleApply();
     queueTextDomApply(blockId, {
@@ -615,9 +621,13 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
             label={t('text.linkUrl')}
             placeholder={t('text.linkPlaceholderUrl')}
             value={linkUrl}
-            onChange={(ev) => setLinkUrl(ev.target.value)}
-            error={!getSafeHref(linkKind, linkUrl)}
-            helperText={!getSafeHref(linkKind, linkUrl) ? t('text.linkInvalid') : ' '}
+            onChange={(ev) => {
+              setLinkUrl(ev.target.value);
+              if (!linkUrlTouched) setLinkUrlTouched(true);
+            }}
+            onBlur={() => setLinkUrlTouched(true)}
+            error={linkUrlTouched && !getSafeHref(linkKind, linkUrl)}
+            helperText={linkUrlTouched && !getSafeHref(linkKind, linkUrl) ? t('text.linkInvalid') : ' '}
             inputRef={linkUrlInputRef}
           />
 

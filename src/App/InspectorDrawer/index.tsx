@@ -2,7 +2,12 @@ import React from 'react';
 
 import { Box, Drawer, Tab, Tabs } from '@mui/material';
 
-import { setSidebarTab, useInspectorDrawerOpen, useSelectedSidebarTab } from '../../documents/editor/EditorContext';
+import {
+  setSidebarTab,
+  useInspectorDrawerOpen,
+  useSelectedMainTab,
+  useSelectedSidebarTab,
+} from '../../documents/editor/EditorContext';
 import { useTranslation } from '../../i18n/useTranslation';
 
 import ConfigurationPanel from './ConfigurationPanel';
@@ -14,6 +19,8 @@ export default function InspectorDrawer() {
   const { t } = useTranslation();
   const selectedSidebarTab = useSelectedSidebarTab();
   const inspectorDrawerOpen = useInspectorDrawerOpen();
+  const selectedMainTab = useSelectedMainTab();
+  const isPreviewMode = selectedMainTab === 'preview';
 
   const renderCurrentSidebarPanel = () => {
     switch (selectedSidebarTab) {
@@ -52,15 +59,22 @@ export default function InspectorDrawer() {
         },
       }}
     >
-      <Box sx={{ width: INSPECTOR_DRAWER_WIDTH, height: 49, borderBottom: 1, borderColor: 'divider' }}>
-        <Box px={2}>
-          <Tabs value={selectedSidebarTab} onChange={(_, v) => setSidebarTab(v)}>
-            <Tab value="styles" label={t('inspector.styles')} />
-            <Tab value="block-configuration" label={t('inspector.inspect')} />
-          </Tabs>
-        </Box>
+      <Box px={2}>
+        <Tabs value={selectedSidebarTab} onChange={(_, v) => setSidebarTab(v)}>
+          <Tab value="styles" label={t('inspector.styles')} />
+          <Tab value="block-configuration" label={t('inspector.inspect')} />
+        </Tabs>
       </Box>
-      <Box sx={{ width: INSPECTOR_DRAWER_WIDTH, height: 'calc(100% - 49px)', overflowY: 'auto', overflowX: 'hidden' }}>
+      <Box
+        sx={{
+          width: INSPECTOR_DRAWER_WIDTH,
+          height: 'calc(100% - 49px)',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          pointerEvents: isPreviewMode ? 'none' : 'auto',
+          opacity: isPreviewMode ? 0.55 : 1,
+        }}
+      >
         {renderCurrentSidebarPanel()}
       </Box>
     </Drawer>

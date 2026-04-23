@@ -24,6 +24,7 @@ import { Language } from '../i18n';
 import {
   applyExternalVariableDefaultsToDocument,
   collectTemplateVariablesFromDocument,
+  hydrateVariableDefaultsFromEmbeddedVariables,
   type EmailBuilderVariableInput,
   type EmailTemplateVariableItem,
 } from '../documents/editor/collectTemplateVariables';
@@ -219,8 +220,9 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   // 关键点：这里要“同步初始化”，保证第三方集成时首屏就按 props 生效（避免抽屉/标题/语言闪一下）
   const initializedRef = useRef(false);
   if (!initializedRef.current) {
+    const hydrated = hydrateVariableDefaultsFromEmbeddedVariables(initialDocument ?? EMPTY_EMAIL_MESSAGE);
     initializeStore({
-      document: applyExternalVariableDefaultsToDocument(initialDocument ?? EMPTY_EMAIL_MESSAGE, variables),
+      document: applyExternalVariableDefaultsToDocument(hydrated, variables),
       language: language,
       showJsonFeatures: showJsonFeatures,
       showSamplesDrawerTitle: showSamplesDrawerTitle,
@@ -232,7 +234,8 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   // 当 initialDocument 变化时，整份替换并合并 variables
   useEffect(() => {
     if (initialDocument !== undefined) {
-      resetDocument(applyExternalVariableDefaultsToDocument(initialDocument, variables));
+      const hydrated = hydrateVariableDefaultsFromEmbeddedVariables(initialDocument);
+      resetDocument(applyExternalVariableDefaultsToDocument(hydrated, variables));
     }
   }, [initialDocument]);
 

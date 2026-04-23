@@ -59,7 +59,7 @@ const testJSON = {
         "markdown": false,
         "message": "My new text block {{first_name}} {{first_name}} {%send_weekday%}",
         "variables": [
-          { "attribute": "first_name", "variable": "{{first_name}}", "type": "user" },
+          { "attribute": "first_name", "variable": "{{first_name}}", "default": "John", "type": "user" },
           { "attribute": "first_name", "variable": "{{first_name}}", "type": "user" },
           { "attribute": "send_weekday", "variable": "{%send_weekday%}", "type": "system" },
         ]
