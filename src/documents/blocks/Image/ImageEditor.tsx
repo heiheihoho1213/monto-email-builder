@@ -1,10 +1,8 @@
 import React, { useRef, useState } from 'react';
 
-import {
-  Check,
-  CloudUploadOutlined,
-  LinkOutlined,
-} from '@mui/icons-material';
+import Check from '@mui/icons-material/Check';
+import CloudUploadOutlined from '@mui/icons-material/CloudUploadOutlined';
+import LinkOutlined from '@mui/icons-material/LinkOutlined';
 import { Box, Button, CircularProgress, Stack, TextField, ToggleButton, Typography } from '@mui/material';
 import { Image, ImageProps } from 'monto-email-block-image';
 

@@ -1,19 +1,17 @@
 import React from 'react';
 
-import {
-  AccountCircleOutlined,
-  Crop32Outlined,
-  HMobiledataOutlined,
-  HorizontalRuleOutlined,
-  HtmlOutlined,
-  ImageOutlined,
-  LibraryAddOutlined,
-  NotesOutlined,
-  ShareOutlined,
-  SmartButtonOutlined,
-  ViewColumnOutlined,
-  VideocamOutlined,
-} from '@mui/icons-material';
+import AccountCircleOutlined from '@mui/icons-material/AccountCircleOutlined';
+import Crop32Outlined from '@mui/icons-material/Crop32Outlined';
+import HMobiledataOutlined from '@mui/icons-material/HMobiledataOutlined';
+import HorizontalRuleOutlined from '@mui/icons-material/HorizontalRuleOutlined';
+import HtmlOutlined from '@mui/icons-material/HtmlOutlined';
+import ImageOutlined from '@mui/icons-material/ImageOutlined';
+import LibraryAddOutlined from '@mui/icons-material/LibraryAddOutlined';
+import NotesOutlined from '@mui/icons-material/NotesOutlined';
+import ShareOutlined from '@mui/icons-material/ShareOutlined';
+import SmartButtonOutlined from '@mui/icons-material/SmartButtonOutlined';
+import ViewColumnOutlined from '@mui/icons-material/ViewColumnOutlined';
+import VideocamOutlined from '@mui/icons-material/VideocamOutlined';
 
 import { TEditorBlock } from '../../../../editor/core';
 

@@ -1,7 +1,7 @@
 import React, { CSSProperties, useState, useRef, useEffect } from 'react';
 
 import { Box, IconButton } from '@mui/material';
-import { DragIndicator } from '@mui/icons-material';
+import DragIndicator from '@mui/icons-material/DragIndicator';
 
 import { useCurrentBlockId } from '../../../editor/EditorBlock';
 import { setSelectedBlockId, useSelectedBlockId, editorStateStore } from '../../../editor/EditorContext';

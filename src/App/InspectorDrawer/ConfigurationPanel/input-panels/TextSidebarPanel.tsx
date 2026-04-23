@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { CloseOutlined, DataObjectOutlined } from '@mui/icons-material';
+import CloseOutlined from '@mui/icons-material/CloseOutlined';
+import DataObjectOutlined from '@mui/icons-material/DataObjectOutlined';
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import LinkOutlined from '@mui/icons-material/LinkOutlined';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Checkbox, Divider, FormControlLabel, IconButton, InputLabel, MenuItem, Popover, Select, SelectChangeEvent, Stack, TextField, Typography } from '@mui/material';

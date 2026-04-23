@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography, Stack, Divider, IconButton, Select, MenuItem, Button, Paper } from '@mui/material';
-import { AspectRatioOutlined, DragIndicator, DeleteOutline, Add } from '@mui/icons-material';
+import AspectRatioOutlined from '@mui/icons-material/AspectRatioOutlined';
+import DragIndicator from '@mui/icons-material/DragIndicator';
+import DeleteOutline from '@mui/icons-material/DeleteOutline';
+import Add from '@mui/icons-material/Add';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import SocialsPropsSchema, { SocialsProps, SOCIAL_PLATFORMS, ICON_STYLES, SocialPlatform, IconStyle } from '../../../../documents/blocks/Socials/SocialsPropsSchema';
 import BaseSidebarPanel from './helpers/BaseSidebarPanel';

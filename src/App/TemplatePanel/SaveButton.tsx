@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { SaveOutlined } from '@mui/icons-material';
+import SaveOutlined from '@mui/icons-material/SaveOutlined';
 import { CircularProgress, IconButton, Tooltip } from '@mui/material';
 
 import { saveDocument, useSaveHandler } from '../../documents/editor/EditorContext';

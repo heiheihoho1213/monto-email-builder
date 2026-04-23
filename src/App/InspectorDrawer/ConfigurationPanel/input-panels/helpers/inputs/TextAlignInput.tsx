@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 
-import { FormatAlignCenterOutlined, FormatAlignLeftOutlined, FormatAlignRightOutlined } from '@mui/icons-material';
+import FormatAlignCenterOutlined from '@mui/icons-material/FormatAlignCenterOutlined';
+import FormatAlignLeftOutlined from '@mui/icons-material/FormatAlignLeftOutlined';
+import FormatAlignRightOutlined from '@mui/icons-material/FormatAlignRightOutlined';
 import { ToggleButton } from '@mui/material';
 
 import RadioGroupInput from './RadioGroupInput';

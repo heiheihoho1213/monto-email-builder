@@ -1,6 +1,9 @@
 import React from 'react';
 
-import { ArrowDownwardOutlined, ArrowUpwardOutlined, ContentCopyOutlined, DeleteOutlined } from '@mui/icons-material';
+import ArrowDownwardOutlined from '@mui/icons-material/ArrowDownwardOutlined';
+import ArrowUpwardOutlined from '@mui/icons-material/ArrowUpwardOutlined';
+import ContentCopyOutlined from '@mui/icons-material/ContentCopyOutlined';
+import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import { Divider, IconButton, Paper, Stack, SxProps, Tooltip } from '@mui/material';
 
 import { TEditorBlock, TEditorConfiguration } from '../../../editor/core';

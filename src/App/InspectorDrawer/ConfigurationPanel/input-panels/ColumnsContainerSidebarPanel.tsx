@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
-import {
-  SpaceBarOutlined,
-  UnfoldMoreOutlined,
-  VerticalAlignBottomOutlined,
-  VerticalAlignCenterOutlined,
-  VerticalAlignTopOutlined,
-} from '@mui/icons-material';
+import SpaceBarOutlined from '@mui/icons-material/SpaceBarOutlined';
+import UnfoldMoreOutlined from '@mui/icons-material/UnfoldMoreOutlined';
+import VerticalAlignBottomOutlined from '@mui/icons-material/VerticalAlignBottomOutlined';
+import VerticalAlignCenterOutlined from '@mui/icons-material/VerticalAlignCenterOutlined';
+import VerticalAlignTopOutlined from '@mui/icons-material/VerticalAlignTopOutlined';
 import {
   Box,
   Button,

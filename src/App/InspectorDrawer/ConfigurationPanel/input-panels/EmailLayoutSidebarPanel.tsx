@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
-import { AspectRatioOutlined, RoundedCornerOutlined } from '@mui/icons-material';
+import AspectRatioOutlined from '@mui/icons-material/AspectRatioOutlined';
+import RoundedCornerOutlined from '@mui/icons-material/RoundedCornerOutlined';
 
 import EmailLayoutPropsSchema, {
   EmailLayoutProps,

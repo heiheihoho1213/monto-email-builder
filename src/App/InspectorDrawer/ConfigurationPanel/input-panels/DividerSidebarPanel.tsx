@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { HeightOutlined } from '@mui/icons-material';
+import HeightOutlined from '@mui/icons-material/HeightOutlined';
 import { DividerProps, DividerPropsDefaults, DividerPropsSchema } from 'monto-email-block-divider';
 import { ZodError } from 'zod';
 import { useTranslation } from '../../../../i18n/useTranslation';

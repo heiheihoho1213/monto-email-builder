@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-import { AddOutlined, CloseOutlined } from '@mui/icons-material';
+import AddOutlined from '@mui/icons-material/AddOutlined';
+import CloseOutlined from '@mui/icons-material/CloseOutlined';
 import { Box, ButtonBase, InputLabel, Menu, Stack, Typography } from '@mui/material';
 
 import Picker from './Picker';

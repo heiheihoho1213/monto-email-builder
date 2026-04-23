@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { TitleOutlined } from '@mui/icons-material';
+import TitleOutlined from '@mui/icons-material/TitleOutlined';
 import { InputLabel, Stack } from '@mui/material';
 
 import RawSliderInput from './raw/RawSliderInput';

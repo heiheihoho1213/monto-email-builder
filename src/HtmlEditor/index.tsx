@@ -30,12 +30,11 @@ import {
   useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import {
-  Code as CodeIcon,
-  Visibility as VisibilityIcon,
-  ViewColumn as ViewColumnIcon,
-  MonitorOutlined, PhoneIphoneOutlined
-} from '@mui/icons-material';
+import CodeIcon from '@mui/icons-material/Code';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import ViewColumnIcon from '@mui/icons-material/ViewColumn';
+import MonitorOutlined from '@mui/icons-material/MonitorOutlined';
+import PhoneIphoneOutlined from '@mui/icons-material/PhoneIphoneOutlined';
 import { Language, t } from '../i18n';
 
 export type HtmlEditorMode = 'split' | 'code' | 'preview';

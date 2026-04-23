@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 
-import {
-  AlignHorizontalLeftOutlined,
-  AlignHorizontalRightOutlined,
-  AlignVerticalBottomOutlined,
-  AlignVerticalTopOutlined,
-} from '@mui/icons-material';
+import AlignHorizontalLeftOutlined from '@mui/icons-material/AlignHorizontalLeftOutlined';
+import AlignHorizontalRightOutlined from '@mui/icons-material/AlignHorizontalRightOutlined';
+import AlignVerticalBottomOutlined from '@mui/icons-material/AlignVerticalBottomOutlined';
+import AlignVerticalTopOutlined from '@mui/icons-material/AlignVerticalTopOutlined';
 import { InputLabel, Stack } from '@mui/material';
 
 import RawSliderInput from './raw/RawSliderInput';

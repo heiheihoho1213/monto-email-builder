@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { ExitToAppOutlined } from '@mui/icons-material';
+import ExitToAppOutlined from '@mui/icons-material/ExitToAppOutlined';
 import { CircularProgress, IconButton, Tooltip } from '@mui/material';
 
 import { saveAndExitDocument, saveDocument, useSaveAndExitHandler, useSaveHandler } from '../../documents/editor/EditorContext';

@@ -1,12 +1,10 @@
 import React, { useRef, useState } from 'react';
 
-import {
-  CloudUploadOutlined,
-  LinkOutlined,
-  VerticalAlignBottomOutlined,
-  VerticalAlignCenterOutlined,
-  VerticalAlignTopOutlined,
-} from '@mui/icons-material';
+import CloudUploadOutlined from '@mui/icons-material/CloudUploadOutlined';
+import LinkOutlined from '@mui/icons-material/LinkOutlined';
+import VerticalAlignBottomOutlined from '@mui/icons-material/VerticalAlignBottomOutlined';
+import VerticalAlignCenterOutlined from '@mui/icons-material/VerticalAlignCenterOutlined';
+import VerticalAlignTopOutlined from '@mui/icons-material/VerticalAlignTopOutlined';
 import { Button, CircularProgress, Stack, ToggleButton, Typography } from '@mui/material';
 import { ZodError } from 'zod';
 

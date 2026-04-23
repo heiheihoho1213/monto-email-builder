@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 
-import { ArrowRightOutlined } from '@mui/icons-material';
+import ArrowRightOutlined from '@mui/icons-material/ArrowRightOutlined';
 import { Button, Divider, Drawer, Stack, Typography, Popover, Paper, Box, Link } from '@mui/material';
 
 import { resetDocument, useSamplesDrawerOpen, setDocument, setSelectedBlockId, useDocument, useShowSamplesDrawerTitle } from '../../documents/editor/EditorContext';

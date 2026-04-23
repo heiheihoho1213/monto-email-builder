@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { IosShareOutlined } from '@mui/icons-material';
+import IosShareOutlined from '@mui/icons-material/IosShareOutlined';
 import { IconButton, Snackbar, Tooltip } from '@mui/material';
 
 import { useDocument } from '../../documents/editor/EditorContext';

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { AddOutlined } from '@mui/icons-material';
+import AddOutlined from '@mui/icons-material/AddOutlined';
 import { Fade, IconButton } from '@mui/material';
 
 type Props = {

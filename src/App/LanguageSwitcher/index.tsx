@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { LanguageOutlined } from '@mui/icons-material';
+import LanguageOutlined from '@mui/icons-material/LanguageOutlined';
 import { IconButton, Menu, MenuItem } from '@mui/material';
 
 import { setLanguage, useLanguage } from '../../documents/editor/EditorContext';

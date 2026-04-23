@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { TextFieldsOutlined } from '@mui/icons-material';
+import TextFieldsOutlined from '@mui/icons-material/TextFieldsOutlined';
 import { InputLabel, Stack } from '@mui/material';
 
 import RawSliderInput from './raw/RawSliderInput';
