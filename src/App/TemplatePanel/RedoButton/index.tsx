@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { RedoOutlined } from '@mui/icons-material';
+import RedoOutlined from '@mui/icons-material/RedoOutlined';
 import { IconButton, Tooltip } from '@mui/material';
 
 import { redo, useCanRedo } from '../../../documents/editor/EditorContext';

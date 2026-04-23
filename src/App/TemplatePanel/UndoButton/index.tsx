@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { UndoOutlined } from '@mui/icons-material';
+import UndoOutlined from '@mui/icons-material/UndoOutlined';
 import { IconButton, Tooltip } from '@mui/material';
 
 import { undo, useCanUndo } from '../../../documents/editor/EditorContext';

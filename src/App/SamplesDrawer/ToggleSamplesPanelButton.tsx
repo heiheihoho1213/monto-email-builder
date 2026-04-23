@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { FirstPageOutlined, MenuOutlined } from '@mui/icons-material';
+import FirstPageOutlined from '@mui/icons-material/FirstPageOutlined';
+import MenuOutlined from '@mui/icons-material/MenuOutlined';
 import { IconButton } from '@mui/material';
 
 import { toggleSamplesDrawerOpen, useSamplesDrawerOpen } from '../../documents/editor/EditorContext';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { FileUploadOutlined } from '@mui/icons-material';
+import FileUploadOutlined from '@mui/icons-material/FileUploadOutlined';
 import { IconButton, Tooltip } from '@mui/material';
 
 import { useTranslation } from '../../../i18n/useTranslation';

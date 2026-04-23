@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { FileDownloadOutlined } from '@mui/icons-material';
+import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined';
 import { IconButton, Tooltip } from '@mui/material';
 
 import { useDocument } from '../../../documents/editor/EditorContext';

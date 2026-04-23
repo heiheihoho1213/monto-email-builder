@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { AppRegistrationOutlined, LastPageOutlined } from '@mui/icons-material';
+import AppRegistrationOutlined from '@mui/icons-material/AppRegistrationOutlined';
+import LastPageOutlined from '@mui/icons-material/LastPageOutlined';
 import { IconButton } from '@mui/material';
 
 import { toggleInspectorDrawerOpen, useInspectorDrawerOpen } from '../../documents/editor/EditorContext';

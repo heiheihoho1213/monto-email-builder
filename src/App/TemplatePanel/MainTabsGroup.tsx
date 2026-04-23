@@ -1,6 +1,9 @@
 import React from 'react';
 
-import { CodeOutlined, DataObjectOutlined, EditOutlined, PreviewOutlined } from '@mui/icons-material';
+import CodeOutlined from '@mui/icons-material/CodeOutlined';
+import DataObjectOutlined from '@mui/icons-material/DataObjectOutlined';
+import EditOutlined from '@mui/icons-material/EditOutlined';
+import PreviewOutlined from '@mui/icons-material/PreviewOutlined';
 import { Tab, Tabs, Tooltip } from '@mui/material';
 
 import { setSelectedMainTab, useSelectedMainTab, useShowJsonFeatures } from '../../documents/editor/EditorContext';
