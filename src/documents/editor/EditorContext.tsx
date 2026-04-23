@@ -29,7 +29,8 @@ export type ContactAttribute = {
 export type TextDomApplyKind =
   | { kind: 'style'; style: Partial<TStyle> }
   | { kind: 'link'; href: string; targetBlank: boolean }
-  | { kind: 'variable'; token: string };
+  | { kind: 'variable'; token: string; defaultValue?: string }
+  | { kind: 'replaceVariable'; token: string; start: number; end: number; defaultValue?: string };
 
 export type TextDomApplyRequest = { blockId: string; id: number } & TextDomApplyKind;
 

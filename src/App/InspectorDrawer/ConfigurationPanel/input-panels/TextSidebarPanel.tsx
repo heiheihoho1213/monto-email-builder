@@ -18,6 +18,7 @@ import {
 } from '../../../../documents/editor/EditorContext';
 import {
   extractInsertedVariableOccurrencesFromHtmlString,
+  getInsertedVariableAtRangeFromHtmlString,
   getLinkInRangeFromHtmlString,
   readInlineStyleInRangeFromHtmlString,
 } from '../../../../documents/blocks/Text/textDom';
@@ -217,7 +218,12 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   const linkEnabled = hasSelection;
   // 明确需求：用户手打的 {{...}} 不识别为变量；只有插入式 span[data-text-variable] 才算变量。
   // 插入按钮只需要“无选区”即可；编辑器内部会保证 caret 不会落进变量 span。
-  const variableEnabled = !hasSelection;
+  const selectedInsertedVariable = useMemo(() => {
+    if (!hasSelection || !textSelection) return null;
+    const html = getResolvedTextBodyHtml(data.props ?? null);
+    return getInsertedVariableAtRangeFromHtmlString(html, textSelection.start, textSelection.end);
+  }, [hasSelection, textSelection, data.props]);
+  const variableActionEnabled = !hasSelection || !!selectedInsertedVariable;
   const htmlForVariables = useMemo(() => getResolvedTextBodyHtml(data.props ?? null), [data.props]);
   const allowedVariableNames = useMemo(() => {
     const all = new Set<string>();
@@ -253,6 +259,10 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   const [linkAnchorEl, setLinkAnchorEl] = useState<null | HTMLElement>(null);
   const [variableAnchorEl, setVariableAnchorEl] = useState<null | HTMLElement>(null);
   const [variableExpanded, setVariableExpanded] = useState<VariableGroup['id'] | null>('contacts');
+  const [variableStage, setVariableStage] = useState<'pick' | 'default'>('pick');
+  const [pendingVariableInsert, setPendingVariableInsert] = useState<{ name: string; kind: 'user' | 'builtin' } | null>(null);
+  const [pendingVariableDefault, setPendingVariableDefault] = useState<string>('');
+  const [pendingVariableDefaultTouched, setPendingVariableDefaultTouched] = useState<boolean>(false);
   const [linkKind, setLinkKind] = useState<LinkKind>('web');
   const [linkUrl, setLinkUrl] = useState<string>('');
   const [linkTargetBlank, setLinkTargetBlank] = useState<boolean>(true);
@@ -280,8 +290,8 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   const getSafeHref = (kind: LinkKind, raw: string): string | null => {
     const v = raw.trim();
     if (!v) return null;
-    // Links 内置变量（不含空格/换行）
-    if (/^\{\%[A-Za-z_][A-Za-z0-9_]*\%\}$/.test(v)) {
+    // 变量 token（不含空格/换行）：支持 {{name}} 与 {%name%}
+    if (/^\{\{[A-Za-z_][A-Za-z0-9_]*\}\}$/.test(v) || /^\{\%[A-Za-z_][A-Za-z0-9_]*\%\}$/.test(v)) {
       return v;
     }
     if (kind === 'email') {
@@ -334,7 +344,7 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
     setLinkAnchorEl(null);
   };
 
-  const builtinLinkVars = useMemo(() => {
+  const linkVars = useMemo(() => {
     const g = variableGroups.find((x) => x.id === 'links');
     return g ? g.items : [];
   }, [variableGroups]);
@@ -361,20 +371,72 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   };
 
   const handleOpenVariable = (e: React.MouseEvent<HTMLElement>) => {
-    if (!variableEnabled) return;
+    if (!variableActionEnabled) return;
     setVariableAnchorEl(e.currentTarget);
     setVariableExpanded('contacts');
+    setVariableStage('pick');
+    setPendingVariableInsert(null);
+    setPendingVariableDefault('');
+    setPendingVariableDefaultTouched(false);
   };
 
   const handleCloseVariable = () => {
     setVariableAnchorEl(null);
+    setVariableStage('pick');
+    setPendingVariableInsert(null);
+    setPendingVariableDefault('');
+    setPendingVariableDefaultTouched(false);
   };
 
   const handleInsertVariable = (name: string, kind: 'user' | 'builtin') => {
-    if (!variableEnabled) return;
-    const token = kind === 'builtin' ? `{%${name}%}` : `{{${name}}}`;
-    queueTextDomApply(blockId, { kind: 'variable', token });
-    setVariableAnchorEl(null);
+    if (!variableActionEnabled) return;
+    if (kind === 'builtin') {
+      const token = `{%${name}%}`;
+      if (selectedInsertedVariable && textSelection) {
+        queueTextDomApply(blockId, {
+          kind: 'replaceVariable',
+          token,
+          start: textSelection.start,
+          end: textSelection.end,
+        });
+      } else {
+        queueTextDomApply(blockId, { kind: 'variable', token });
+      }
+      handleCloseVariable();
+      return;
+    }
+    setPendingVariableInsert({ name, kind });
+    setPendingVariableDefault('');
+    setPendingVariableDefaultTouched(false);
+    setVariableStage('default');
+  };
+
+  const handleBackToVariablePick = () => {
+    setVariableStage('pick');
+    setPendingVariableDefaultTouched(false);
+  };
+
+  const handleConfirmInsertVariable = () => {
+    if (!pendingVariableInsert) return;
+    const defaultValue = pendingVariableDefault.trim();
+    if (defaultValue === '') return;
+    const token = pendingVariableInsert.kind === 'builtin' ? `{%${pendingVariableInsert.name}%}` : `{{${pendingVariableInsert.name}}}`;
+    if (selectedInsertedVariable && textSelection) {
+      queueTextDomApply(blockId, {
+        kind: 'replaceVariable',
+        token,
+        start: textSelection.start,
+        end: textSelection.end,
+        defaultValue,
+      });
+    } else {
+      queueTextDomApply(blockId, {
+        kind: 'variable',
+        token,
+        defaultValue,
+      });
+    }
+    handleCloseVariable();
   };
 
   const handleSaveLink = () => {
@@ -457,7 +519,7 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
             size="small"
             variant="outlined"
             onClick={handleOpenVariable}
-            disabled={!variableEnabled}
+            disabled={!variableActionEnabled}
             aria-label={t('text.addVariables')}
             startIcon={<DataObjectOutlined fontSize="small" />}
             sx={{
@@ -471,7 +533,7 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
               },
             }}
           >
-            {t('text.addVariables')}
+            {selectedInsertedVariable ? t('text.replaceVariable') : t('text.addVariables')}
           </Button>
         </Stack>
       </Stack>
@@ -559,21 +621,21 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
             inputRef={linkUrlInputRef}
           />
 
-          {builtinLinkVars.length > 0 && (
+          {linkVars.length > 0 && (
             <Stack spacing={0.75}>
               <Typography variant="body2" color="text.secondary">
-                {t('text.linkBuiltinVariables')}
+                {t('text.linkVariables')}
               </Typography>
               <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                {builtinLinkVars.map((it) => (
+                {linkVars.map((it) => (
                   <Button
                     key={it.name}
                     size="small"
                     variant="outlined"
-                    onClick={() => insertIntoLinkUrlAtCursor(`{%${it.name}%}`)}
+                    onClick={() => insertIntoLinkUrlAtCursor(`{{${it.name}}}`)}
                     sx={{ borderColor: 'divider', color: 'text.secondary' }}
                   >
-                    {`{%${it.name}%}`}
+                    {`{{${it.name}}}`}
                   </Button>
                 ))}
               </Stack>
@@ -608,10 +670,11 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
       >
         <Stack spacing={1.5}>
           <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-            {t('text.addVariables')}
+            {variableStage === 'pick' ? t('text.addVariables') : t('text.variables.setDefaultTitle')}
           </Typography>
-          <Box>
-            {variableGroups.map((g, idx) => {
+          {variableStage === 'pick' ? (
+            <Box>
+              {variableGroups.map((g, idx) => {
               const titleKey =
                 g.id === 'contacts'
                   ? 'text.variables.groupContacts'
@@ -625,75 +688,123 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
 
               const expanded = variableExpanded === g.id;
 
-              return (
-                <Accordion
-                  key={g.id}
-                  disableGutters
-                  square
-                  elevation={0}
-                  expanded={expanded}
-                  onChange={(_, next) => setVariableExpanded(next ? g.id : null)}
-                  sx={{
-                    '&:before': { display: 'none' },
-                    border: 1,
-                    borderColor: 'divider',
-                    borderRadius: 1,
-                    overflow: 'hidden',
-                    mb: 1,
-                  }}
-                >
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreOutlined fontSize="small" />}
+                return (
+                  <Accordion
+                    key={g.id}
+                    disableGutters
+                    square
+                    elevation={0}
+                    expanded={expanded}
+                    onChange={(_, next) => setVariableExpanded(next ? g.id : null)}
                     sx={{
-                      minHeight: 40,
-                      '& .MuiAccordionSummary-content': { my: 0.75 },
+                      '&:before': { display: 'none' },
+                      border: 1,
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      mb: 1,
                     }}
                   >
-                    <Typography variant="overline" color="text.secondary">
-                      {t(titleKey)}
-                    </Typography>
-                  </AccordionSummary>
-                  <AccordionDetails sx={{ pt: 0, pb: 1.25 }}>
-                    <Stack sx={{ mt: 0.5 }}>
-                      {g.items.map((it) => (
-                        <Button
-                          key={it.name}
-                          size="small"
-                          variant="outlined"
-                          sx={{
-                            justifyContent: 'flex-start',
-                            color: 'text.secondary',
-                            borderColor: 'divider',
-                            borderRadius: 1,
-                            mb: 0.5,
-                            '&:hover': {
-                              borderColor: 'text.disabled',
-                              backgroundColor: 'action.hover',
-                            },
-                          }}
-                          onClick={() => handleInsertVariable(it.name, it.kind)}
-                        >
-                          <Stack spacing={0} alignItems="flex-start">
-                            <Typography variant="caption" color="text.primary" fontSize={14}>
-                              {(it as any).isCustomLabel ? it.labelKey : t(it.labelKey)}
-                            </Typography>
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              fontSize={11}
-                              sx={{ fontFamily: 'monospace' }}
-                            >
-                              {it.kind === 'builtin' ? `{%${it.name}%}` : `{{${it.name}}}`}
-                            </Typography>
-                          </Stack>
-                        </Button>
-                      ))}
-                    </Stack>
-                  </AccordionDetails>
-                </Accordion>
-              );
-            })}
-          </Box>
+                    <AccordionSummary
+                      expandIcon={<ExpandMoreOutlined fontSize="small" />}
+                      sx={{
+                        minHeight: 40,
+                        '& .MuiAccordionSummary-content': { my: 0.75 },
+                      }}
+                    >
+                      <Typography variant="overline" color="text.secondary">
+                        {t(titleKey)}
+                      </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ pt: 0, pb: 1.25 }}>
+                      <Stack sx={{ mt: 0.5 }}>
+                        {g.items.map((it) => (
+                          <Button
+                            key={it.name}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              justifyContent: 'flex-start',
+                              color: 'text.secondary',
+                              borderColor: 'divider',
+                              borderRadius: 1,
+                              mb: 0.5,
+                              '&:hover': {
+                                borderColor: 'text.disabled',
+                                backgroundColor: 'action.hover',
+                              },
+                            }}
+                            onClick={() => handleInsertVariable(it.name, it.kind)}
+                          >
+                            <Stack spacing={0} alignItems="flex-start">
+                              <Typography variant="caption" color="text.primary" fontSize={14}>
+                                {(it as any).isCustomLabel ? it.labelKey : t(it.labelKey)}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                fontSize={11}
+                                sx={{ fontFamily: 'monospace' }}
+                              >
+                                {it.kind === 'builtin' ? `{%${it.name}%}` : `{{${it.name}}}`}
+                              </Typography>
+                            </Stack>
+                          </Button>
+                        ))}
+                      </Stack>
+                    </AccordionDetails>
+                  </Accordion>
+                );
+              })}
+            </Box>
+          ) : (
+            <Stack spacing={1.25}>
+              <TextField
+                size="small"
+                label={t('text.variables.selectedVariable')}
+                value={
+                  pendingVariableInsert
+                    ? pendingVariableInsert.kind === 'builtin'
+                      ? `{%${pendingVariableInsert.name}%}`
+                      : `{{${pendingVariableInsert.name}}}`
+                    : ''
+                }
+                InputProps={{ readOnly: true }}
+              />
+              <TextField
+                size="small"
+                label={
+                  <>
+                    {t('text.variables.defaultValueLabel')}
+                    <Box component="span" sx={{ color: 'error.main', ml: 0.25 }}>
+                      *
+                    </Box>
+                  </>
+                }
+                value={pendingVariableDefault}
+                placeholder={t('text.variables.defaultPlaceholder')}
+                onChange={(ev) => {
+                  setPendingVariableDefault(ev.target.value);
+                  if (!pendingVariableDefaultTouched) setPendingVariableDefaultTouched(true);
+                }}
+                onBlur={() => setPendingVariableDefaultTouched(true)}
+                error={pendingVariableDefaultTouched && pendingVariableDefault.trim() === ''}
+                helperText={pendingVariableDefaultTouched && pendingVariableDefault.trim() === '' ? t('text.variables.defaultRequired') : ' '}
+              />
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', pt: 0.5 }}>
+                <Button variant="outlined" onClick={handleBackToVariablePick}>
+                  {t('text.variables.back')}
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleConfirmInsertVariable}
+                  disabled={pendingVariableDefault.trim() === ''}
+                >
+                  {t('text.variables.confirmInsert')}
+                </Button>
+              </Box>
+            </Stack>
+          )}
         </Stack>
       </Popover>
     </BaseSidebarPanel>

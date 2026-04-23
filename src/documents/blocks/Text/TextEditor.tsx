@@ -193,25 +193,29 @@ function computeMessageFromMargin(margin: HTMLElement): string {
 function buildPropsVariablesFromBodyHtml(html: string) {
   return extractInsertedVariableOccurrencesFromHtmlString(html)
     .filter((o) => o.instanceId)
-    .map((o) => ({
-      variableInstanceId: o.instanceId,
-      attribute: o.name,
-      variable: o.builtin ? `{%${o.name}%}` : `{{${o.name}}}`,
-    }));
+    .map((o) => {
+      const type: 'user' | 'system' = o.builtin ? 'system' : 'user';
+      return {
+        variableInstanceId: o.instanceId,
+        attribute: o.name,
+        variable: o.builtin ? `{%${o.name}%}` : `{{${o.name}}}`,
+        type,
+      };
+    });
 }
 
-function insertVariableTokenAtCaret(margin: HTMLElement, token: string): void {
+function insertVariableTokenAtCaret(margin: HTMLElement, token: string): string | null {
   const sel = window.getSelection();
-  if (!sel) return;
+  if (!sel) return null;
   if (sel.rangeCount === 0) {
     placeCaretAtEndOfLastParagraph(margin);
   }
-  if (sel.rangeCount === 0) return;
+  if (sel.rangeCount === 0) return null;
   const r0 = sel.getRangeAt(0);
   if (!margin.contains(r0.startContainer) || !margin.contains(r0.endContainer)) {
     placeCaretAtEndOfLastParagraph(margin);
   }
-  if (sel.rangeCount === 0) return;
+  if (sel.rangeCount === 0) return null;
   const r = sel.getRangeAt(0);
   // 没有落在 <p> 内时，强制把插入点移动到最后一个 <p> 末尾
   const startNode =
@@ -220,7 +224,7 @@ function insertVariableTokenAtCaret(margin: HTMLElement, token: string): void {
   if (!inP) {
     placeCaretAtEndOfLastParagraph(margin);
   }
-  if (sel.rangeCount === 0) return;
+  if (sel.rangeCount === 0) return null;
   const r2 = sel.getRangeAt(0);
   // 不允许在“旧版变量 span”内部继续插入（兼容历史内容）
   const startEl =
@@ -248,6 +252,30 @@ function insertVariableTokenAtCaret(margin: HTMLElement, token: string): void {
   after.collapse(true);
   sel.removeAllRanges();
   sel.addRange(after);
+  return span.getAttribute('data-variable-instance-id');
+}
+
+function replaceRangeWithVariableToken(
+  margin: HTMLElement,
+  start: number,
+  end: number,
+  token: string
+): string | null {
+  const range = offsetsToRange(margin, start, end);
+  if (!range) return null;
+  const sel = window.getSelection();
+  if (!sel) return null;
+  sel.removeAllRanges();
+  sel.addRange(range);
+  range.deleteContents();
+  const span = createVariableSpan(token);
+  range.insertNode(span);
+  const after = document.createRange();
+  after.setStartAfter(span);
+  after.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(after);
+  return span.getAttribute('data-variable-instance-id');
 }
 
 function normalizeKnownVariableTokensInMargin(
@@ -1236,7 +1264,52 @@ export default function TextEditor(props: TextProps) {
         // 没有 caret 时按需求：插入到第一个/最后一个 <p> 末尾（当前结构一般只有一个 <p>）
         placeCaretAtEndOfLastParagraph(margin);
       }
-      insertVariableTokenAtCaret(margin, req.token);
+      const insertedInstanceId = insertVariableTokenAtCaret(margin, req.token);
+      const tb = editorStateStore.getState().document[blockId];
+      const vdPrev = (tb?.data as TextProps)?.props?.variableDefaults ?? null;
+      const { variableDefaults: nextVd } = migrateVariableInstanceIdsInMargin(margin, vdPrev);
+      const incomingDefault = req.defaultValue ?? '';
+      if (insertedInstanceId && incomingDefault !== '') {
+        nextVd[insertedInstanceId] = incomingDefault;
+      }
+      const html = serializeBodyHtml(margin);
+      const message = computeMessageFromMargin(margin);
+      updateDocumentHtml(html, message, nextVd);
+      markLastInlineStyleApply();
+      clearTextDomApplyRequest();
+
+      const flatAfterApply = getFlattenedText(margin);
+      const len = getFlattenedLength(margin);
+      const rs = Math.min(len, len);
+      const snapAfterApply =
+        flatAfterApply.length > 0
+          ? readInlineStyleAtOffset(margin, Math.max(0, flatAfterApply.length - 1))
+          : {};
+      setLastTextBlockContent({ blockId, text: flatAfterApply, styleSnapshot: snapAfterApply });
+      return;
+    } else if (req.kind === 'replaceVariable') {
+      const insertedInstanceId = replaceRangeWithVariableToken(margin, req.start, req.end, req.token);
+      const tb = editorStateStore.getState().document[blockId];
+      const vdPrev = (tb?.data as TextProps)?.props?.variableDefaults ?? null;
+      const { variableDefaults: nextVd } = migrateVariableInstanceIdsInMargin(margin, vdPrev);
+      const incomingDefault = req.defaultValue ?? '';
+      if (insertedInstanceId && incomingDefault !== '') {
+        nextVd[insertedInstanceId] = incomingDefault;
+      }
+      const html = serializeBodyHtml(margin);
+      const message = computeMessageFromMargin(margin);
+      updateDocumentHtml(html, message, nextVd);
+      markLastInlineStyleApply();
+      clearTextDomApplyRequest();
+
+      const flatAfterApply = getFlattenedText(margin);
+      const snapAfterApply =
+        flatAfterApply.length > 0
+          ? readInlineStyleAtOffset(margin, Math.max(0, flatAfterApply.length - 1))
+          : {};
+      setLastTextBlockContent({ blockId, text: flatAfterApply, styleSnapshot: snapAfterApply });
+      setTextSelection(null);
+      return;
     } else {
       const ts = textSelection;
       if (!ts || ts.blockId !== blockId || ts.start >= ts.end) {

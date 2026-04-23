@@ -57,11 +57,11 @@ const testJSON = {
     "data": {
       "props": {
         "markdown": false,
-        "message": "My new text block {{first_name}} {{first_name}} {%unsubscribe_link%}",
+        "message": "My new text block {{first_name}} {{first_name}} {%send_weekday%}",
         "variables": [
-          { "attribute": "first_name", "variable": "{{first_name}}" },
-          { "attribute": "first_name", "variable": "{{first_name}}" },
-          { "attribute": "unsubscribe_link", "variable": "{%unsubscribe_link%}" },
+          { "attribute": "first_name", "variable": "{{first_name}}", "type": "user" },
+          { "attribute": "first_name", "variable": "{{first_name}}", "type": "user" },
+          { "attribute": "send_weekday", "variable": "{%send_weekday%}", "type": "system" },
         ]
       },
       "style": {

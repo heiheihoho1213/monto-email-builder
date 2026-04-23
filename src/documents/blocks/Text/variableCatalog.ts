@@ -47,15 +47,15 @@ export const BASE_VARIABLE_GROUPS: VariableGroup[] = [
     id: 'date',
     items: [
       { name: 'birthday', labelKey: 'text.variables.birthday', kind: 'user' },
-      { name: 'current_date', labelKey: 'text.variables.currentDate', kind: 'builtin' },
-      { name: 'current_year', labelKey: 'text.variables.currentYear', kind: 'builtin' },
-      { name: 'current_month_name', labelKey: 'text.variables.currentMonthName', kind: 'builtin' },
-      { name: 'current_weekday', labelKey: 'text.variables.currentWeekday', kind: 'builtin' },
+      { name: 'send_date', labelKey: 'text.variables.currentDate', kind: 'builtin' },
+      { name: 'send_year', labelKey: 'text.variables.currentYear', kind: 'builtin' },
+      { name: 'send_month', labelKey: 'text.variables.currentMonthName', kind: 'builtin' },
+      { name: 'send_weekday', labelKey: 'text.variables.currentWeekday', kind: 'builtin' },
     ],
   },
   {
     id: 'links',
-    items: [{ name: 'unsubscribe_link', labelKey: 'text.variables.unsubscribeLink', kind: 'builtin' }],
+    items: [{ name: 'unsubscribe_link', labelKey: 'text.variables.unsubscribeLink', kind: 'user' }],
   },
 ];
 

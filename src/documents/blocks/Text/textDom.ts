@@ -885,6 +885,34 @@ export function extractInsertedVariableNamesFromHtmlString(html: string): string
 
 export type InsertedVariableKind = { name: string; builtin: boolean; instanceId: string };
 
+export function getInsertedVariableAtRangeFromHtmlString(
+  html: string,
+  start: number,
+  end: number
+): (InsertedVariableKind & { token: string }) | null {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const root = doc.body.firstElementChild as HTMLElement | null;
+  if (!root) return null;
+  if (start >= end) return null;
+  const spans = Array.from(root.querySelectorAll('[data-text-variable]')) as HTMLElement[];
+  for (const el of spans) {
+    const parsed = parseDataTextVariableToken(el.getAttribute('data-text-variable') ?? '');
+    if (!parsed) continue;
+    const r = document.createRange();
+    r.selectNode(el);
+    const off = rangeToOffsets(root, r);
+    if (off.start === start && off.end === end) {
+      return {
+        name: parsed.name,
+        builtin: parsed.builtin,
+        instanceId: (el.getAttribute('data-variable-instance-id') ?? '').trim(),
+        token: parsed.builtin ? `{%${parsed.name}%}` : `{{${parsed.name}}}`,
+      };
+    }
+  }
+  return null;
+}
+
 function parseDataTextVariableToken(token: string): Omit<InsertedVariableKind, 'instanceId'> | null {
   const t = token.trim();
   if (t.startsWith('{{') && t.endsWith('}}')) {
