@@ -173,7 +173,13 @@
       "currentYear": "今年（以收件人收到时为准）",
       "currentMonthName": "本月（以收件人收到时为准）",
       "currentWeekday": "今天星期几（以收件人收到时为准）",
-      "unsubscribeLink": "取消订阅链接"
+      "unsubscribeLink": "取消订阅链接",
+      "groupCustom": "自定义",
+      "addCustomVariable": "新增",
+      "customVariableName": "变量名",
+      "customVariableNameRequired": "变量名不能为空",
+      "customVariableNameInvalid": "变量名只能包含英文字母、数字和下划线，且以字母或下划线开头",
+      "customVariableNameDuplicate": "变量名已存在"
     }
   },
   "button": {

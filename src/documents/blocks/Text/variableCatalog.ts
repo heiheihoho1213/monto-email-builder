@@ -1,4 +1,4 @@
-export type VariableGroupId = 'contacts' | 'email' | 'organization' | 'date' | 'links';
+export type VariableGroupId = 'custom' | 'contacts' | 'email' | 'organization' | 'date' | 'links';
 
 export type VariableKind = 'user' | 'builtin';
 
@@ -6,6 +6,10 @@ export type VariableGroup = {
   id: VariableGroupId;
   items: { name: string; labelKey: string; kind: VariableKind }[];
 };
+
+export type CustomVariableDefinition = { name: string; label: string };
+
+export const VARIABLE_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 /** 变量目录（基础内置项）。自定义联系人属性会在 UI 层动态追加。 */
 export const BASE_VARIABLE_GROUPS: VariableGroup[] = [
@@ -62,6 +66,7 @@ export const BASE_VARIABLE_GROUPS: VariableGroup[] = [
 export function buildAllowedVariableNameSets(args: {
   baseGroups?: VariableGroup[];
   contactAttributes?: { AttrField: string; Enable?: number | boolean }[] | null;
+  customVariables?: CustomVariableDefinition[] | null;
 }) {
   const base = args.baseGroups ?? BASE_VARIABLE_GROUPS;
   const allowedUser = new Set<string>();
@@ -81,6 +86,12 @@ export function buildAllowedVariableNameSets(args: {
     const f = typeof (a as any)?.AttrField === 'string' ? (a as any).AttrField.trim() : '';
     if (!f) continue;
     allowedUser.add(f);
+  }
+
+  const cvs = Array.isArray(args.customVariables) ? args.customVariables : [];
+  for (const cv of cvs) {
+    const n = typeof cv?.name === 'string' ? cv.name.trim() : '';
+    if (n && VARIABLE_NAME_RE.test(n)) allowedUser.add(n);
   }
 
   return { allowedUser, allowedBuiltin };

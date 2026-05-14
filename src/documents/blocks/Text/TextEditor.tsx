@@ -31,7 +31,7 @@ import {
   useTextDomApplyRequest,
   useTextSelection,
 } from '../../editor/EditorContext';
-import { BASE_VARIABLE_GROUPS, buildAllowedVariableNameSets } from './variableCatalog';
+import { BASE_VARIABLE_GROUPS, CustomVariableDefinition, buildAllowedVariableNameSets } from './variableCatalog';
 
 function getPaddingCss(style: TextProps['style']): string | undefined {
   const p = style?.padding;
@@ -379,9 +379,14 @@ export default function TextEditor(props: TextProps) {
 
   const isSelected = selectedBlockId === blockId;
 
+  const propsCustomVariables: CustomVariableDefinition[] = useMemo(
+    () => (Array.isArray((props.props as any)?.customVariables) ? (props.props as any).customVariables : []),
+    [props.props],
+  );
+
   const { allowedUser, allowedBuiltin } = useMemo(
-    () => buildAllowedVariableNameSets({ baseGroups: BASE_VARIABLE_GROUPS, contactAttributes }),
-    [contactAttributes]
+    () => buildAllowedVariableNameSets({ baseGroups: BASE_VARIABLE_GROUPS, contactAttributes, customVariables: propsCustomVariables }),
+    [contactAttributes, propsCustomVariables]
   );
 
   // 明确需求：用户手打的 {{...}}/{%...%} 永远当普通文本，不做变量识别与限制。
