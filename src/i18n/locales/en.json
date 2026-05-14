@@ -174,7 +174,13 @@
       "currentYear": "Current year",
       "currentMonthName": "Current month name",
       "currentWeekday": "Current weekday",
-      "unsubscribeLink": "Unsubscribe link"
+      "unsubscribeLink": "Unsubscribe link",
+      "groupCustom": "Custom",
+      "addCustomVariable": "Add",
+      "customVariableName": "Variable name",
+      "customVariableNameRequired": "Variable name is required",
+      "customVariableNameInvalid": "Only letters, numbers, and underscores allowed, starting with a letter or underscore",
+      "customVariableNameDuplicate": "Variable name already exists"
     }
   },
   "button": {

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import * as AddOutlinedModule from '@mui/icons-material/AddOutlined';
 import * as CloseOutlinedModule from '@mui/icons-material/CloseOutlined';
 import * as DataObjectOutlinedModule from '@mui/icons-material/DataObjectOutlined';
+import * as EditOutlinedModule from '@mui/icons-material/EditOutlined';
 import * as ExpandMoreOutlinedModule from '@mui/icons-material/ExpandMoreOutlined';
 import * as LinkOutlinedModule from '@mui/icons-material/LinkOutlined';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Checkbox, Divider, FormControlLabel, IconButton, InputLabel, MenuItem, Popover, Select, SelectChangeEvent, Stack, TextField, Typography } from '@mui/material';
@@ -9,7 +11,9 @@ import { TextProps, TextPropsSchema, getResolvedTextBodyHtml } from 'monto-email
 import { ZodError } from 'zod';
 import { useTranslation } from '../../../../i18n/useTranslation';
 import {
+  editorStateStore,
   markLastInlineStyleApply,
+  setDocument,
   setTextSelection,
   useLastTextBlockContent,
   useContactAttributes,
@@ -23,7 +27,7 @@ import {
   getLinkInRangeFromHtmlString,
   readInlineStyleInRangeFromHtmlString,
 } from '../../../../documents/blocks/Text/textDom';
-import { BASE_VARIABLE_GROUPS, VariableGroup } from '../../../../documents/blocks/Text/variableCatalog';
+import { BASE_VARIABLE_GROUPS, CustomVariableDefinition, VARIABLE_NAME_RE, VariableGroup, VariableGroupId } from '../../../../documents/blocks/Text/variableCatalog';
 import { TStyle } from '../../../../documents/blocks/helpers/TStyle';
 
 import BaseSidebarPanel from './helpers/BaseSidebarPanel';
@@ -31,8 +35,10 @@ import MultiStylePropertyPanel from './helpers/style-inputs/MultiStylePropertyPa
 
 import { resolveMuiIcon } from '../../../../utils/resolveMuiIcon';
 
+const AddOutlined = resolveMuiIcon(AddOutlinedModule);
 const CloseOutlined = resolveMuiIcon(CloseOutlinedModule);
 const DataObjectOutlined = resolveMuiIcon(DataObjectOutlinedModule);
+const EditOutlined = resolveMuiIcon(EditOutlinedModule);
 const ExpandMoreOutlined = resolveMuiIcon(ExpandMoreOutlinedModule);
 const LinkOutlined = resolveMuiIcon(LinkOutlinedModule);
 
@@ -117,6 +123,56 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
     >;
   }, [contactAttributes]);
 
+  const customVariables: CustomVariableDefinition[] = useMemo(
+    () => (Array.isArray((data.props as any)?.customVariables) ? (data.props as any).customVariables : []),
+    [data.props],
+  );
+
+  const variableGroupsWithCustom = useMemo(() => {
+    const customGroup = {
+      id: 'custom' as const,
+      items: customVariables.map((cv) => ({
+        name: cv.name,
+        labelKey: cv.label || cv.name,
+        kind: 'user' as const,
+        isCustomLabel: true,
+      })),
+    };
+    return [customGroup, ...variableGroups];
+  }, [customVariables, variableGroups]);
+
+  const updateCustomVariables = useCallback(
+    (next: CustomVariableDefinition[]) => {
+      const currentBlock = editorStateStore.getState().document[blockId];
+      if (!currentBlock || currentBlock.type !== 'Text') return;
+      setDocument({
+        [blockId]: {
+          ...currentBlock,
+          data: {
+            ...currentBlock.data,
+            props: { ...((currentBlock.data as any).props ?? {}), customVariables: next },
+          },
+        },
+      });
+    },
+    [blockId],
+  );
+
+  const validateCustomVarName = useCallback(
+    (name: string, excludeIndex?: number): string | null => {
+      const trimmed = name.trim();
+      if (!trimmed) return t('text.variables.customVariableNameRequired');
+      if (!VARIABLE_NAME_RE.test(trimmed)) return t('text.variables.customVariableNameInvalid');
+      const isDuplicate = customVariables.some((cv, i) => i !== excludeIndex && cv.name === trimmed);
+      if (isDuplicate) return t('text.variables.customVariableNameDuplicate');
+      for (const g of variableGroups) {
+        if (g.items.some((it) => it.name === trimmed)) return t('text.variables.customVariableNameDuplicate');
+      }
+      return null;
+    },
+    [customVariables, variableGroups, t],
+  );
+
   /** 选区行内样式：合并同一帧内多次变更（如滑块拖动），避免每秒数百次 setDocument + renderToStaticMarkup */
   const pendingSelectionStyleRef = useRef<Partial<TStyle>>({});
   const selectionStyleRafRef = useRef<number | null>(null);
@@ -156,7 +212,12 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   const updateData = (d: unknown) => {
     const res = TextPropsSchema.safeParse(d);
     if (res.success) {
-      setData(res.data);
+      const incomingCustomVars = (d as any)?.props?.customVariables;
+      const final =
+        incomingCustomVars !== undefined
+          ? { ...res.data, props: { ...res.data.props, customVariables: incomingCustomVars } }
+          : res.data;
+      setData(final as TextProps);
       setErrors(null);
     } else {
       setErrors(res.error);
@@ -235,13 +296,13 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   const htmlForVariables = useMemo(() => getResolvedTextBodyHtml(data.props ?? null), [data.props]);
   const allowedVariableNames = useMemo(() => {
     const all = new Set<string>();
-    for (const g of variableGroups) {
+    for (const g of variableGroupsWithCustom) {
       for (const it of g.items) {
         if (it.kind === 'user') all.add(it.name);
       }
     }
     return all;
-  }, [variableGroups]);
+  }, [variableGroupsWithCustom]);
   /** 用户变量按「实例」列出（同名多次出现各自有默认值）；内置 {% %} 不在此列。依赖 data-variable-instance-id（编辑器挂载后会迁移补齐）。 */
   const recognizedUserVariableInstances = useMemo(() => {
     const occ = extractInsertedVariableOccurrencesFromHtmlString(htmlForVariables);
@@ -266,11 +327,18 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
 
   const [linkAnchorEl, setLinkAnchorEl] = useState<null | HTMLElement>(null);
   const [variableAnchorEl, setVariableAnchorEl] = useState<null | HTMLElement>(null);
-  const [variableExpanded, setVariableExpanded] = useState<VariableGroup['id'] | null>('contacts');
-  const [variableStage, setVariableStage] = useState<'pick' | 'default'>('pick');
+  const [variableExpanded, setVariableExpanded] = useState<VariableGroupId | null>('custom');
+  const [variableStage, setVariableStage] = useState<'pick' | 'default' | 'custom-edit'>('pick');
   const [pendingVariableInsert, setPendingVariableInsert] = useState<{ name: string; kind: 'user' | 'builtin' } | null>(null);
   const [pendingVariableDefault, setPendingVariableDefault] = useState<string>('');
   const [pendingVariableDefaultTouched, setPendingVariableDefaultTouched] = useState<boolean>(false);
+  const [customVarEditName, setCustomVarEditName] = useState<string>('');
+  const [customVarEditTouched, setCustomVarEditTouched] = useState<boolean>(false);
+  const [customVarEditDefault, setCustomVarEditDefault] = useState<string>('');
+  const [customVarEditDefaultTouched, setCustomVarEditDefaultTouched] = useState<boolean>(false);
+  const [editingCustomVarIndex, setEditingCustomVarIndex] = useState<number | null>(null);
+  const [renamingInstanceId, setRenamingInstanceId] = useState<string | null>(null);
+  const [renamingValue, setRenamingValue] = useState<string>('');
   const [linkKind, setLinkKind] = useState<LinkKind>('web');
   const [linkUrl, setLinkUrl] = useState<string>('');
   const [linkTargetBlank, setLinkTargetBlank] = useState<boolean>(true);
@@ -384,11 +452,14 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   const handleOpenVariable = (e: React.MouseEvent<HTMLElement>) => {
     if (!variableActionEnabled) return;
     setVariableAnchorEl(e.currentTarget);
-    setVariableExpanded('contacts');
+    setVariableExpanded('custom');
     setVariableStage('pick');
     setPendingVariableInsert(null);
     setPendingVariableDefault('');
     setPendingVariableDefaultTouched(false);
+    setCustomVarEditName('');
+    setCustomVarEditTouched(false);
+    setEditingCustomVarIndex(null);
   };
 
   const handleCloseVariable = () => {
@@ -397,6 +468,11 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
     setPendingVariableInsert(null);
     setPendingVariableDefault('');
     setPendingVariableDefaultTouched(false);
+    setCustomVarEditName('');
+    setCustomVarEditTouched(false);
+    setCustomVarEditDefault('');
+    setCustomVarEditDefaultTouched(false);
+    setEditingCustomVarIndex(null);
   };
 
   const handleInsertVariable = (name: string, kind: 'user' | 'builtin') => {
@@ -425,6 +501,66 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   const handleBackToVariablePick = () => {
     setVariableStage('pick');
     setPendingVariableDefaultTouched(false);
+  };
+
+  const handleStartAddCustomVariable = () => {
+    setCustomVarEditName('');
+    setCustomVarEditTouched(false);
+    setCustomVarEditDefault('');
+    setCustomVarEditDefaultTouched(false);
+    setEditingCustomVarIndex(null);
+    setVariableStage('custom-edit');
+  };
+
+  const handleSaveCustomVariable = () => {
+    const name = customVarEditName.trim();
+    if (validateCustomVarName(name, editingCustomVarIndex ?? undefined)) return;
+    const defaultValue = customVarEditDefault.trim();
+    if (!defaultValue) return;
+
+    const next = [...customVariables, { name, label: name }];
+    updateCustomVariables(next);
+
+    const token = `{{${name}}}`;
+    if (selectedInsertedVariable && textSelection) {
+      queueTextDomApply(blockId, {
+        kind: 'replaceVariable',
+        token,
+        start: textSelection.start,
+        end: textSelection.end,
+        defaultValue,
+      });
+    } else {
+      queueTextDomApply(blockId, { kind: 'variable', token, defaultValue });
+    }
+    handleCloseVariable();
+  };
+
+  const handleRenameCustomVariable = (instanceId: string, oldName: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed || !VARIABLE_NAME_RE.test(trimmed) || trimmed === oldName) {
+      setRenamingInstanceId(null);
+      return;
+    }
+    const idx = customVariables.findIndex((cv) => cv.name === oldName);
+    if (idx === -1) {
+      setRenamingInstanceId(null);
+      return;
+    }
+    const isDup = customVariables.some((cv, i) => i !== idx && cv.name === trimmed);
+    if (isDup) {
+      setRenamingInstanceId(null);
+      return;
+    }
+    for (const g of variableGroups) {
+      if (g.items.some((it) => it.name === trimmed)) {
+        setRenamingInstanceId(null);
+        return;
+      }
+    }
+    const next = customVariables.map((cv, i) => (i === idx ? { ...cv, name: trimmed, label: trimmed } : cv));
+    updateCustomVariables(next);
+    setRenamingInstanceId(null);
   };
 
   const handleConfirmInsertVariable = () => {
@@ -557,43 +693,78 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
           <Typography variant="body2" color="text.secondary">
             {t('text.variables.defaultsTitle')}
           </Typography>
-          {recognizedUserVariableInstances.map((inst) => (
-            <Stack
-              key={inst.instanceId}
-              direction="row"
-              alignItems="flex-start"
-              sx={{ flexWrap: 'wrap', rowGap: 0.5 }}
-            >
-              <Typography
-                variant="body2"
-                sx={{
-                  fontFamily: 'monospace',
-                  flex: '0 1 180px',
-                  minWidth: 0,
-                  wordBreak: 'break-all',
-                  whiteSpace: 'normal',
-                  lineHeight: 1.2,
-                }}
+          {recognizedUserVariableInstances.map((inst) => {
+            const isCustom = customVariables.some((cv) => cv.name === inst.name);
+            const isRenaming = renamingInstanceId === inst.instanceId;
+            return (
+              <Stack
+                key={inst.instanceId}
+                direction="row"
+                alignItems="flex-start"
+                sx={{ flexWrap: 'wrap', rowGap: 0.5 }}
               >
-                {inst.label}
-              </Typography>
-              <TextField
-                size="small"
-                fullWidth
-                sx={{
-                  flex: '1 1 200px',
-                  minWidth: 160,
-                }}
-                value={(variableDefaults && variableDefaults[inst.instanceId]) ?? ''}
-                placeholder={t('text.variables.defaultPlaceholder')}
-                onChange={(ev) => {
-                  const next = { ...(variableDefaults ?? {}) } as Record<string, string>;
-                  next[inst.instanceId] = ev.target.value;
-                  updateData({ ...data, props: { ...(data.props as object), variableDefaults: next } });
-                }}
-              />
-            </Stack>
-          ))}
+                {isRenaming ? (
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={renamingValue}
+                    onChange={(ev) => setRenamingValue(ev.target.value)}
+                    onBlur={() => handleRenameCustomVariable(inst.instanceId, inst.name, renamingValue)}
+                    onKeyDown={(ev) => {
+                      if (ev.key === 'Enter') handleRenameCustomVariable(inst.instanceId, inst.name, renamingValue);
+                      if (ev.key === 'Escape') setRenamingInstanceId(null);
+                    }}
+                    autoFocus
+                    sx={{
+                      '& .MuiInputBase-input': { fontFamily: 'monospace', fontSize: '0.875rem' },
+                    }}
+                  />
+                ) : (
+                  <Stack direction="row" alignItems="center" sx={{ flex: '0 1 180px', minWidth: 0 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontFamily: 'monospace',
+                        wordBreak: 'break-all',
+                        whiteSpace: 'normal',
+                        lineHeight: 1.2,
+                        minWidth: 0,
+                      }}
+                    >
+                      {inst.label}
+                    </Typography>
+                    {isCustom && (
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          setRenamingInstanceId(inst.instanceId);
+                          setRenamingValue(inst.name);
+                        }}
+                        sx={{ flexShrink: 0, ml: 0.25, p: 0.25 }}
+                      >
+                        <EditOutlined sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    )}
+                  </Stack>
+                )}
+                <TextField
+                  size="small"
+                  fullWidth
+                  sx={{
+                    flex: '1 1 200px',
+                    minWidth: 160,
+                  }}
+                  value={(variableDefaults && variableDefaults[inst.instanceId]) ?? ''}
+                  placeholder={t('text.variables.defaultPlaceholder')}
+                  onChange={(ev) => {
+                    const next = { ...(variableDefaults ?? {}) } as Record<string, string>;
+                    next[inst.instanceId] = ev.target.value;
+                    updateData({ ...data, props: { ...(data.props as object), variableDefaults: next } });
+                  }}
+                />
+              </Stack>
+            );
+          })}
         </Stack>
       )}
       <MultiStylePropertyPanel names={SELECTION_AWARE_NAMES} value={displayStyle} onChange={handleStyleChange} />
@@ -688,23 +859,29 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
       >
         <Stack spacing={1.5}>
           <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-            {variableStage === 'pick' ? t('text.addVariables') : t('text.variables.setDefaultTitle')}
+            {variableStage === 'pick'
+              ? t('text.addVariables')
+              : variableStage === 'custom-edit'
+                ? t('text.variables.groupCustom')
+                : t('text.variables.setDefaultTitle')}
           </Typography>
           {variableStage === 'pick' ? (
             <Box>
-              {variableGroups.map((g, idx) => {
-              const titleKey =
-                g.id === 'contacts'
-                  ? 'text.variables.groupContacts'
-                  : g.id === 'email'
-                    ? 'text.variables.groupEmail'
-                    : g.id === 'organization'
-                      ? 'text.variables.groupOrganization'
-                      : g.id === 'date'
-                        ? 'text.variables.groupDate'
-                        : 'text.variables.groupLinks';
+              {variableGroupsWithCustom.map((g) => {
+                const titleKey =
+                  g.id === 'custom'
+                    ? 'text.variables.groupCustom'
+                    : g.id === 'contacts'
+                      ? 'text.variables.groupContacts'
+                      : g.id === 'email'
+                        ? 'text.variables.groupEmail'
+                        : g.id === 'organization'
+                          ? 'text.variables.groupOrganization'
+                          : g.id === 'date'
+                            ? 'text.variables.groupDate'
+                            : 'text.variables.groupLinks';
 
-              const expanded = variableExpanded === g.id;
+                const expanded = variableExpanded === g.id;
 
                 return (
                   <Accordion
@@ -769,12 +946,89 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
                             </Stack>
                           </Button>
                         ))}
+                        {g.id === 'custom' && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<AddOutlined fontSize="small" />}
+                            onClick={handleStartAddCustomVariable}
+                            sx={{
+                              justifyContent: 'center',
+                              color: 'text.secondary',
+                              borderColor: 'divider',
+                              borderStyle: 'dashed',
+                              borderRadius: 1,
+                              mb: 0.5,
+                              '&:hover': {
+                                borderColor: 'text.disabled',
+                                backgroundColor: 'action.hover',
+                              },
+                            }}
+                          >
+                            {t('text.variables.addCustomVariable')}
+                          </Button>
+                        )}
                       </Stack>
                     </AccordionDetails>
                   </Accordion>
                 );
               })}
             </Box>
+          ) : variableStage === 'custom-edit' ? (
+            <Stack spacing={1.25}>
+              <TextField
+                size="small"
+                label={t('text.variables.customVariableName')}
+                value={customVarEditName}
+                placeholder="e.g. order_id"
+                onChange={(ev) => {
+                  setCustomVarEditName(ev.target.value);
+                  if (!customVarEditTouched) setCustomVarEditTouched(true);
+                }}
+                onBlur={() => setCustomVarEditTouched(true)}
+                error={customVarEditTouched && !!validateCustomVarName(customVarEditName, editingCustomVarIndex ?? undefined)}
+                helperText={
+                  customVarEditTouched
+                    ? (validateCustomVarName(customVarEditName, editingCustomVarIndex ?? undefined) ?? undefined)
+                    : undefined
+                }
+              />
+              {customVarEditName.trim() && !validateCustomVarName(customVarEditName, editingCustomVarIndex ?? undefined) && (
+                <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                  {`{{${customVarEditName.trim()}}}`}
+                </Typography>
+              )}
+              <TextField
+                size="small"
+                label={
+                  <>
+                    {t('text.variables.defaultValueLabel')}
+                    <Box component="span" sx={{ color: 'error.main', ml: 0.25 }}>*</Box>
+                  </>
+                }
+                value={customVarEditDefault}
+                placeholder={t('text.variables.defaultPlaceholder')}
+                onChange={(ev) => {
+                  setCustomVarEditDefault(ev.target.value);
+                  if (!customVarEditDefaultTouched) setCustomVarEditDefaultTouched(true);
+                }}
+                onBlur={() => setCustomVarEditDefaultTouched(true)}
+                error={customVarEditDefaultTouched && customVarEditDefault.trim() === ''}
+                helperText={customVarEditDefaultTouched && customVarEditDefault.trim() === '' ? t('text.variables.defaultRequired') : ' '}
+              />
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', pt: 0.5 }}>
+                <Button variant="outlined" onClick={handleBackToVariablePick}>
+                  {t('text.variables.back')}
+                </Button>
+                <Button
+                  variant="contained"
+                  disabled={!!validateCustomVarName(customVarEditName, editingCustomVarIndex ?? undefined) || customVarEditDefault.trim() === ''}
+                  onClick={handleSaveCustomVariable}
+                >
+                  {t('text.variables.confirmInsert')}
+                </Button>
+              </Box>
+            </Stack>
           ) : (
             <Stack spacing={1.25}>
               <TextField
