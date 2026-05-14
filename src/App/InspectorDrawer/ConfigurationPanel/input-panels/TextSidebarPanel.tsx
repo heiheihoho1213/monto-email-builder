@@ -15,6 +15,7 @@ import {
   markLastInlineStyleApply,
   setDocument,
   setTextSelection,
+  useDocument,
   useLastTextBlockContent,
   useContactAttributes,
   useTextCaret,
@@ -27,6 +28,7 @@ import {
   getLinkInRangeFromHtmlString,
   readInlineStyleInRangeFromHtmlString,
 } from '../../../../documents/blocks/Text/textDom';
+import type { TEditorConfiguration } from '../../../../documents/editor/core';
 import { BASE_VARIABLE_GROUPS, CustomVariableDefinition, VARIABLE_NAME_RE, VariableGroup, VariableGroupId } from '../../../../documents/blocks/Text/variableCatalog';
 import { TStyle } from '../../../../documents/blocks/helpers/TStyle';
 
@@ -77,9 +79,125 @@ type TextSidebarPanelProps = {
   setData: (v: TextProps) => void;
 };
 
+function buildTextVariablesFromHtml(html: string) {
+  return extractInsertedVariableOccurrencesFromHtmlString(html)
+    .filter((o) => o.instanceId)
+    .map((o) => ({
+      variableInstanceId: o.instanceId,
+      attribute: o.name,
+      variable: o.builtin ? `{%${o.name}%}` : `{{${o.name}}}`,
+      type: o.builtin ? 'system' : 'user',
+    }));
+}
+
+function buildMessageFromTextHtml(html: string): string {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const root = doc.body.firstElementChild ?? doc.body;
+  const ps = Array.from(root.querySelectorAll('p')) as HTMLParagraphElement[];
+  if (ps.length === 0) return (root.textContent ?? '').replace(/\u200B/g, '');
+  return ps
+    .map((p) => {
+      const text = (p.textContent ?? '').replace(/\u200B/g, '');
+      if (text.length === 0 && p.querySelector('br')) return '';
+      return text;
+    })
+    .join('\n');
+}
+
+function renameInsertedCustomVariableInHtml(
+  html: string,
+  oldName: string,
+  newName: string,
+): { html: string; message: string; variables: ReturnType<typeof buildTextVariablesFromHtml> } | null {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const oldToken = `{{${oldName}}}`;
+  const newToken = `{{${newName}}}`;
+  let changed = false;
+
+  for (const el of Array.from(doc.body.querySelectorAll('[data-text-variable]')) as HTMLElement[]) {
+    if ((el.getAttribute('data-text-variable') ?? '').trim() !== oldToken) continue;
+    el.setAttribute('data-text-variable', newToken);
+    el.textContent = newToken;
+    changed = true;
+  }
+
+  if (!changed) return null;
+  const nextHtml = doc.body.firstElementChild?.outerHTML ?? doc.body.innerHTML;
+  return {
+    html: nextHtml,
+    message: buildMessageFromTextHtml(nextHtml),
+    variables: buildTextVariablesFromHtml(nextHtml),
+  };
+}
+
+function getBlockCustomVariables(block: unknown): CustomVariableDefinition[] {
+  const vars = (block as any)?.data?.props?.customVariables;
+  if (!Array.isArray(vars)) return [];
+  return vars
+    .map((cv) => {
+      const name = typeof cv?.name === 'string' ? cv.name.trim() : '';
+      if (!name || !VARIABLE_NAME_RE.test(name)) return null;
+      const label = typeof cv?.label === 'string' && cv.label.trim() ? cv.label.trim() : name;
+      return { name, label };
+    })
+    .filter((cv): cv is CustomVariableDefinition => !!cv);
+}
+
+function collectCustomVariablesFromDocument(document: TEditorConfiguration): CustomVariableDefinition[] {
+  const byName = new Map<string, CustomVariableDefinition>();
+  for (const block of Object.values(document)) {
+    if (block.type !== 'Text') continue;
+    for (const cv of getBlockCustomVariables(block)) {
+      if (!byName.has(cv.name)) byName.set(cv.name, cv);
+    }
+  }
+  return Array.from(byName.values());
+}
+
+function buildCustomVariablesDocumentPatch(
+  document: TEditorConfiguration,
+  nextCustomVariables: CustomVariableDefinition[],
+  rename?: { oldName: string; newName: string },
+): Partial<TEditorConfiguration> {
+  const updates: Partial<TEditorConfiguration> = {};
+
+  for (const [id, block] of Object.entries(document)) {
+    if (block.type !== 'Text') continue;
+    const currentProps = ((block.data as any).props ?? {}) as Record<string, unknown>;
+    const renamedBody = rename
+      ? renameInsertedCustomVariableInHtml(
+          getResolvedTextBodyHtml(currentProps as TextProps['props']),
+          rename.oldName,
+          rename.newName,
+        )
+      : null;
+
+    updates[id] = {
+      ...block,
+      data: {
+        ...block.data,
+        props: {
+          ...currentProps,
+          customVariables: nextCustomVariables,
+          ...(renamedBody
+            ? {
+                html: renamedBody.html,
+                message: renamedBody.message,
+                variables: renamedBody.variables,
+              }
+            : {}),
+        },
+      },
+    } as any;
+  }
+
+  return updates;
+}
+
 export default function TextSidebarPanel({ blockId, data, setData }: TextSidebarPanelProps) {
   const { t } = useTranslation();
   const [, setErrors] = useState<ZodError | null>(null);
+  const document = useDocument();
   const textSelection = useTextSelection();
   const textCaret = useTextCaret();
   const lastTextBlockContent = useLastTextBlockContent();
@@ -123,10 +241,7 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
     >;
   }, [contactAttributes]);
 
-  const customVariables: CustomVariableDefinition[] = useMemo(
-    () => (Array.isArray((data.props as any)?.customVariables) ? (data.props as any).customVariables : []),
-    [data.props],
-  );
+  const customVariables: CustomVariableDefinition[] = useMemo(() => collectCustomVariablesFromDocument(document), [document]);
 
   const variableGroupsWithCustom = useMemo(() => {
     const customGroup = {
@@ -143,19 +258,10 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
 
   const updateCustomVariables = useCallback(
     (next: CustomVariableDefinition[]) => {
-      const currentBlock = editorStateStore.getState().document[blockId];
-      if (!currentBlock || currentBlock.type !== 'Text') return;
-      setDocument({
-        [blockId]: {
-          ...currentBlock,
-          data: {
-            ...currentBlock.data,
-            props: { ...((currentBlock.data as any).props ?? {}), customVariables: next },
-          },
-        },
-      });
+      const currentDocument = editorStateStore.getState().document;
+      setDocument(buildCustomVariablesDocumentPatch(currentDocument, next) as any);
     },
-    [blockId],
+    [],
   );
 
   const validateCustomVarName = useCallback(
@@ -536,7 +642,7 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
     handleCloseVariable();
   };
 
-  const handleRenameCustomVariable = (instanceId: string, oldName: string, newName: string) => {
+  const handleRenameCustomVariable = (oldName: string, newName: string) => {
     const trimmed = newName.trim();
     if (!trimmed || !VARIABLE_NAME_RE.test(trimmed) || trimmed === oldName) {
       setRenamingInstanceId(null);
@@ -559,7 +665,13 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
       }
     }
     const next = customVariables.map((cv, i) => (i === idx ? { ...cv, name: trimmed, label: trimmed } : cv));
-    updateCustomVariables(next);
+    const currentDocument = editorStateStore.getState().document;
+    setDocument(
+      buildCustomVariablesDocumentPatch(currentDocument, next, {
+        oldName,
+        newName: trimmed,
+      }) as any,
+    );
     setRenamingInstanceId(null);
   };
 
@@ -709,9 +821,9 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
                     fullWidth
                     value={renamingValue}
                     onChange={(ev) => setRenamingValue(ev.target.value)}
-                    onBlur={() => handleRenameCustomVariable(inst.instanceId, inst.name, renamingValue)}
+                    onBlur={() => handleRenameCustomVariable(inst.name, renamingValue)}
                     onKeyDown={(ev) => {
-                      if (ev.key === 'Enter') handleRenameCustomVariable(inst.instanceId, inst.name, renamingValue);
+                      if (ev.key === 'Enter') handleRenameCustomVariable(inst.name, renamingValue);
                       if (ev.key === 'Escape') setRenamingInstanceId(null);
                     }}
                     autoFocus
