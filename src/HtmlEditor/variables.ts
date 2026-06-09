@@ -133,7 +133,7 @@ export function scanHtmlEditorVariables(source: string): HtmlEditorVariableItem[
 
   return occurrences.map((item, index) => ({
     id: index + 1,
-    variableInstanceId: createHtmlEditorVariableInstanceId(item.type, item.attribute, index),
+    variableInstanceId: createScannedHtmlEditorVariableInstanceId(item.type, item.attribute, item.start),
     variable: item.type === 'system' ? `{%${item.attribute}%}` : `{{${item.attribute}}}`,
     type: item.type,
     attribute: item.attribute,
@@ -145,15 +145,15 @@ export function mergeScannedHtmlEditorVariables(
   scanned: ReadonlyArray<HtmlEditorVariableItem>,
   current: ReadonlyArray<HtmlEditorVariableItem>,
 ): HtmlEditorVariableItem[] {
-  type CurrentEntry = { item: HtmlEditorVariableItem; index: number; consumed: boolean };
-  type ScannedEntry = { item: HtmlEditorVariableItem; scanIndex: number; matchedCurrentIndex?: number };
+  type CurrentEntry = {
+    item: HtmlEditorVariableItem;
+    consumed: boolean;
+  };
 
-  const currentEntries = current.map((item, index) => ({ item, index, consumed: false }));
   const currentByInstanceId = new Map<string, CurrentEntry[]>();
   const currentByAttribute = new Map<string, CurrentEntry[]>();
-
-  currentEntries.forEach((entry) => {
-    const { item } = entry;
+  current.forEach((item) => {
+    const entry: CurrentEntry = { item, consumed: false };
     if (item.variableInstanceId) {
       const list = currentByInstanceId.get(item.variableInstanceId) ?? [];
       list.push(entry);
@@ -165,79 +165,24 @@ export function mergeScannedHtmlEditorVariables(
     currentByAttribute.set(key, list);
   });
 
-  const consumedByAttribute = new Map<string, number>();
-
-  const mergedEntries: ScannedEntry[] = scanned.map((item, index) => {
+  return scanned.map((item, index) => {
     const key = `${item.type}:${item.attribute}`;
-    const used = consumedByAttribute.get(key) ?? 0;
-    consumedByAttribute.set(key, used + 1);
-
     const matchedByInstanceId = item.variableInstanceId
       ? currentByInstanceId.get(item.variableInstanceId)?.find((entry) => !entry.consumed)
       : undefined;
-    const attributeEntries = currentByAttribute.get(key) ?? [];
-    const matchedByAttribute =
-      attributeEntries[used] && !attributeEntries[used].consumed
-        ? attributeEntries[used]
-        : attributeEntries.find((entry) => !entry.consumed);
+    const matchedByAttribute = (currentByAttribute.get(key) ?? []).find((entry) => !entry.consumed);
     const matched = matchedByInstanceId ?? matchedByAttribute;
     if (matched) {
       matched.consumed = true;
     }
 
     return {
-      item: {
-        ...item,
-        id: index + 1,
-        variableInstanceId:
-          matched?.item.variableInstanceId ||
-          item.variableInstanceId ||
-          createHtmlEditorVariableInstanceId(item.type, item.attribute, index),
-        default: item.type === 'system' ? '' : (matched?.item.default ?? item.default ?? ''),
-      },
-      scanIndex: index,
-      matchedCurrentIndex: matched?.index,
+      ...item,
+      id: index + 1,
+      variableInstanceId: item.variableInstanceId || createHtmlEditorVariableInstanceId(item.type, item.attribute, index),
+      default: item.type === 'system' ? '' : (matched?.item.default ?? item.default ?? ''),
     };
   });
-
-  const scannedByCurrentIndex = new Map<number, ScannedEntry>();
-  mergedEntries.forEach((entry) => {
-    if (entry.matchedCurrentIndex !== undefined) {
-      scannedByCurrentIndex.set(entry.matchedCurrentIndex, entry);
-    }
-  });
-
-  const orderedEntries: ScannedEntry[] = currentEntries.map((entry) => {
-    const scannedEntry = scannedByCurrentIndex.get(entry.index);
-    if (scannedEntry) return scannedEntry;
-    return { item: entry.item, scanIndex: Number.POSITIVE_INFINITY, matchedCurrentIndex: entry.index };
-  });
-
-  mergedEntries
-    .filter((entry) => entry.matchedCurrentIndex === undefined)
-    .sort((a, b) => a.scanIndex - b.scanIndex)
-    .forEach((entry) => {
-      const nextMatchedEntry = mergedEntries.find(
-        (candidate) => candidate.scanIndex > entry.scanIndex && candidate.matchedCurrentIndex !== undefined,
-      );
-      if (nextMatchedEntry?.matchedCurrentIndex !== undefined) {
-        const insertAt = orderedEntries.findIndex(
-          (candidate) => candidate.matchedCurrentIndex === nextMatchedEntry.matchedCurrentIndex,
-        );
-        if (insertAt >= 0) {
-          orderedEntries.splice(insertAt, 0, entry);
-          return;
-        }
-      }
-      orderedEntries.push(entry);
-    });
-
-  return orderedEntries.map(({ item }, index) => ({
-    ...item,
-    id: index + 1,
-    variableInstanceId: item.variableInstanceId || createHtmlEditorVariableInstanceId(item.type, item.attribute, index),
-    default: item.type === 'system' ? '' : (item.default ?? ''),
-  }));
 }
 
 function escapeHtml(value: string): string {
@@ -253,14 +198,25 @@ export function applyHtmlEditorVariableDefaults(
   source: string,
   variables: ReadonlyArray<HtmlEditorVariableItem>,
 ): string {
-  const defaultsByAttribute = new Map<string, string[]>();
+  const defaultsByInstanceId = new Map<string, string>();
+  const defaultsByAttribute = new Map<string, string>();
   variables.forEach((item) => {
     if (item.type !== 'user') return;
-    const list = defaultsByAttribute.get(item.attribute) ?? [];
-    list.push(item.default ?? '');
-    defaultsByAttribute.set(item.attribute, list);
+    if (item.variableInstanceId) {
+      defaultsByInstanceId.set(item.variableInstanceId, item.default ?? '');
+    }
+    if (!defaultsByAttribute.has(item.attribute)) {
+      defaultsByAttribute.set(item.attribute, item.default ?? '');
+    }
   });
-  const consumedByAttribute = new Map<string, number>();
+  const scanned = scanHtmlEditorVariables(source);
+  const scannedByStart = new Map<number, HtmlEditorVariableItem>();
+  scanned.forEach((item) => {
+    const start = Number(String(item.variableInstanceId ?? '').split('-at-')[1]);
+    if (Number.isFinite(start)) {
+      scannedByStart.set(start, item);
+    }
+  });
 
   return (source || '').replace(USER_VARIABLE_RE, (match, rawName, offset, fullSource) => {
     const end = offset + match.length;
@@ -268,9 +224,12 @@ export function applyHtmlEditorVariableDefaults(
 
     const attribute = String(rawName).trim();
     if (!attribute || !VARIABLE_NAME_RE.test(attribute)) return match;
-    const used = consumedByAttribute.get(attribute) ?? 0;
-    consumedByAttribute.set(attribute, used + 1);
-    const defaultValue = defaultsByAttribute.get(attribute)?.[used];
+    const instanceId = scannedByStart.get(offset)?.variableInstanceId;
+    const defaultValue =
+      (instanceId ? defaultsByInstanceId.get(instanceId) : undefined) ??
+      (variables.filter((item) => item.type === 'user' && item.attribute === attribute).length === 1
+        ? defaultsByAttribute.get(attribute)
+        : undefined);
     if (defaultValue === undefined || defaultValue === '') return match;
     return escapeHtml(defaultValue);
   });
@@ -300,7 +259,7 @@ export function isHtmlEditorBuiltinVariableName(name: string): boolean {
 export function getHtmlEditorVariableInsertText(name: string, kind: VariableKind): string {
   const attribute = name.trim();
   if (kind === 'user' && attribute === HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE) {
-    return `<a href="{{${HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE}}">Unsubscribe Link</a>`;
+    return `<a href="{{${HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE}}}">Unsubscribe Link</a>`;
   }
 
   return toVariableToken(attribute, kind);
@@ -308,4 +267,8 @@ export function getHtmlEditorVariableInsertText(name: string, kind: VariableKind
 
 function createHtmlEditorVariableInstanceId(type: HtmlEditorVariableType, attribute: string, index: number): string {
   return `html-${type}-${attribute}-${index + 1}`;
+}
+
+function createScannedHtmlEditorVariableInstanceId(type: HtmlEditorVariableType, attribute: string, start: number): string {
+  return `html-${type}-${attribute}-at-${start}`;
 }

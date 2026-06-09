@@ -260,6 +260,9 @@ ref: React.Ref<HtmlEditorRef>,
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const codeMirrorViewRef = useRef<any>(null);
   const htmlVariablesRef = useRef<HtmlEditorVariableItem[]>(htmlVariables);
+  const variableSettingsRef = useRef<HTMLDivElement>(null);
+  const detectedVariablesRef = useRef<HTMLDivElement>(null);
+  const pendingDetectedScrollRef = useRef(false);
 
   // iframe ref 必须在组件顶层声明，不能在 renderPreview 函数内部
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -342,9 +345,26 @@ ref: React.Ref<HtmlEditorRef>,
   }, [getCurrentHtmlValue, internalValue, requireVariableDefaults, scanVariablesFromValue]);
 
   const handleSaveVariables = useCallback(() => {
+    pendingDetectedScrollRef.current = true;
     validateVariables();
     setRightTab('variables');
   }, [validateVariables]);
+
+  useEffect(() => {
+    if (rightTab !== 'variables' || !pendingDetectedScrollRef.current) return;
+    const rafId = window.requestAnimationFrame(() => {
+      const container = variableSettingsRef.current;
+      const section = detectedVariablesRef.current;
+      if (container && section) {
+        container.scrollTo({
+          top: Math.max(section.offsetTop - 8, 0),
+          behavior: 'auto',
+        });
+      }
+      pendingDetectedScrollRef.current = false;
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [rightTab, htmlVariables.length]);
 
   // 清理防抖定时器
   useEffect(() => {
@@ -410,7 +430,7 @@ ref: React.Ref<HtmlEditorRef>,
       getPreviewHtml: () => applyHtmlEditorVariableDefaults(getCurrentHtmlValue(), htmlVariablesRef.current),
       scanVariables: () => scanVariablesFromValue(getCurrentHtmlValue()),
       getVariables: (callback?: (items: HtmlEditorVariableItem[]) => void) => {
-        const currentVariables = htmlVariablesRef.current;
+        const currentVariables = scanVariablesFromValue(getCurrentHtmlValue());
         callback?.(currentVariables);
         return currentVariables;
       },
@@ -485,11 +505,7 @@ ref: React.Ref<HtmlEditorRef>,
       const nextValue = insertTextAtCursor(getHtmlEditorVariableInsertText(name, kind));
       const scanned = scanHtmlEditorVariables(nextValue);
       const merged = mergeScannedHtmlEditorVariables(scanned, htmlVariablesRef.current);
-      updateVariables(
-        scanned.some((item) => item.type === variable.type && item.attribute === variable.attribute)
-          ? merged
-          : [...merged, { ...variable, variableInstanceId: `${variable.variableInstanceId}-${Date.now()}` }],
-      );
+      updateVariables(merged);
       setRightTab('variables');
     },
     [insertTextAtCursor, updateVariables],
@@ -518,7 +534,14 @@ ref: React.Ref<HtmlEditorRef>,
     const nextValue = insertTextAtCursor(variable.variable);
     const scanned = scanHtmlEditorVariables(nextValue);
     const merged = mergeScannedHtmlEditorVariables(scanned, htmlVariablesRef.current);
-    const insertedIndex = merged.findIndex((item) => item.type === variable.type && item.attribute === variable.attribute && item.default === '');
+    let insertedIndex = -1;
+    for (let index = merged.length - 1; index >= 0; index -= 1) {
+      const item = merged[index];
+      if (item.type === variable.type && item.attribute === variable.attribute && item.default === '') {
+        insertedIndex = index;
+        break;
+      }
+    }
     updateVariables(
       merged.map((item, index) =>
         index === insertedIndex
@@ -718,11 +741,16 @@ ref: React.Ref<HtmlEditorRef>,
 
   const renderVariableSettings = () => (
     <Box
+      ref={variableSettingsRef}
       sx={{
-        height: previewHeight,
+        flex: 1,
+        height: '100%',
+        minHeight: 0,
         overflow: 'auto',
         backgroundColor: 'background.paper',
-        p: 2,
+        px: 2,
+        pt: 2,
+        pb: 6,
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1.5 }}>
@@ -873,10 +901,10 @@ ref: React.Ref<HtmlEditorRef>,
 
       <Divider sx={{ my: 2 }} />
 
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+      <Typography ref={detectedVariablesRef} variant="subtitle2" sx={{ mb: 0.5 }}>
         {translate('htmlEditor.variables.detected')}
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.25 }}>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
         {translate('htmlEditor.variables.defaultHelp')}
       </Typography>
       {visibleHtmlVariables.length === 0 ? (
@@ -894,7 +922,7 @@ ref: React.Ref<HtmlEditorRef>,
           {translate('htmlEditor.variables.empty')}
         </Box>
       ) : (
-        <Box sx={{ display: 'grid', gap: 1.5 }}>
+        <Box sx={{ display: 'grid', gap: 0.25 }}>
           {visibleHtmlVariables.map((item, index) => {
             const isMissing = showVariableErrors && item.type === 'user' && item.default.trim() === '';
             const sameNameCount = visibleHtmlVariables.filter((v) => v.type === item.type && v.attribute === item.attribute).length;
@@ -906,14 +934,33 @@ ref: React.Ref<HtmlEditorRef>,
                 key={item.variableInstanceId || `${item.type}:${item.attribute}:${item.id}`}
                 sx={{
                   display: 'grid',
-                  gap: 0.75,
-                  p: 1.25,
+                  gridTemplateColumns: { xs: '1fr', sm: 'minmax(150px, 42%) 1fr' },
+                  alignItems: isMissing ? 'flex-start' : 'center',
+                  gap: 1,
+                  px: 1,
+                  py: 0.75,
                   border: '1px solid',
-                  borderColor: isMissing ? 'error.main' : 'divider',
+                  borderColor: isMissing ? 'error.main' : 'transparent',
                   borderRadius: 1,
+                  borderBottomColor: isMissing ? 'error.main' : 'divider',
+                  backgroundColor: isMissing ? alpha(hostTheme.palette.error.main, 0.04) : 'transparent',
+                  transition: 'background-color 120ms ease, border-color 120ms ease',
+                  '&:hover': {
+                    backgroundColor: isMissing ? alpha(hostTheme.palette.error.main, 0.04) : 'action.hover',
+                    borderColor: isMissing ? 'error.main' : 'divider',
+                  },
                 }}
               >
-                <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    lineHeight: 1.35,
+                    wordBreak: 'break-all',
+                    color: isMissing ? 'error.main' : 'text.primary',
+                  }}
+                >
                   {sameNameCount > 1 ? `${item.variable} (${sameNameIndex})` : item.variable}
                 </Typography>
                 <TextField
@@ -921,15 +968,21 @@ ref: React.Ref<HtmlEditorRef>,
                   fullWidth
                   disabled={item.type === 'system'}
                   value={item.default}
-                  label={translate('text.variables.defaultValueLabel')}
+                  label={isMissing ? translate('text.variables.defaultValueLabel') : undefined}
                   placeholder={
                     item.type === 'system'
                       ? translate('htmlEditor.variables.systemDefault')
                       : translate('text.variables.defaultPlaceholder')
                   }
                   error={isMissing}
-                  helperText={isMissing ? translate('text.variables.defaultRequired') : ' '}
+                  helperText={isMissing ? translate('text.variables.defaultRequired') : undefined}
                   onChange={(event) => handleVariableDefaultChange(item.variableInstanceId, event.target.value)}
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      py: 0.75,
+                      fontSize: 13,
+                    },
+                  }}
                 />
               </Box>
             );
@@ -958,7 +1011,7 @@ ref: React.Ref<HtmlEditorRef>,
         <Tab value="preview" label={translate('htmlEditor.tabs.preview')} />
         <Tab value="variables" label={translate('htmlEditor.tabs.variables')} />
       </Tabs>
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {rightTab === 'preview' ? renderPreview() : renderVariableSettings()}
       </Box>
     </Box>
