@@ -1087,7 +1087,6 @@ ref: React.Ref<HtmlEditorRef>,
                 onChange={(e) => {
                   const next = e.target.value;
                   setTheme(next);
-                  console.log('theme changed to', next);
                   setStoredTheme(next);
                 }}
                 sx={{
