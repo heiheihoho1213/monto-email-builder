@@ -259,6 +259,7 @@ ref: React.Ref<HtmlEditorRef>,
   const [customVariableDefaultTouched, setCustomVariableDefaultTouched] = useState(false);
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const codeMirrorViewRef = useRef<any>(null);
+  const htmlVariablesRef = useRef<HtmlEditorVariableItem[]>(htmlVariables);
 
   // iframe ref 必须在组件顶层声明，不能在 renderPreview 函数内部
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -272,7 +273,9 @@ ref: React.Ref<HtmlEditorRef>,
 
   useEffect(() => {
     if (variables === undefined) return;
-    setHtmlVariables(normalizeHtmlEditorVariables(variables));
+    const normalized = normalizeHtmlEditorVariables(variables);
+    htmlVariablesRef.current = normalized;
+    setHtmlVariables(normalized);
   }, [variables]);
 
   const updateVariables = useCallback(
@@ -282,12 +285,21 @@ ref: React.Ref<HtmlEditorRef>,
         id: index + 1,
         default: item.type === 'system' ? '' : (item.default ?? ''),
       }));
+      htmlVariablesRef.current = normalized;
       setHtmlVariables(normalized);
       onVariablesChange?.(normalized);
       return normalized;
     },
     [onVariablesChange],
   );
+
+  const getCurrentHtmlValue = useCallback(() => {
+    const doc = codeMirrorViewRef.current?.state?.doc;
+    if (doc && typeof doc.toString === 'function') {
+      return doc.toString();
+    }
+    return internalValue;
+  }, [internalValue]);
 
   // 防抖处理 onChange
   const handleChangeDebounced = (newValue: string) => {
@@ -301,16 +313,20 @@ ref: React.Ref<HtmlEditorRef>,
   };
 
   const scanVariablesFromValue = useCallback(
-    (nextValue = internalValue) => {
-      const scanned = scanHtmlEditorVariables(nextValue);
-      const nextVariables = mergeScannedHtmlEditorVariables(scanned, htmlVariables);
+    (nextValue?: string) => {
+      const scanned = scanHtmlEditorVariables(nextValue ?? getCurrentHtmlValue());
+      const nextVariables = mergeScannedHtmlEditorVariables(scanned, htmlVariablesRef.current);
       return updateVariables(nextVariables);
     },
-    [htmlVariables, internalValue, updateVariables],
+    [getCurrentHtmlValue, updateVariables],
   );
 
   const validateVariables = useCallback((): HtmlEditorVariableValidationResult => {
-    const nextVariables = scanVariablesFromValue(internalValue);
+    const currentValue = getCurrentHtmlValue();
+    if (currentValue !== internalValue) {
+      setInternalValue(currentValue);
+    }
+    const nextVariables = scanVariablesFromValue(currentValue);
     const missing = requireVariableDefaults
       ? nextVariables.filter((item) => item.type === 'user' && item.default.trim() === '')
       : [];
@@ -323,7 +339,7 @@ ref: React.Ref<HtmlEditorRef>,
       variables: nextVariables,
       missing,
     };
-  }, [internalValue, requireVariableDefaults, scanVariablesFromValue]);
+  }, [getCurrentHtmlValue, internalValue, requireVariableDefaults, scanVariablesFromValue]);
 
   const handleSaveVariables = useCallback(() => {
     validateVariables();
@@ -390,17 +406,18 @@ ref: React.Ref<HtmlEditorRef>,
   useImperativeHandle(
     ref,
     () => ({
-      getValue: () => internalValue,
-      getPreviewHtml: () => previewHtml,
-      scanVariables: () => scanVariablesFromValue(internalValue),
+      getValue: () => getCurrentHtmlValue(),
+      getPreviewHtml: () => applyHtmlEditorVariableDefaults(getCurrentHtmlValue(), htmlVariablesRef.current),
+      scanVariables: () => scanVariablesFromValue(getCurrentHtmlValue()),
       getVariables: (callback?: (items: HtmlEditorVariableItem[]) => void) => {
-        callback?.(htmlVariables);
-        return htmlVariables;
+        const currentVariables = htmlVariablesRef.current;
+        callback?.(currentVariables);
+        return currentVariables;
       },
       validateVariables,
       showVariables: () => setRightTab('variables'),
     }),
-    [htmlVariables, internalValue, previewHtml, scanVariablesFromValue, validateVariables],
+    [getCurrentHtmlValue, scanVariablesFromValue, validateVariables],
   );
 
   // 当 HTML 内容变化时，更新 iframe 内容（必须在组件顶层，不能在 renderPreview 内部）
@@ -424,49 +441,58 @@ ref: React.Ref<HtmlEditorRef>,
   };
 
   const insertTextAtCursor = useCallback(
-    (text: string) => {
+    (text: string): string => {
       const view = codeMirrorViewRef.current;
       if (view?.state && view?.dispatch) {
         const range = view.state.selection?.main;
+        const currentValue = view.state.doc.toString();
         const from = range?.from ?? view.state.doc.length;
         const to = range?.to ?? from;
+        const nextValue = `${currentValue.slice(0, from)}${text}${currentValue.slice(to)}`;
         view.dispatch({
           changes: { from, to, insert: text },
           selection: { anchor: from + text.length },
         });
         view.focus?.();
-        handleChangeDebounced(view.state.doc.toString());
-        return;
+        handleChangeDebounced(nextValue);
+        return nextValue;
       }
-      handleChangeDebounced(`${internalValue}${text}`);
+      const nextValue = `${internalValue}${text}`;
+      handleChangeDebounced(nextValue);
+      return nextValue;
     },
     [internalValue],
   );
 
   const handleVariableDefaultChange = useCallback(
-    (attribute: string, type: HtmlEditorVariableItem['type'], defaultValue: string) => {
+    (variableInstanceId: string | undefined, defaultValue: string) => {
+      const currentVariables = htmlVariablesRef.current;
       updateVariables(
-        htmlVariables.map((item) =>
-          item.attribute === attribute && item.type === type
+        currentVariables.map((item) =>
+          item.variableInstanceId === variableInstanceId
             ? { ...item, default: defaultValue }
             : item,
         ),
       );
     },
-    [htmlVariables, updateVariables],
+    [updateVariables],
   );
 
   const handleInsertCatalogVariable = useCallback(
     (name: string, kind: VariableKind) => {
       const variable = createHtmlEditorVariable(name, kind);
       if (!variable) return;
-      insertTextAtCursor(getHtmlEditorVariableInsertText(name, kind));
-      if (!htmlVariables.some((item) => item.attribute === variable.attribute && item.type === variable.type)) {
-        updateVariables([...htmlVariables, variable]);
-      }
+      const nextValue = insertTextAtCursor(getHtmlEditorVariableInsertText(name, kind));
+      const scanned = scanHtmlEditorVariables(nextValue);
+      const merged = mergeScannedHtmlEditorVariables(scanned, htmlVariablesRef.current);
+      updateVariables(
+        scanned.some((item) => item.type === variable.type && item.attribute === variable.attribute)
+          ? merged
+          : [...merged, { ...variable, variableInstanceId: `${variable.variableInstanceId}-${Date.now()}` }],
+      );
       setRightTab('variables');
     },
-    [htmlVariables, insertTextAtCursor, updateVariables],
+    [insertTextAtCursor, updateVariables],
   );
 
   const customVariableNameError = useMemo(() => {
@@ -489,19 +515,34 @@ ref: React.Ref<HtmlEditorRef>,
     const variable = createHtmlEditorVariable(customVariableName.trim(), 'user', defaultValue);
     if (!variable) return;
 
-    insertTextAtCursor(variable.variable);
-    updateVariables([...htmlVariables, variable]);
+    const nextValue = insertTextAtCursor(variable.variable);
+    const scanned = scanHtmlEditorVariables(nextValue);
+    const merged = mergeScannedHtmlEditorVariables(scanned, htmlVariablesRef.current);
+    const insertedIndex = merged.findIndex((item) => item.type === variable.type && item.attribute === variable.attribute && item.default === '');
+    updateVariables(
+      merged.map((item, index) =>
+        index === insertedIndex
+          ? { ...item, default: variable.default }
+          : item,
+      ),
+    );
     setCustomVariableName('');
     setCustomVariableDefault('');
     setCustomVariableTouched(false);
     setCustomVariableDefaultTouched(false);
     setRightTab('variables');
-  }, [customVariableDefault, customVariableName, customVariableNameError, htmlVariables, insertTextAtCursor, updateVariables]);
+  }, [customVariableDefault, customVariableName, customVariableNameError, insertTextAtCursor, updateVariables]);
 
   const variableGroupsWithCustom = useMemo<VariableGroup[]>(() => {
+    const customNames = new Set<string>();
     const customItems = htmlVariables
       .filter((item) => item.type === 'user')
       .filter((item) => !HTML_EDITOR_VARIABLE_GROUPS.some((group) => group.items.some((groupItem) => groupItem.name === item.attribute)))
+      .filter((item) => {
+        if (customNames.has(item.attribute)) return false;
+        customNames.add(item.attribute);
+        return true;
+      })
       .map((item) => ({
         name: item.attribute,
         labelKey: item.attribute,
@@ -510,6 +551,11 @@ ref: React.Ref<HtmlEditorRef>,
 
     return [{ id: 'custom', items: customItems }, ...HTML_EDITOR_VARIABLE_GROUPS];
   }, [htmlVariables]);
+
+  const visibleHtmlVariables = useMemo(
+    () => htmlVariables.filter((item) => item.type !== 'system'),
+    [htmlVariables],
+  );
 
   const getVariableGroupTitleKey = (id: VariableGroupId | 'custom') => {
     if (id === 'custom') return 'text.variables.groupCustom';
@@ -833,7 +879,7 @@ ref: React.Ref<HtmlEditorRef>,
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1.25 }}>
         {translate('htmlEditor.variables.defaultHelp')}
       </Typography>
-      {htmlVariables.length === 0 ? (
+      {visibleHtmlVariables.length === 0 ? (
         <Box
           sx={{
             border: '1px dashed',
@@ -849,11 +895,15 @@ ref: React.Ref<HtmlEditorRef>,
         </Box>
       ) : (
         <Box sx={{ display: 'grid', gap: 1.5 }}>
-          {htmlVariables.map((item) => {
+          {visibleHtmlVariables.map((item, index) => {
             const isMissing = showVariableErrors && item.type === 'user' && item.default.trim() === '';
+            const sameNameCount = visibleHtmlVariables.filter((v) => v.type === item.type && v.attribute === item.attribute).length;
+            const sameNameIndex = visibleHtmlVariables
+              .slice(0, index + 1)
+              .filter((v) => v.type === item.type && v.attribute === item.attribute).length;
             return (
               <Box
-                key={`${item.type}:${item.attribute}`}
+                key={item.variableInstanceId || `${item.type}:${item.attribute}:${item.id}`}
                 sx={{
                   display: 'grid',
                   gap: 0.75,
@@ -864,7 +914,7 @@ ref: React.Ref<HtmlEditorRef>,
                 }}
               >
                 <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
-                  {item.variable}
+                  {sameNameCount > 1 ? `${item.variable} (${sameNameIndex})` : item.variable}
                 </Typography>
                 <TextField
                   size="small"
@@ -879,7 +929,7 @@ ref: React.Ref<HtmlEditorRef>,
                   }
                   error={isMissing}
                   helperText={isMissing ? translate('text.variables.defaultRequired') : ' '}
-                  onChange={(event) => handleVariableDefaultChange(item.attribute, item.type, event.target.value)}
+                  onChange={(event) => handleVariableDefaultChange(item.variableInstanceId, event.target.value)}
                 />
               </Box>
             );
