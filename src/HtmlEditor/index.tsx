@@ -24,6 +24,7 @@ import {
   Box,
   Button,
   Divider,
+  ScopedCssBaseline,
   Tooltip,
   Select,
   MenuItem,
@@ -34,6 +35,7 @@ import {
   Tabs,
   TextField,
   Theme,
+  ThemeProvider,
   Typography,
   ListSubheader,
   useTheme,
@@ -51,6 +53,7 @@ import * as PhoneIphoneOutlinedModule from '@mui/icons-material/PhoneIphoneOutli
 import { Language, t } from '../i18n';
 import { VARIABLE_NAME_RE, type VariableGroup, type VariableGroupId, type VariableKind } from '../documents/blocks/Text/variableCatalog';
 
+import editorTheme from '../theme';
 import { resolveMuiIcon } from '../utils/resolveMuiIcon';
 import {
   applyHtmlEditorVariableDefaults,
@@ -222,7 +225,7 @@ export interface HtmlEditorProps {
   requireVariableDefaults?: boolean;
 }
 
-function HtmlEditor(
+function HtmlEditorContent(
 {
   value,
   onChange,
@@ -252,7 +255,7 @@ ref: React.Ref<HtmlEditorRef>,
   const [rightTab, setRightTab] = useState<HtmlEditorRightTab>(initialRightTab);
   const [htmlVariables, setHtmlVariables] = useState<HtmlEditorVariableItem[]>(() => normalizeHtmlEditorVariables(variables));
   const [showVariableErrors, setShowVariableErrors] = useState(false);
-  const [variableExpanded, setVariableExpanded] = useState<VariableGroupId | 'custom' | null>('custom');
+  const [variableExpanded, setVariableExpanded] = useState<VariableGroupId | 'custom' | null>(null);
   const [customVariableName, setCustomVariableName] = useState('');
   const [customVariableDefault, setCustomVariableDefault] = useState('');
   const [customVariableTouched, setCustomVariableTouched] = useState(false);
@@ -621,6 +624,15 @@ ref: React.Ref<HtmlEditorRef>,
       sx: { color: alpha(hostTheme.palette?.text?.primary ?? '#1F1F21', 0.9) },
     },
   };
+  const compactHelperTextProps = {
+    component: 'div' as const,
+    sx: {
+      mt: 0.5,
+      mx: 0,
+      minHeight: 18,
+      lineHeight: 1.5,
+    },
+  };
 
   // 渲染代码编辑器（高度由父级 flex 约束，避免 100vh 导致溢出；minHeight: 0 让 flex 子项可收缩）
   const renderCodeEditor = () => (
@@ -765,7 +777,7 @@ ref: React.Ref<HtmlEditorRef>,
               </Box>
             </Tooltip>
           </Box>
-          <Typography variant="body2" color="text.secondary">
+          <Typography component="div" variant="body2" color="text.secondary">
             {translate('htmlEditor.variables.scanHint')}
           </Typography>
         </Box>
@@ -799,7 +811,7 @@ ref: React.Ref<HtmlEditorRef>,
                   '& .MuiAccordionSummary-content': { my: 1 },
                 }}
               >
-                <Typography variant="body2" color="text.primary">
+                <Typography component="div" variant="body2" color="text.primary">
                   {translate(getVariableGroupTitleKey(group.id))}
                 </Typography>
               </AccordionSummary>
@@ -823,6 +835,7 @@ ref: React.Ref<HtmlEditorRef>,
                       }}
                       error={customVariableTouched && !!customVariableNameError}
                       helperText={customVariableTouched ? customVariableNameError || ' ' : ' '}
+                      FormHelperTextProps={compactHelperTextProps}
                       sx={{ mb: 1 }}
                     />
                     <TextField
@@ -846,6 +859,7 @@ ref: React.Ref<HtmlEditorRef>,
                           ? translate('text.variables.defaultRequired')
                           : ' '
                       }
+                      FormHelperTextProps={compactHelperTextProps}
                     />
                     <Button
                       fullWidth
@@ -882,10 +896,15 @@ ref: React.Ref<HtmlEditorRef>,
                         }}
                       >
                         <Box sx={{ textAlign: 'left', minWidth: 0 }}>
-                          <Typography variant="body2" color="text.primary">
+                          <Typography component="div" variant="body2" color="text.primary">
                             {group.id === 'custom' ? item.name : translate(item.labelKey)}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                          <Typography
+                            component="div"
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontFamily: 'monospace' }}
+                          >
                             {item.kind === 'builtin' ? `{%${item.name}%}` : `{{${item.name}}}`}
                           </Typography>
                         </Box>
@@ -901,10 +920,10 @@ ref: React.Ref<HtmlEditorRef>,
 
       <Divider sx={{ my: 2 }} />
 
-      <Typography ref={detectedVariablesRef} variant="subtitle2" sx={{ mb: 0.5 }}>
+      <Typography component="div" ref={detectedVariablesRef} variant="subtitle2" sx={{ mb: 0.5 }}>
         {translate('htmlEditor.variables.detected')}
       </Typography>
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+      <Typography component="div" variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
         {translate('htmlEditor.variables.defaultHelp')}
       </Typography>
       {visibleHtmlVariables.length === 0 ? (
@@ -952,6 +971,7 @@ ref: React.Ref<HtmlEditorRef>,
                 }}
               >
                 <Typography
+                  component="div"
                   variant="body2"
                   sx={{
                     fontFamily: 'monospace',
@@ -976,6 +996,7 @@ ref: React.Ref<HtmlEditorRef>,
                   }
                   error={isMissing}
                   helperText={isMissing ? translate('text.variables.defaultRequired') : undefined}
+                  FormHelperTextProps={compactHelperTextProps}
                   onChange={(event) => handleVariableDefaultChange(item.variableInstanceId, event.target.value)}
                   sx={{
                     '& .MuiInputBase-input': {
@@ -1171,7 +1192,25 @@ ref: React.Ref<HtmlEditorRef>,
   );
 }
 
-const ForwardedHtmlEditor = forwardRef<HtmlEditorRef, HtmlEditorProps>(HtmlEditor);
+const ForwardedHtmlEditorContent = forwardRef<HtmlEditorRef, HtmlEditorProps>(HtmlEditorContent);
+ForwardedHtmlEditorContent.displayName = 'HtmlEditorContent';
+
+const ForwardedHtmlEditor = forwardRef<HtmlEditorRef, HtmlEditorProps>((props, ref) => (
+  <ThemeProvider theme={editorTheme}>
+    <ScopedCssBaseline
+      sx={{
+        height: '100%',
+        width: '100%',
+        minHeight: 0,
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <ForwardedHtmlEditorContent ref={ref} {...props} />
+    </ScopedCssBaseline>
+  </ThemeProvider>
+));
 ForwardedHtmlEditor.displayName = 'HtmlEditor';
 
 export default ForwardedHtmlEditor;
