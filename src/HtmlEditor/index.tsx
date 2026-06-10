@@ -284,6 +284,27 @@ ref: React.Ref<HtmlEditorRef>,
     setHtmlVariables(normalized);
   }, [variables]);
 
+  useEffect(() => {
+    if (variables !== undefined) return;
+    const scanned = scanHtmlEditorVariables(internalValue);
+    const merged = mergeScannedHtmlEditorVariables(scanned, htmlVariablesRef.current);
+    const changed =
+      merged.length !== htmlVariablesRef.current.length ||
+      merged.some((item, index) => {
+        const current = htmlVariablesRef.current[index];
+        return (
+          !current ||
+          current.variableInstanceId !== item.variableInstanceId ||
+          current.attribute !== item.attribute ||
+          current.type !== item.type ||
+          current.default !== item.default
+        );
+      });
+    if (!changed) return;
+    htmlVariablesRef.current = merged;
+    setHtmlVariables(merged);
+  }, [internalValue, variables]);
+
   const updateVariables = useCallback(
     (nextVariables: ReadonlyArray<HtmlEditorVariableItem>) => {
       const normalized = nextVariables.map((item, index) => ({
