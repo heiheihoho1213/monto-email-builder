@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { html } from '@codemirror/lang-html';
 import {
@@ -17,18 +17,63 @@ import {
 } from '@uiw/codemirror-themes-all';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import { Box, Tooltip, Select, MenuItem, FormControl, InputLabel, SxProps, Theme, ListSubheader, useTheme } from '@mui/material';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Button,
+  Divider,
+  ScopedCssBaseline,
+  Tooltip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  SxProps,
+  Tab,
+  Tabs,
+  TextField,
+  Theme,
+  ThemeProvider,
+  Typography,
+  ListSubheader,
+  useTheme,
+} from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import * as AddOutlinedModule from '@mui/icons-material/AddOutlined';
 import * as CodeIconModule from '@mui/icons-material/Code';
+import * as DataObjectOutlinedModule from '@mui/icons-material/DataObjectOutlined';
+import * as ExpandMoreOutlinedModule from '@mui/icons-material/ExpandMoreOutlined';
+import * as HelpOutlinedModule from '@mui/icons-material/HelpOutlined';
 import * as VisibilityIconModule from '@mui/icons-material/Visibility';
 import * as ViewColumnIconModule from '@mui/icons-material/ViewColumn';
 import * as MonitorOutlinedModule from '@mui/icons-material/MonitorOutlined';
 import * as PhoneIphoneOutlinedModule from '@mui/icons-material/PhoneIphoneOutlined';
 import { Language, t } from '../i18n';
+import { VARIABLE_NAME_RE, type VariableGroup, type VariableGroupId, type VariableKind } from '../documents/blocks/Text/variableCatalog';
 
+import editorTheme from '../theme';
 import { resolveMuiIcon } from '../utils/resolveMuiIcon';
+import {
+  applyHtmlEditorVariableDefaults,
+  createHtmlEditorVariable,
+  getHtmlEditorVariableInsertText,
+  HTML_EDITOR_VARIABLE_GROUPS,
+  isHtmlEditorBuiltinVariableName,
+  mergeScannedHtmlEditorVariables,
+  normalizeHtmlEditorVariables,
+  scanHtmlEditorVariables,
+  type HtmlEditorVariableInput,
+  type HtmlEditorVariableItem,
+  type HtmlEditorVariableValidationResult,
+} from './variables';
 
+const AddOutlined = resolveMuiIcon(AddOutlinedModule);
 const CodeIcon = resolveMuiIcon(CodeIconModule);
+const DataObjectOutlined = resolveMuiIcon(DataObjectOutlinedModule);
+const ExpandMoreOutlined = resolveMuiIcon(ExpandMoreOutlinedModule);
+const HelpOutlined = resolveMuiIcon(HelpOutlinedModule);
 const VisibilityIcon = resolveMuiIcon(VisibilityIconModule);
 const ViewColumnIcon = resolveMuiIcon(ViewColumnIconModule);
 const MonitorOutlined = resolveMuiIcon(MonitorOutlinedModule);
@@ -36,6 +81,21 @@ const PhoneIphoneOutlined = resolveMuiIcon(PhoneIphoneOutlinedModule);
 
 export type HtmlEditorMode = 'split' | 'code' | 'preview';
 export type HtmlEditorDevice = 'desktop' | 'mobile';
+export type HtmlEditorRightTab = 'preview' | 'variables';
+export type {
+  HtmlEditorVariableInput,
+  HtmlEditorVariableItem,
+  HtmlEditorVariableValidationResult,
+};
+
+export interface HtmlEditorRef {
+  getValue: () => string;
+  getPreviewHtml: () => string;
+  scanVariables: () => HtmlEditorVariableItem[];
+  getVariables: (callback?: (items: HtmlEditorVariableItem[]) => void) => HtmlEditorVariableItem[];
+  validateVariables: () => HtmlEditorVariableValidationResult;
+  showVariables: () => void;
+}
 
 // 主题映射表
 const themeMap: Record<string, any> = {
@@ -145,9 +205,28 @@ export interface HtmlEditorProps {
    * 若本地已有 localStorage 则优先用 localStorage；未传时默认 'dracula'
    */
   initialTheme?: string;
+  /**
+   * 初始右侧面板 tab
+   * @default 'preview'
+   */
+  initialRightTab?: HtmlEditorRightTab;
+  /**
+   * 已有模板变量默认值。保存时可通过 ref.validateVariables() 扫描当前 HTML 并合并这些默认值。
+   */
+  variables?: HtmlEditorVariableInput[];
+  /**
+   * 变量变更回调
+   */
+  onVariablesChange?: (variables: HtmlEditorVariableItem[]) => void;
+  /**
+   * 保存校验时是否要求用户变量填写默认值
+   * @default true
+   */
+  requireVariableDefaults?: boolean;
 }
 
-export default function HtmlEditor({
+function HtmlEditorContent(
+{
   value,
   onChange,
   language = 'zh',
@@ -158,7 +237,13 @@ export default function HtmlEditor({
   sx,
   showToolbar = true,
   initialTheme,
-}: HtmlEditorProps) {
+  initialRightTab = 'preview',
+  variables,
+  onVariablesChange,
+  requireVariableDefaults = true,
+}: HtmlEditorProps,
+ref: React.Ref<HtmlEditorRef>,
+) {
   // 翻译函数
   const translate = (key: string, params?: Record<string, string | number>): string => {
     return t(key, params, language);
@@ -167,7 +252,20 @@ export default function HtmlEditor({
   const [device, setDevice] = useState<HtmlEditorDevice>(initialDevice);
   const [theme, setTheme] = useState<string>(() => getStoredTheme(initialTheme));
   const [internalValue, setInternalValue] = useState(value);
+  const [rightTab, setRightTab] = useState<HtmlEditorRightTab>(initialRightTab);
+  const [htmlVariables, setHtmlVariables] = useState<HtmlEditorVariableItem[]>(() => normalizeHtmlEditorVariables(variables));
+  const [showVariableErrors, setShowVariableErrors] = useState(false);
+  const [variableExpanded, setVariableExpanded] = useState<VariableGroupId | 'custom' | null>(null);
+  const [customVariableName, setCustomVariableName] = useState('');
+  const [customVariableDefault, setCustomVariableDefault] = useState('');
+  const [customVariableTouched, setCustomVariableTouched] = useState(false);
+  const [customVariableDefaultTouched, setCustomVariableDefaultTouched] = useState(false);
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const codeMirrorViewRef = useRef<any>(null);
+  const htmlVariablesRef = useRef<HtmlEditorVariableItem[]>(htmlVariables);
+  const variableSettingsRef = useRef<HTMLDivElement>(null);
+  const detectedVariablesRef = useRef<HTMLDivElement>(null);
+  const pendingDetectedScrollRef = useRef(false);
 
   // iframe ref 必须在组件顶层声明，不能在 renderPreview 函数内部
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -179,6 +277,57 @@ export default function HtmlEditor({
     }
   }, [value]);
 
+  useEffect(() => {
+    if (variables === undefined) return;
+    const normalized = normalizeHtmlEditorVariables(variables);
+    htmlVariablesRef.current = normalized;
+    setHtmlVariables(normalized);
+  }, [variables]);
+
+  useEffect(() => {
+    if (variables !== undefined) return;
+    const scanned = scanHtmlEditorVariables(internalValue);
+    const merged = mergeScannedHtmlEditorVariables(scanned, htmlVariablesRef.current);
+    const changed =
+      merged.length !== htmlVariablesRef.current.length ||
+      merged.some((item, index) => {
+        const current = htmlVariablesRef.current[index];
+        return (
+          !current ||
+          current.variableInstanceId !== item.variableInstanceId ||
+          current.attribute !== item.attribute ||
+          current.type !== item.type ||
+          current.default !== item.default
+        );
+      });
+    if (!changed) return;
+    htmlVariablesRef.current = merged;
+    setHtmlVariables(merged);
+  }, [internalValue, variables]);
+
+  const updateVariables = useCallback(
+    (nextVariables: ReadonlyArray<HtmlEditorVariableItem>) => {
+      const normalized = nextVariables.map((item, index) => ({
+        ...item,
+        id: index + 1,
+        default: item.type === 'system' ? '' : (item.default ?? ''),
+      }));
+      htmlVariablesRef.current = normalized;
+      setHtmlVariables(normalized);
+      onVariablesChange?.(normalized);
+      return normalized;
+    },
+    [onVariablesChange],
+  );
+
+  const getCurrentHtmlValue = useCallback(() => {
+    const doc = codeMirrorViewRef.current?.state?.doc;
+    if (doc && typeof doc.toString === 'function') {
+      return doc.toString();
+    }
+    return internalValue;
+  }, [internalValue]);
+
   // 防抖处理 onChange
   const handleChangeDebounced = (newValue: string) => {
     setInternalValue(newValue);
@@ -189,6 +338,57 @@ export default function HtmlEditor({
       onChange?.(newValue);
     }, 300);
   };
+
+  const scanVariablesFromValue = useCallback(
+    (nextValue?: string) => {
+      const scanned = scanHtmlEditorVariables(nextValue ?? getCurrentHtmlValue());
+      const nextVariables = mergeScannedHtmlEditorVariables(scanned, htmlVariablesRef.current);
+      return updateVariables(nextVariables);
+    },
+    [getCurrentHtmlValue, updateVariables],
+  );
+
+  const validateVariables = useCallback((): HtmlEditorVariableValidationResult => {
+    const currentValue = getCurrentHtmlValue();
+    if (currentValue !== internalValue) {
+      setInternalValue(currentValue);
+    }
+    const nextVariables = scanVariablesFromValue(currentValue);
+    const missing = requireVariableDefaults
+      ? nextVariables.filter((item) => item.type === 'user' && item.default.trim() === '')
+      : [];
+    setShowVariableErrors(missing.length > 0);
+    if (missing.length > 0) {
+      setRightTab('variables');
+    }
+    return {
+      valid: missing.length === 0,
+      variables: nextVariables,
+      missing,
+    };
+  }, [getCurrentHtmlValue, internalValue, requireVariableDefaults, scanVariablesFromValue]);
+
+  const handleSaveVariables = useCallback(() => {
+    pendingDetectedScrollRef.current = true;
+    validateVariables();
+    setRightTab('variables');
+  }, [validateVariables]);
+
+  useEffect(() => {
+    if (rightTab !== 'variables' || !pendingDetectedScrollRef.current) return;
+    const rafId = window.requestAnimationFrame(() => {
+      const container = variableSettingsRef.current;
+      const section = detectedVariablesRef.current;
+      if (container && section) {
+        container.scrollTo({
+          top: Math.max(section.offsetTop - 8, 0),
+          behavior: 'auto',
+        });
+      }
+      pendingDetectedScrollRef.current = false;
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [rightTab, htmlVariables.length]);
 
   // 清理防抖定时器
   useEffect(() => {
@@ -239,8 +439,30 @@ export default function HtmlEditor({
     return completeHtml;
   };
 
+  const previewHtml = useMemo(
+    () => applyHtmlEditorVariableDefaults(internalValue, htmlVariables),
+    [htmlVariables, internalValue],
+  );
+
   // 使用 useMemo 缓存处理后的 HTML，避免每次渲染都重新计算
-  const processedHtml = useMemo(() => processHtml(internalValue), [internalValue]);
+  const processedHtml = useMemo(() => processHtml(previewHtml), [previewHtml]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      getValue: () => getCurrentHtmlValue(),
+      getPreviewHtml: () => applyHtmlEditorVariableDefaults(getCurrentHtmlValue(), htmlVariablesRef.current),
+      scanVariables: () => scanVariablesFromValue(getCurrentHtmlValue()),
+      getVariables: (callback?: (items: HtmlEditorVariableItem[]) => void) => {
+        const currentVariables = scanVariablesFromValue(getCurrentHtmlValue());
+        callback?.(currentVariables);
+        return currentVariables;
+      },
+      validateVariables,
+      showVariables: () => setRightTab('variables'),
+    }),
+    [getCurrentHtmlValue, scanVariablesFromValue, validateVariables],
+  );
 
   // 当 HTML 内容变化时，更新 iframe 内容（必须在组件顶层，不能在 renderPreview 内部）
   useEffect(() => {
@@ -260,6 +482,135 @@ export default function HtmlEditor({
 
   const handleDeviceChange = (_: React.MouseEvent<HTMLElement>, newDevice: HtmlEditorDevice | null) => {
     if (newDevice === 'desktop' || newDevice === 'mobile') setDevice(newDevice);
+  };
+
+  const insertTextAtCursor = useCallback(
+    (text: string): string => {
+      const view = codeMirrorViewRef.current;
+      if (view?.state && view?.dispatch) {
+        const range = view.state.selection?.main;
+        const currentValue = view.state.doc.toString();
+        const from = range?.from ?? view.state.doc.length;
+        const to = range?.to ?? from;
+        const nextValue = `${currentValue.slice(0, from)}${text}${currentValue.slice(to)}`;
+        view.dispatch({
+          changes: { from, to, insert: text },
+          selection: { anchor: from + text.length },
+        });
+        view.focus?.();
+        handleChangeDebounced(nextValue);
+        return nextValue;
+      }
+      const nextValue = `${internalValue}${text}`;
+      handleChangeDebounced(nextValue);
+      return nextValue;
+    },
+    [internalValue],
+  );
+
+  const handleVariableDefaultChange = useCallback(
+    (variableInstanceId: string | undefined, defaultValue: string) => {
+      const currentVariables = htmlVariablesRef.current;
+      updateVariables(
+        currentVariables.map((item) =>
+          item.variableInstanceId === variableInstanceId
+            ? { ...item, default: defaultValue }
+            : item,
+        ),
+      );
+    },
+    [updateVariables],
+  );
+
+  const handleInsertCatalogVariable = useCallback(
+    (name: string, kind: VariableKind) => {
+      const variable = createHtmlEditorVariable(name, kind);
+      if (!variable) return;
+      const nextValue = insertTextAtCursor(getHtmlEditorVariableInsertText(name, kind));
+      const scanned = scanHtmlEditorVariables(nextValue);
+      const merged = mergeScannedHtmlEditorVariables(scanned, htmlVariablesRef.current);
+      updateVariables(merged);
+      setRightTab('variables');
+    },
+    [insertTextAtCursor, updateVariables],
+  );
+
+  const customVariableNameError = useMemo(() => {
+    const name = customVariableName.trim();
+    if (!name) return translate('text.variables.customVariableNameRequired');
+    if (!VARIABLE_NAME_RE.test(name)) return translate('text.variables.customVariableNameInvalid');
+    if (isHtmlEditorBuiltinVariableName(name)) return translate('text.variables.customVariableNameDuplicate');
+    if (htmlVariables.some((item) => item.type === 'user' && item.attribute === name)) {
+      return translate('text.variables.customVariableNameDuplicate');
+    }
+    return '';
+  }, [customVariableName, htmlVariables]);
+
+  const handleAddCustomVariable = useCallback(() => {
+    const defaultValue = customVariableDefault.trim();
+    setCustomVariableTouched(true);
+    setCustomVariableDefaultTouched(true);
+    if (customVariableNameError || defaultValue === '') return;
+
+    const variable = createHtmlEditorVariable(customVariableName.trim(), 'user', defaultValue);
+    if (!variable) return;
+
+    const nextValue = insertTextAtCursor(variable.variable);
+    const scanned = scanHtmlEditorVariables(nextValue);
+    const merged = mergeScannedHtmlEditorVariables(scanned, htmlVariablesRef.current);
+    let insertedIndex = -1;
+    for (let index = merged.length - 1; index >= 0; index -= 1) {
+      const item = merged[index];
+      if (item.type === variable.type && item.attribute === variable.attribute && item.default === '') {
+        insertedIndex = index;
+        break;
+      }
+    }
+    updateVariables(
+      merged.map((item, index) =>
+        index === insertedIndex
+          ? { ...item, default: variable.default }
+          : item,
+      ),
+    );
+    setCustomVariableName('');
+    setCustomVariableDefault('');
+    setCustomVariableTouched(false);
+    setCustomVariableDefaultTouched(false);
+    setRightTab('variables');
+  }, [customVariableDefault, customVariableName, customVariableNameError, insertTextAtCursor, updateVariables]);
+
+  const variableGroupsWithCustom = useMemo<VariableGroup[]>(() => {
+    const customNames = new Set<string>();
+    const customItems = htmlVariables
+      .filter((item) => item.type === 'user')
+      .filter((item) => !HTML_EDITOR_VARIABLE_GROUPS.some((group) => group.items.some((groupItem) => groupItem.name === item.attribute)))
+      .filter((item) => {
+        if (customNames.has(item.attribute)) return false;
+        customNames.add(item.attribute);
+        return true;
+      })
+      .map((item) => ({
+        name: item.attribute,
+        labelKey: item.attribute,
+        kind: 'user' as VariableKind,
+      }));
+
+    return [{ id: 'custom', items: customItems }, ...HTML_EDITOR_VARIABLE_GROUPS];
+  }, [htmlVariables]);
+
+  const visibleHtmlVariables = useMemo(
+    () => htmlVariables.filter((item) => item.type !== 'system'),
+    [htmlVariables],
+  );
+
+  const getVariableGroupTitleKey = (id: VariableGroupId | 'custom') => {
+    if (id === 'custom') return 'text.variables.groupCustom';
+    if (id === 'contacts') return 'text.variables.groupContacts';
+    if (id === 'email') return 'text.variables.groupEmail';
+    if (id === 'organization') return 'text.variables.groupOrganization';
+    if (id === 'date') return 'text.variables.groupDate';
+    return 'text.variables.groupLinks';
   };
 
   const hostTheme = useTheme();
@@ -282,14 +633,25 @@ export default function HtmlEditor({
   const tooltipSlotProps = {
     tooltip: {
       sx: {
-        fontSize: '11px',
-        fontWeight: 300,
+        fontSize: '13px',
+        fontWeight: 400,
+        lineHeight: 1.45,
+        maxWidth: 360,
         backgroundColor: alpha(hostTheme.palette?.text?.primary ?? '#1F1F21', 0.9),
         color: hostTheme.palette?.common?.white ?? '#fff',
       },
     },
     arrow: {
       sx: { color: alpha(hostTheme.palette?.text?.primary ?? '#1F1F21', 0.9) },
+    },
+  };
+  const compactHelperTextProps = {
+    component: 'div' as const,
+    sx: {
+      mt: 0.5,
+      mx: 0,
+      minHeight: 18,
+      lineHeight: 1.5,
     },
   };
 
@@ -301,6 +663,7 @@ export default function HtmlEditor({
         minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
+        position: 'relative',
         borderRight: mode === 'split' ? '1px solid' : 'none',
         borderColor: 'divider',
       }}
@@ -340,6 +703,9 @@ export default function HtmlEditor({
           extensions={[html()]}
           theme={themeMap[theme] || dracula}
           onChange={handleChangeDebounced}
+          onCreateEditor={(view) => {
+            codeMirrorViewRef.current = view;
+          }}
           basicSetup={{
             lineNumbers: true,
             foldGutter: true,
@@ -348,6 +714,22 @@ export default function HtmlEditor({
           }}
         />
       </Box>
+      <Button
+        size="small"
+        variant="contained"
+        startIcon={<DataObjectOutlined fontSize="small" />}
+        onClick={handleSaveVariables}
+        sx={{
+          position: 'absolute',
+          right: 16,
+          bottom: 16,
+          zIndex: 2,
+          textTransform: 'none',
+          boxShadow: 3,
+        }}
+      >
+        {translate('common.save')}
+      </Button>
     </Box>
   );
 
@@ -389,6 +771,293 @@ export default function HtmlEditor({
       </Box>
     );
   };
+
+  const renderVariableSettings = () => (
+    <Box
+      ref={variableSettingsRef}
+      sx={{
+        flex: 1,
+        height: '100%',
+        minHeight: 0,
+        overflow: 'auto',
+        backgroundColor: 'background.paper',
+        px: 2,
+        pt: 2,
+        pb: 6,
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1.5 }}>
+        <Box sx={{ minWidth: 0 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              {translate('htmlEditor.variables.title')}
+            </Typography>
+            <Tooltip title={translate('htmlEditor.variables.help')} arrow slotProps={tooltipSlotProps}>
+              <Box component="span" sx={{ display: 'inline-flex', color: 'text.secondary', cursor: 'help' }}>
+                <HelpOutlined fontSize="small" />
+              </Box>
+            </Tooltip>
+          </Box>
+          <Typography component="div" variant="body2" color="text.secondary">
+            {translate('htmlEditor.variables.scanHint')}
+          </Typography>
+        </Box>
+      </Box>
+
+      <Box sx={{ mb: 2 }}>
+        {variableGroupsWithCustom.map((group) => {
+          const expanded = variableExpanded === group.id;
+
+          return (
+            <Accordion
+              key={group.id}
+              disableGutters
+              square
+              elevation={0}
+              expanded={expanded}
+              onChange={(_, next) => setVariableExpanded(next ? group.id : null)}
+              sx={{
+                '&:before': { display: 'none' },
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 1,
+                overflow: 'hidden',
+                mb: 1,
+              }}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMoreOutlined fontSize="small" />}
+                sx={{
+                  minHeight: 44,
+                  '& .MuiAccordionSummary-content': { my: 1 },
+                }}
+              >
+                <Typography component="div" variant="body2" color="text.primary">
+                  {translate(getVariableGroupTitleKey(group.id))}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ pt: 0, pb: 1.25 }}>
+                {group.id === 'custom' && (
+                  <Box sx={{ mb: 1 }}>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      label={translate('text.variables.customVariableName')}
+                      value={customVariableName}
+                      placeholder="e.g. order_id"
+                      onChange={(event) => {
+                        setCustomVariableName(event.target.value);
+                        if (!customVariableTouched && event.target.value.trim() !== '') {
+                          setCustomVariableTouched(true);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (customVariableName.trim() !== '') setCustomVariableTouched(true);
+                      }}
+                      error={customVariableTouched && !!customVariableNameError}
+                      helperText={customVariableTouched ? customVariableNameError || ' ' : ' '}
+                      FormHelperTextProps={compactHelperTextProps}
+                      sx={{ mb: 1 }}
+                    />
+                    <TextField
+                      size="small"
+                      fullWidth
+                      label={translate('text.variables.defaultValueLabel')}
+                      value={customVariableDefault}
+                      placeholder={translate('text.variables.defaultPlaceholder')}
+                      onChange={(event) => {
+                        setCustomVariableDefault(event.target.value);
+                        if (!customVariableDefaultTouched && event.target.value.trim() !== '') {
+                          setCustomVariableDefaultTouched(true);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (customVariableDefault.trim() !== '') setCustomVariableDefaultTouched(true);
+                      }}
+                      error={customVariableDefaultTouched && customVariableDefault.trim() === ''}
+                      helperText={
+                        customVariableDefaultTouched && customVariableDefault.trim() === ''
+                          ? translate('text.variables.defaultRequired')
+                          : ' '
+                      }
+                      FormHelperTextProps={compactHelperTextProps}
+                    />
+                    <Button
+                      fullWidth
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AddOutlined fontSize="small" />}
+                      onClick={handleAddCustomVariable}
+                      sx={{
+                        justifyContent: 'center',
+                        borderColor: 'divider',
+                        borderStyle: 'dashed',
+                        color: 'text.secondary',
+                        textTransform: 'none',
+                      }}
+                    >
+                      {translate('text.variables.addCustomVariable')}
+                    </Button>
+                  </Box>
+                )}
+
+                {group.items.length > 0 && (
+                  <Box sx={{ display: 'grid', gap: 0.75 }}>
+                    {group.items.map((item) => (
+                      <Button
+                        key={`${group.id}:${item.name}`}
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleInsertCatalogVariable(item.name, item.kind)}
+                        sx={{
+                          justifyContent: 'flex-start',
+                          borderColor: 'divider',
+                          color: 'text.secondary',
+                          textTransform: 'none',
+                        }}
+                      >
+                        <Box sx={{ textAlign: 'left', minWidth: 0 }}>
+                          <Typography component="div" variant="body2" color="text.primary">
+                            {group.id === 'custom' ? item.name : translate(item.labelKey)}
+                          </Typography>
+                          <Typography
+                            component="div"
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontFamily: 'monospace' }}
+                          >
+                            {item.kind === 'builtin' ? `{%${item.name}%}` : `{{${item.name}}}`}
+                          </Typography>
+                        </Box>
+                      </Button>
+                    ))}
+                  </Box>
+                )}
+              </AccordionDetails>
+            </Accordion>
+          );
+        })}
+      </Box>
+
+      <Divider sx={{ my: 2 }} />
+
+      <Typography component="div" ref={detectedVariablesRef} variant="subtitle2" sx={{ mb: 0.5 }}>
+        {translate('htmlEditor.variables.detected')}
+      </Typography>
+      <Typography component="div" variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+        {translate('htmlEditor.variables.defaultHelp')}
+      </Typography>
+      {visibleHtmlVariables.length === 0 ? (
+        <Box
+          sx={{
+            border: '1px dashed',
+            borderColor: 'divider',
+            borderRadius: 1,
+            p: 2,
+            color: 'text.secondary',
+            fontSize: 14,
+            textAlign: 'center',
+          }}
+        >
+          {translate('htmlEditor.variables.empty')}
+        </Box>
+      ) : (
+        <Box sx={{ display: 'grid', gap: 0.25 }}>
+          {visibleHtmlVariables.map((item, index) => {
+            const isMissing = showVariableErrors && item.type === 'user' && item.default.trim() === '';
+            const sameNameCount = visibleHtmlVariables.filter((v) => v.type === item.type && v.attribute === item.attribute).length;
+            const sameNameIndex = visibleHtmlVariables
+              .slice(0, index + 1)
+              .filter((v) => v.type === item.type && v.attribute === item.attribute).length;
+            return (
+              <Box
+                key={item.variableInstanceId || `${item.type}:${item.attribute}:${item.id}`}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'minmax(150px, 42%) 1fr' },
+                  alignItems: isMissing ? 'flex-start' : 'center',
+                  gap: 1,
+                  px: 1,
+                  py: 0.75,
+                  border: '1px solid',
+                  borderColor: isMissing ? 'error.main' : 'transparent',
+                  borderRadius: 1,
+                  borderBottomColor: isMissing ? 'error.main' : 'divider',
+                  backgroundColor: isMissing ? alpha(hostTheme.palette.error.main, 0.04) : 'transparent',
+                  transition: 'background-color 120ms ease, border-color 120ms ease',
+                  '&:hover': {
+                    backgroundColor: isMissing ? alpha(hostTheme.palette.error.main, 0.04) : 'action.hover',
+                    borderColor: isMissing ? 'error.main' : 'divider',
+                  },
+                }}
+              >
+                <Typography
+                  component="div"
+                  variant="body2"
+                  sx={{
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    lineHeight: 1.35,
+                    wordBreak: 'break-all',
+                    color: isMissing ? 'error.main' : 'text.primary',
+                  }}
+                >
+                  {sameNameCount > 1 ? `${item.variable} (${sameNameIndex})` : item.variable}
+                </Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  disabled={item.type === 'system'}
+                  value={item.default}
+                  label={isMissing ? translate('text.variables.defaultValueLabel') : undefined}
+                  placeholder={
+                    item.type === 'system'
+                      ? translate('htmlEditor.variables.systemDefault')
+                      : translate('text.variables.defaultPlaceholder')
+                  }
+                  error={isMissing}
+                  helperText={isMissing ? translate('text.variables.defaultRequired') : undefined}
+                  FormHelperTextProps={compactHelperTextProps}
+                  onChange={(event) => handleVariableDefaultChange(item.variableInstanceId, event.target.value)}
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      py: 0.75,
+                      fontSize: 13,
+                    },
+                  }}
+                />
+              </Box>
+            );
+          })}
+        </Box>
+      )}
+    </Box>
+  );
+
+  const renderRightPanel = () => (
+    <Box sx={{ height: previewHeight, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <Tabs
+        value={rightTab}
+        onChange={(_, next: HtmlEditorRightTab) => setRightTab(next)}
+        sx={{
+          minHeight: 40,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          backgroundColor: 'background.paper',
+          '& .MuiTab-root': {
+            minHeight: 40,
+            textTransform: 'none',
+          },
+        }}
+      >
+        <Tab value="preview" label={translate('htmlEditor.tabs.preview')} />
+        <Tab value="variables" label={translate('htmlEditor.tabs.variables')} />
+      </Tabs>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {rightTab === 'preview' ? renderPreview() : renderVariableSettings()}
+      </Box>
+    </Box>
+  );
 
   return (
     <Box
@@ -460,7 +1129,6 @@ export default function HtmlEditor({
                 onChange={(e) => {
                   const next = e.target.value;
                   setTheme(next);
-                  console.log('theme changed to', next);
                   setStoredTheme(next);
                 }}
                 sx={{
@@ -531,16 +1199,39 @@ export default function HtmlEditor({
         {mode === 'split' && (
           <>
             <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{renderCodeEditor()}</Box>
-            <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{renderPreview()}</Box>
+            <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{renderRightPanel()}</Box>
           </>
         )}
         {mode === 'code' && (
           <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{renderCodeEditor()}</Box>
         )}
         {mode === 'preview' && (
-          <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{renderPreview()}</Box>
+          <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{renderRightPanel()}</Box>
         )}
       </Box>
       </Box>
   );
 }
+
+const ForwardedHtmlEditorContent = forwardRef<HtmlEditorRef, HtmlEditorProps>(HtmlEditorContent);
+ForwardedHtmlEditorContent.displayName = 'HtmlEditorContent';
+
+const ForwardedHtmlEditor = forwardRef<HtmlEditorRef, HtmlEditorProps>((props, ref) => (
+  <ThemeProvider theme={editorTheme}>
+    <ScopedCssBaseline
+      sx={{
+        height: '100%',
+        width: '100%',
+        minHeight: 0,
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <ForwardedHtmlEditorContent ref={ref} {...props} />
+    </ScopedCssBaseline>
+  </ThemeProvider>
+));
+ForwardedHtmlEditor.displayName = 'HtmlEditor';
+
+export default ForwardedHtmlEditor;

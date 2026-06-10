@@ -297,6 +297,20 @@
       "previewOnly": "Preview only",
       "desktopView": "Desktop view",
       "mobileView": "Mobile view"
+    },
+    "tabs": {
+      "preview": "Preview",
+      "variables": "Settings"
+    },
+    "variables": {
+      "title": "Variables",
+      "scan": "Scan variables",
+      "scanHint": "Insert variables here and set their default values.",
+      "help": "You can type {{variable_name}} directly in the code, then click Save in the code panel to scan variables and set default values in one place. You can also insert variables from Settings and enter their defaults here.",
+      "detected": "Detected variables",
+      "defaultHelp": "Please enter a default value to ensure that the content displays correctly even if the variable is missing.",
+      "empty": "No variables yet. Click Save in the code panel to scan, or insert one from the catalog above.",
+      "systemDefault": "System variables do not need defaults"
     }
   }
 }
