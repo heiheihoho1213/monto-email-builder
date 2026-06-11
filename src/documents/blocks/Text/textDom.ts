@@ -4,7 +4,6 @@ import { getFontFamily, styleToCss } from 'monto-email-block-text';
 import type { TextProps } from 'monto-email-block-text';
 
 import type { TStyle } from '../helpers/TStyle';
-import { isBuiltinVariableName } from './variableCatalog';
 
 const FONT_ORDER = [
   'MODERN_SANS',
@@ -17,6 +16,8 @@ const FONT_ORDER = [
   'BOOK_SERIF',
   'MONOSPACE',
 ] as const;
+
+const LEGACY_SYSTEM_VARIABLE_NAMES = new Set<string>(['unsubscribe_link']);
 
 function inferFontFamilyEnum(cssFont: string): TStyle['fontFamily'] {
   const s = cssFont.trim().toLowerCase();
@@ -918,7 +919,7 @@ function parseDataTextVariableToken(token: string): Omit<InsertedVariableKind, '
   const t = token.trim();
   if (t.startsWith('{{') && t.endsWith('}}')) {
     const n = t.slice(2, -2);
-    if (VARIABLE_NAME_RE.test(n)) return { name: n, builtin: isBuiltinVariableName(n) };
+    if (VARIABLE_NAME_RE.test(n)) return { name: n, builtin: LEGACY_SYSTEM_VARIABLE_NAMES.has(n) };
   }
   if (t.startsWith('{%') && t.endsWith('%}')) {
     const n = t.slice(2, -2);
@@ -951,7 +952,7 @@ export function migrateVariableInstanceIdsInMargin(
     const token = (el.getAttribute('data-text-variable') ?? '').trim();
     if (token.startsWith('{{') && token.endsWith('}}')) {
       const name = token.slice(2, -2).trim();
-      if (isBuiltinVariableName(name)) {
+      if (LEGACY_SYSTEM_VARIABLE_NAMES.has(name)) {
         const builtinToken = `{%${name}%}`;
         el.setAttribute('data-text-variable', builtinToken);
         el.textContent = builtinToken;

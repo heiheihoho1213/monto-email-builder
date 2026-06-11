@@ -1,6 +1,5 @@
 import {
   BASE_VARIABLE_GROUPS,
-  isBuiltinVariableName,
   VARIABLE_NAME_RE,
   type VariableGroup,
   type VariableKind,
@@ -39,6 +38,19 @@ export const HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE = 'unsubscribe_link';
 const USER_VARIABLE_RE = /\{\{\s*([^{}]+?)\s*\}\}/g;
 const SYSTEM_VARIABLE_RE = /\{%\s*([^{}%]+?)\s*%\}/g;
 
+export function normalizeHtmlEditorBuiltinSyntax(source: string): string {
+  const content = source || '';
+  return content.replace(USER_VARIABLE_RE, (match, rawName, offset, fullSource) => {
+    const end = offset + match.length;
+    if (!isStandaloneToken(fullSource, offset, end, '{', '}')) return match;
+
+    const attribute = String(rawName).trim();
+    if (!attribute || !VARIABLE_NAME_RE.test(attribute)) return match;
+    if (attribute !== HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE) return match;
+    return `{%${attribute}%}`;
+  });
+}
+
 function isStandaloneToken(source: string, start: number, end: number, left: string, right: string): boolean {
   return source[start - 1] !== left && source[end] !== right;
 }
@@ -55,7 +67,10 @@ export function parseHtmlEditorVariableToken(token: string | null | undefined): 
   if (value.startsWith('{{') && value.endsWith('}}')) {
     const attribute = value.slice(2, -2).trim();
     if (VARIABLE_NAME_RE.test(attribute)) {
-      return { attribute, type: isBuiltinVariableName(attribute) ? 'system' : 'user' };
+      return {
+        attribute,
+        type: attribute === HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE ? 'system' : 'user',
+      };
     }
   }
   if (value.startsWith('{%') && value.endsWith('%}')) {
@@ -68,7 +83,12 @@ export function parseHtmlEditorVariableToken(token: string | null | undefined): 
 function normalizeVariableInput(input: HtmlEditorVariableInput, index: number): HtmlEditorVariableItem | null {
   const rawToken = input.variable ?? input.Variable ?? input.key ?? '';
   const parsedToken = parseHtmlEditorVariableToken(rawToken);
-  const rawType = input.type ?? input.Type ?? parsedToken?.type ?? (isBuiltinVariableName(String(input.attribute ?? input.Attribute ?? parsedToken?.attribute ?? '')) ? 'system' : 'user');
+  const inferredAttribute = String(input.attribute ?? input.Attribute ?? parsedToken?.attribute ?? '').trim();
+  const rawType =
+    input.type ??
+    input.Type ??
+    parsedToken?.type ??
+    (inferredAttribute === HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE ? 'system' : 'user');
   const type: HtmlEditorVariableType = rawType === 'system' ? 'system' : 'user';
   const rawAttribute = input.attribute ?? input.Attribute ?? parsedToken?.attribute ?? '';
   const attribute = String(rawAttribute).trim();

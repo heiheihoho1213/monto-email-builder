@@ -1,4 +1,3 @@
-import { isBuiltinVariableName } from '../blocks/Text/variableCatalog';
 import { getResolvedTextBodyHtml, type TextProps } from 'monto-email-block-text';
 
 import { extractInsertedVariableOccurrencesFromHtmlString } from '../blocks/Text/textDom';
@@ -21,6 +20,7 @@ export type EmailTemplateVariableItem = {
 };
 
 const VARIABLE_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const LEGACY_SYSTEM_VARIABLE_NAMES = new Set<string>(['unsubscribe_link']);
 
 /** 从入参解析「变量名」：优先 `attribute`，否则从 `variable` 的 `{{name}}` 解析 */
 function resolveAttributeKeyFromInput(v: EmailBuilderVariableInput): string | null {
@@ -97,7 +97,7 @@ export function hydrateVariableDefaultsFromEmbeddedVariables(
         default: def,
       });
       if (!key) continue;
-      if (isBuiltinVariableName(key)) continue;
+      if (LEGACY_SYSTEM_VARIABLE_NAMES.has(key)) continue;
       if (vd[key] !== def) {
         vd[key] = def;
         blockChanged = true;

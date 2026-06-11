@@ -68,6 +68,7 @@ import {
   HTML_EDITOR_VARIABLE_GROUPS,
   isHtmlEditorBuiltinVariableName,
   mergeScannedHtmlEditorVariables,
+  normalizeHtmlEditorBuiltinSyntax,
   normalizeHtmlEditorVariables,
   scanHtmlEditorVariables,
   type HtmlEditorVariableInput,
@@ -257,7 +258,7 @@ ref: React.Ref<HtmlEditorRef>,
   const [mode, setMode] = useState<HtmlEditorMode>(initialMode);
   const [device, setDevice] = useState<HtmlEditorDevice>(initialDevice);
   const [theme, setTheme] = useState<string>(() => getStoredTheme(initialTheme));
-  const [internalValue, setInternalValue] = useState(value);
+  const [internalValue, setInternalValue] = useState(() => normalizeHtmlEditorBuiltinSyntax(value));
   const [rightTab, setRightTab] = useState<HtmlEditorRightTab>(initialRightTab);
   const [htmlVariables, setHtmlVariables] = useState<HtmlEditorVariableItem[]>(() => normalizeHtmlEditorVariables(variables));
   const [showVariableErrors, setShowVariableErrors] = useState(false);
@@ -278,10 +279,12 @@ ref: React.Ref<HtmlEditorRef>,
 
   // 同步外部 value 变化
   useEffect(() => {
-    if (value !== internalValue) {
-      setInternalValue(value);
+    const normalizedValue = normalizeHtmlEditorBuiltinSyntax(value);
+    if (normalizedValue !== internalValue) {
+      setInternalValue(normalizedValue);
+      onChange?.(normalizedValue);
     }
-  }, [value]);
+  }, [value, internalValue, onChange]);
 
   useEffect(() => {
     if (variables === undefined) return;
@@ -336,12 +339,13 @@ ref: React.Ref<HtmlEditorRef>,
 
   // 防抖处理 onChange
   const handleChangeDebounced = (newValue: string) => {
-    setInternalValue(newValue);
+    const normalizedValue = normalizeHtmlEditorBuiltinSyntax(newValue);
+    setInternalValue(normalizedValue);
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
     debounceTimeoutRef.current = setTimeout(() => {
-      onChange?.(newValue);
+      onChange?.(normalizedValue);
     }, 300);
   };
 
