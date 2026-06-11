@@ -259,6 +259,7 @@ ref: React.Ref<HtmlEditorRef>,
   const [device, setDevice] = useState<HtmlEditorDevice>(initialDevice);
   const [theme, setTheme] = useState<string>(() => getStoredTheme(initialTheme));
   const [internalValue, setInternalValue] = useState(() => normalizeHtmlEditorBuiltinSyntax(value));
+  const internalValueRef = useRef(normalizeHtmlEditorBuiltinSyntax(value));
   const [rightTab, setRightTab] = useState<HtmlEditorRightTab>(initialRightTab);
   const [htmlVariables, setHtmlVariables] = useState<HtmlEditorVariableItem[]>(() => normalizeHtmlEditorVariables(variables));
   const [showVariableErrors, setShowVariableErrors] = useState(false);
@@ -270,6 +271,8 @@ ref: React.Ref<HtmlEditorRef>,
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const codeMirrorViewRef = useRef<any>(null);
   const htmlVariablesRef = useRef<HtmlEditorVariableItem[]>(htmlVariables);
+  const lastUserChangeValueRef = useRef<string | null>(null);
+  const lastExternalValueRef = useRef(value);
   const variableSettingsRef = useRef<HTMLDivElement>(null);
   const detectedVariablesRef = useRef<HTMLDivElement>(null);
   const pendingDetectedScrollRef = useRef(false);
@@ -277,14 +280,27 @@ ref: React.Ref<HtmlEditorRef>,
   // iframe ref 必须在组件顶层声明，不能在 renderPreview 函数内部
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // 同步外部 value 变化
   useEffect(() => {
-    const normalizedValue = normalizeHtmlEditorBuiltinSyntax(value);
-    if (normalizedValue !== internalValue) {
-      setInternalValue(normalizedValue);
-      onChange?.(normalizedValue);
+    internalValueRef.current = internalValue;
+  }, [internalValue]);
+
+  // 同步外部 value 变化：仅在 prop 真正变化时处理，避免把用户输入中的本地 state 回滚成旧 value。
+  useEffect(() => {
+    if (value === lastExternalValueRef.current) return;
+    lastExternalValueRef.current = value;
+
+    if (value === lastUserChangeValueRef.current) {
+      lastUserChangeValueRef.current = null;
+      return;
     }
-  }, [value, internalValue, onChange]);
+
+    lastUserChangeValueRef.current = null;
+    const nextValue = normalizeHtmlEditorBuiltinSyntax(value);
+    if (nextValue !== internalValueRef.current) {
+      internalValueRef.current = nextValue;
+      setInternalValue(nextValue);
+    }
+  }, [value]);
 
   useEffect(() => {
     if (variables === undefined) return;
@@ -339,13 +355,14 @@ ref: React.Ref<HtmlEditorRef>,
 
   // 防抖处理 onChange
   const handleChangeDebounced = (newValue: string) => {
-    const normalizedValue = normalizeHtmlEditorBuiltinSyntax(newValue);
-    setInternalValue(normalizedValue);
+    lastUserChangeValueRef.current = newValue;
+    internalValueRef.current = newValue;
+    setInternalValue(newValue);
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
     debounceTimeoutRef.current = setTimeout(() => {
-      onChange?.(normalizedValue);
+      onChange?.(newValue);
     }, 300);
   };
 
