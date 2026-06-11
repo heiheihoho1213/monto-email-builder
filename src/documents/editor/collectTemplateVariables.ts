@@ -1,3 +1,4 @@
+import { isBuiltinVariableName } from '../blocks/Text/variableCatalog';
 import { getResolvedTextBodyHtml, type TextProps } from 'monto-email-block-text';
 
 import { extractInsertedVariableOccurrencesFromHtmlString } from '../blocks/Text/textDom';
@@ -27,6 +28,10 @@ function resolveAttributeKeyFromInput(v: EmailBuilderVariableInput): string | nu
   if (attr && VARIABLE_NAME_RE.test(attr)) return attr;
   const varStr = (v.variable ?? '').trim();
   if (varStr.startsWith('{{') && varStr.endsWith('}}')) {
+    const n = varStr.slice(2, -2).trim();
+    if (VARIABLE_NAME_RE.test(n)) return n;
+  }
+  if (varStr.startsWith('{%') && varStr.endsWith('%}')) {
     const n = varStr.slice(2, -2).trim();
     if (VARIABLE_NAME_RE.test(n)) return n;
   }
@@ -92,6 +97,7 @@ export function hydrateVariableDefaultsFromEmbeddedVariables(
         default: def,
       });
       if (!key) continue;
+      if (isBuiltinVariableName(key)) continue;
       if (vd[key] !== def) {
         vd[key] = def;
         blockChanged = true;

@@ -4,6 +4,7 @@ import { getFontFamily, styleToCss } from 'monto-email-block-text';
 import type { TextProps } from 'monto-email-block-text';
 
 import type { TStyle } from '../helpers/TStyle';
+import { isBuiltinVariableName } from './variableCatalog';
 
 const FONT_ORDER = [
   'MODERN_SANS',
@@ -917,7 +918,7 @@ function parseDataTextVariableToken(token: string): Omit<InsertedVariableKind, '
   const t = token.trim();
   if (t.startsWith('{{') && t.endsWith('}}')) {
     const n = t.slice(2, -2);
-    if (VARIABLE_NAME_RE.test(n)) return { name: n, builtin: false };
+    if (VARIABLE_NAME_RE.test(n)) return { name: n, builtin: isBuiltinVariableName(n) };
   }
   if (t.startsWith('{%') && t.endsWith('%}')) {
     const n = t.slice(2, -2);
@@ -947,6 +948,16 @@ export function migrateVariableInstanceIdsInMargin(
 
   const allSpans = Array.from(margin.querySelectorAll('[data-text-variable]')) as HTMLElement[];
   for (const el of allSpans) {
+    const token = (el.getAttribute('data-text-variable') ?? '').trim();
+    if (token.startsWith('{{') && token.endsWith('}}')) {
+      const name = token.slice(2, -2).trim();
+      if (isBuiltinVariableName(name)) {
+        const builtinToken = `{%${name}%}`;
+        el.setAttribute('data-text-variable', builtinToken);
+        el.textContent = builtinToken;
+        domTouched = true;
+      }
+    }
     if (!el.getAttribute('data-variable-instance-id')?.trim()) {
       el.setAttribute('data-variable-instance-id', createVariableInstanceId());
       domTouched = true;

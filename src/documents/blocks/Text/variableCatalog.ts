@@ -10,7 +10,6 @@ export type VariableGroup = {
 export type CustomVariableDefinition = { name: string; label: string };
 
 export const VARIABLE_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
-export const OPTIONAL_DEFAULT_USER_VARIABLES = new Set<string>(['unsubscribe_link']);
 
 /** 变量目录（基础内置项）。自定义联系人属性会在 UI 层动态追加。 */
 export const BASE_VARIABLE_GROUPS: VariableGroup[] = [
@@ -60,7 +59,7 @@ export const BASE_VARIABLE_GROUPS: VariableGroup[] = [
   },
   {
     id: 'links',
-    items: [{ name: 'unsubscribe_link', labelKey: 'text.variables.unsubscribeLink', kind: 'user' }],
+    items: [{ name: 'unsubscribe_link', labelKey: 'text.variables.unsubscribeLink', kind: 'builtin' }],
   },
 ];
 
@@ -98,9 +97,14 @@ export function buildAllowedVariableNameSets(args: {
   return { allowedUser, allowedBuiltin };
 }
 
-export function requiresVariableDefault(name: string, kind: VariableKind = 'user'): boolean {
-  if (kind !== 'user') return false;
+export function isBuiltinVariableName(name: string): boolean {
   const attribute = name.trim();
   if (!attribute) return false;
-  return !OPTIONAL_DEFAULT_USER_VARIABLES.has(attribute);
+  return BASE_VARIABLE_GROUPS.some((group) =>
+    group.items.some((item) => item.kind === 'builtin' && item.name === attribute),
+  );
+}
+
+export function requiresVariableDefault(name: string, kind: VariableKind = 'user'): boolean {
+  return kind === 'user';
 }

@@ -1,5 +1,6 @@
 import {
   BASE_VARIABLE_GROUPS,
+  isBuiltinVariableName,
   VARIABLE_NAME_RE,
   type VariableGroup,
   type VariableKind,
@@ -53,7 +54,9 @@ export function parseHtmlEditorVariableToken(token: string | null | undefined): 
   const value = typeof token === 'string' ? token.trim() : '';
   if (value.startsWith('{{') && value.endsWith('}}')) {
     const attribute = value.slice(2, -2).trim();
-    if (VARIABLE_NAME_RE.test(attribute)) return { attribute, type: 'user' };
+    if (VARIABLE_NAME_RE.test(attribute)) {
+      return { attribute, type: isBuiltinVariableName(attribute) ? 'system' : 'user' };
+    }
   }
   if (value.startsWith('{%') && value.endsWith('%}')) {
     const attribute = value.slice(2, -2).trim();
@@ -65,7 +68,7 @@ export function parseHtmlEditorVariableToken(token: string | null | undefined): 
 function normalizeVariableInput(input: HtmlEditorVariableInput, index: number): HtmlEditorVariableItem | null {
   const rawToken = input.variable ?? input.Variable ?? input.key ?? '';
   const parsedToken = parseHtmlEditorVariableToken(rawToken);
-  const rawType = input.type ?? input.Type ?? parsedToken?.type ?? 'user';
+  const rawType = input.type ?? input.Type ?? parsedToken?.type ?? (isBuiltinVariableName(String(input.attribute ?? input.Attribute ?? parsedToken?.attribute ?? '')) ? 'system' : 'user');
   const type: HtmlEditorVariableType = rawType === 'system' ? 'system' : 'user';
   const rawAttribute = input.attribute ?? input.Attribute ?? parsedToken?.attribute ?? '';
   const attribute = String(rawAttribute).trim();
@@ -258,8 +261,8 @@ export function isHtmlEditorBuiltinVariableName(name: string): boolean {
 
 export function getHtmlEditorVariableInsertText(name: string, kind: VariableKind): string {
   const attribute = name.trim();
-  if (kind === 'user' && attribute === HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE) {
-    return `<a href="{{${HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE}}}">Unsubscribe Link</a>`;
+  if (kind === 'builtin' && attribute === HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE) {
+    return `<a href="{%${HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE}%}">Unsubscribe Link</a>`;
   }
 
   return toVariableToken(attribute, kind);
