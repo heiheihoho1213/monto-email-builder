@@ -51,7 +51,13 @@ import * as ViewColumnIconModule from '@mui/icons-material/ViewColumn';
 import * as MonitorOutlinedModule from '@mui/icons-material/MonitorOutlined';
 import * as PhoneIphoneOutlinedModule from '@mui/icons-material/PhoneIphoneOutlined';
 import { Language, t } from '../i18n';
-import { VARIABLE_NAME_RE, type VariableGroup, type VariableGroupId, type VariableKind } from '../documents/blocks/Text/variableCatalog';
+import {
+  VARIABLE_NAME_RE,
+  requiresVariableDefault,
+  type VariableGroup,
+  type VariableGroupId,
+  type VariableKind,
+} from '../documents/blocks/Text/variableCatalog';
 
 import editorTheme from '../theme';
 import { resolveMuiIcon } from '../utils/resolveMuiIcon';
@@ -355,7 +361,9 @@ ref: React.Ref<HtmlEditorRef>,
     }
     const nextVariables = scanVariablesFromValue(currentValue);
     const missing = requireVariableDefaults
-      ? nextVariables.filter((item) => item.type === 'user' && item.default.trim() === '')
+      ? nextVariables.filter(
+          (item) => item.type === 'user' && requiresVariableDefault(item.attribute, 'user') && item.default.trim() === '',
+        )
       : [];
     setShowVariableErrors(missing.length > 0);
     if (missing.length > 0) {
@@ -962,9 +970,10 @@ ref: React.Ref<HtmlEditorRef>,
           {translate('htmlEditor.variables.empty')}
         </Box>
       ) : (
-        <Box sx={{ display: 'grid', gap: 0.25 }}>
+        <Box sx={{ display: 'grid', gap: 0.75 }}>
           {visibleHtmlVariables.map((item, index) => {
-            const isMissing = showVariableErrors && item.type === 'user' && item.default.trim() === '';
+            const needsDefault = item.type === 'user' && requiresVariableDefault(item.attribute, 'user');
+            const isMissing = showVariableErrors && needsDefault && item.default.trim() === '';
             const sameNameCount = visibleHtmlVariables.filter((v) => v.type === item.type && v.attribute === item.attribute).length;
             const sameNameIndex = visibleHtmlVariables
               .slice(0, index + 1)
@@ -1004,28 +1013,33 @@ ref: React.Ref<HtmlEditorRef>,
                 >
                   {sameNameCount > 1 ? `${item.variable} (${sameNameIndex})` : item.variable}
                 </Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  disabled={item.type === 'system'}
-                  value={item.default}
-                  label={isMissing ? translate('text.variables.defaultValueLabel') : undefined}
-                  placeholder={
-                    item.type === 'system'
-                      ? translate('htmlEditor.variables.systemDefault')
-                      : translate('text.variables.defaultPlaceholder')
-                  }
-                  error={isMissing}
-                  helperText={isMissing ? translate('text.variables.defaultRequired') : undefined}
-                  FormHelperTextProps={compactHelperTextProps}
-                  onChange={(event) => handleVariableDefaultChange(item.variableInstanceId, event.target.value)}
-                  sx={{
-                    '& .MuiInputBase-input': {
-                      py: 0.75,
-                      fontSize: 13,
-                    },
-                  }}
-                />
+                {needsDefault ? (
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={item.default}
+                    label={isMissing ? translate('text.variables.defaultValueLabel') : undefined}
+                    placeholder={translate('text.variables.defaultPlaceholder')}
+                    error={isMissing}
+                    helperText={isMissing ? translate('text.variables.defaultRequired') : ' '}
+                    FormHelperTextProps={compactHelperTextProps}
+                    onChange={(event) => handleVariableDefaultChange(item.variableInstanceId, event.target.value)}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        minHeight: 40,
+                        alignItems: 'center',
+                      },
+                      '& .MuiInputBase-input': {
+                        py: 1.25,
+                        fontSize: 13,
+                      },
+                    }}
+                  />
+                ) : (
+                  <Typography component="div" variant="body2" color="text.secondary" sx={{ fontSize: 13 }}>
+                    {translate('htmlEditor.variables.systemDefault')}
+                  </Typography>
+                )}
               </Box>
             );
           })}

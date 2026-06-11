@@ -10,6 +10,7 @@ export type VariableGroup = {
 export type CustomVariableDefinition = { name: string; label: string };
 
 export const VARIABLE_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
+export const OPTIONAL_DEFAULT_USER_VARIABLES = new Set<string>(['unsubscribe_link']);
 
 /** 变量目录（基础内置项）。自定义联系人属性会在 UI 层动态追加。 */
 export const BASE_VARIABLE_GROUPS: VariableGroup[] = [
@@ -97,3 +98,9 @@ export function buildAllowedVariableNameSets(args: {
   return { allowedUser, allowedBuiltin };
 }
 
+export function requiresVariableDefault(name: string, kind: VariableKind = 'user'): boolean {
+  if (kind !== 'user') return false;
+  const attribute = name.trim();
+  if (!attribute) return false;
+  return !OPTIONAL_DEFAULT_USER_VARIABLES.has(attribute);
+}
