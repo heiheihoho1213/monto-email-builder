@@ -89,7 +89,12 @@ function normalizeVariableInput(input: HtmlEditorVariableInput, index: number): 
     input.Type ??
     parsedToken?.type ??
     (inferredAttribute === HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE ? 'system' : 'user');
-  const type: HtmlEditorVariableType = rawType === 'system' ? 'system' : 'user';
+  const type: HtmlEditorVariableType =
+    inferredAttribute === HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE
+      ? 'system'
+      : rawType === 'system'
+        ? 'system'
+        : 'user';
   const rawAttribute = input.attribute ?? input.Attribute ?? parsedToken?.attribute ?? '';
   const attribute = String(rawAttribute).trim();
 
