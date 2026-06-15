@@ -17,6 +17,8 @@ const FONT_ORDER = [
   'MONOSPACE',
 ] as const;
 
+const LEGACY_SYSTEM_VARIABLE_NAMES = new Set<string>(['unsubscribe_link']);
+
 function inferFontFamilyEnum(cssFont: string): TStyle['fontFamily'] {
   const s = cssFont.trim().toLowerCase();
   if (!s) return undefined;
@@ -917,7 +919,7 @@ function parseDataTextVariableToken(token: string): Omit<InsertedVariableKind, '
   const t = token.trim();
   if (t.startsWith('{{') && t.endsWith('}}')) {
     const n = t.slice(2, -2);
-    if (VARIABLE_NAME_RE.test(n)) return { name: n, builtin: false };
+    if (VARIABLE_NAME_RE.test(n)) return { name: n, builtin: LEGACY_SYSTEM_VARIABLE_NAMES.has(n) };
   }
   if (t.startsWith('{%') && t.endsWith('%}')) {
     const n = t.slice(2, -2);
@@ -947,6 +949,16 @@ export function migrateVariableInstanceIdsInMargin(
 
   const allSpans = Array.from(margin.querySelectorAll('[data-text-variable]')) as HTMLElement[];
   for (const el of allSpans) {
+    const token = (el.getAttribute('data-text-variable') ?? '').trim();
+    if (token.startsWith('{{') && token.endsWith('}}')) {
+      const name = token.slice(2, -2).trim();
+      if (LEGACY_SYSTEM_VARIABLE_NAMES.has(name)) {
+        const builtinToken = `{%${name}%}`;
+        el.setAttribute('data-text-variable', builtinToken);
+        el.textContent = builtinToken;
+        domTouched = true;
+      }
+    }
     if (!el.getAttribute('data-variable-instance-id')?.trim()) {
       el.setAttribute('data-variable-instance-id', createVariableInstanceId());
       domTouched = true;

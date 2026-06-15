@@ -1,6 +1,6 @@
 {
   "name": "monto-email-builder",
-  "version": "1.4.3",
+  "version": "1.4.7",
   "description": "A powerful and customizable email template builder React component library with visual editing, internationalization, and image upload support",
   "keywords": [
     "email",
@@ -72,6 +72,7 @@
     "monto-email-block-spacer": "0.0.1",
     "monto-email-block-text": "0.0.7",
     "monto-email-block-video": "0.0.1",
+    "monto-email-builder": "^1.4.5",
     "monto-email-core": "0.1.8",
     "monto-email-document-core": "0.0.1",
     "react-colorful": "^5.6.1",

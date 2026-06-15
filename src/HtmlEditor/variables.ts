@@ -38,6 +38,19 @@ export const HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE = 'unsubscribe_link';
 const USER_VARIABLE_RE = /\{\{\s*([^{}]+?)\s*\}\}/g;
 const SYSTEM_VARIABLE_RE = /\{%\s*([^{}%]+?)\s*%\}/g;
 
+export function normalizeHtmlEditorBuiltinSyntax(source: string): string {
+  const content = source || '';
+  return content.replace(USER_VARIABLE_RE, (match, rawName, offset, fullSource) => {
+    const end = offset + match.length;
+    if (!isStandaloneToken(fullSource, offset, end, '{', '}')) return match;
+
+    const attribute = String(rawName).trim();
+    if (!attribute || !VARIABLE_NAME_RE.test(attribute)) return match;
+    if (attribute !== HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE) return match;
+    return `{%${attribute}%}`;
+  });
+}
+
 function isStandaloneToken(source: string, start: number, end: number, left: string, right: string): boolean {
   return source[start - 1] !== left && source[end] !== right;
 }
@@ -53,7 +66,12 @@ export function parseHtmlEditorVariableToken(token: string | null | undefined): 
   const value = typeof token === 'string' ? token.trim() : '';
   if (value.startsWith('{{') && value.endsWith('}}')) {
     const attribute = value.slice(2, -2).trim();
-    if (VARIABLE_NAME_RE.test(attribute)) return { attribute, type: 'user' };
+    if (VARIABLE_NAME_RE.test(attribute)) {
+      return {
+        attribute,
+        type: attribute === HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE ? 'system' : 'user',
+      };
+    }
   }
   if (value.startsWith('{%') && value.endsWith('%}')) {
     const attribute = value.slice(2, -2).trim();
@@ -65,8 +83,18 @@ export function parseHtmlEditorVariableToken(token: string | null | undefined): 
 function normalizeVariableInput(input: HtmlEditorVariableInput, index: number): HtmlEditorVariableItem | null {
   const rawToken = input.variable ?? input.Variable ?? input.key ?? '';
   const parsedToken = parseHtmlEditorVariableToken(rawToken);
-  const rawType = input.type ?? input.Type ?? parsedToken?.type ?? 'user';
-  const type: HtmlEditorVariableType = rawType === 'system' ? 'system' : 'user';
+  const inferredAttribute = String(input.attribute ?? input.Attribute ?? parsedToken?.attribute ?? '').trim();
+  const rawType =
+    input.type ??
+    input.Type ??
+    parsedToken?.type ??
+    (inferredAttribute === HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE ? 'system' : 'user');
+  const type: HtmlEditorVariableType =
+    inferredAttribute === HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE
+      ? 'system'
+      : rawType === 'system'
+        ? 'system'
+        : 'user';
   const rawAttribute = input.attribute ?? input.Attribute ?? parsedToken?.attribute ?? '';
   const attribute = String(rawAttribute).trim();
 
@@ -258,8 +286,8 @@ export function isHtmlEditorBuiltinVariableName(name: string): boolean {
 
 export function getHtmlEditorVariableInsertText(name: string, kind: VariableKind): string {
   const attribute = name.trim();
-  if (kind === 'user' && attribute === HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE) {
-    return `<a href="{{${HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE}}}">Unsubscribe Link</a>`;
+  if (kind === 'builtin' && attribute === HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE) {
+    return `<a href="{%${HTML_EDITOR_UNSUBSCRIBE_LINK_VARIABLE}%}">Unsubscribe Link</a>`;
   }
 
   return toVariableToken(attribute, kind);

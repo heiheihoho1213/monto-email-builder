@@ -20,6 +20,7 @@ export type EmailTemplateVariableItem = {
 };
 
 const VARIABLE_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const LEGACY_SYSTEM_VARIABLE_NAMES = new Set<string>(['unsubscribe_link']);
 
 /** 从入参解析「变量名」：优先 `attribute`，否则从 `variable` 的 `{{name}}` 解析 */
 function resolveAttributeKeyFromInput(v: EmailBuilderVariableInput): string | null {
@@ -27,6 +28,10 @@ function resolveAttributeKeyFromInput(v: EmailBuilderVariableInput): string | nu
   if (attr && VARIABLE_NAME_RE.test(attr)) return attr;
   const varStr = (v.variable ?? '').trim();
   if (varStr.startsWith('{{') && varStr.endsWith('}}')) {
+    const n = varStr.slice(2, -2).trim();
+    if (VARIABLE_NAME_RE.test(n)) return n;
+  }
+  if (varStr.startsWith('{%') && varStr.endsWith('%}')) {
     const n = varStr.slice(2, -2).trim();
     if (VARIABLE_NAME_RE.test(n)) return n;
   }
@@ -92,6 +97,7 @@ export function hydrateVariableDefaultsFromEmbeddedVariables(
         default: def,
       });
       if (!key) continue;
+      if (LEGACY_SYSTEM_VARIABLE_NAMES.has(key)) continue;
       if (vd[key] !== def) {
         vd[key] = def;
         blockChanged = true;

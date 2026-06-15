@@ -59,7 +59,7 @@ export const BASE_VARIABLE_GROUPS: VariableGroup[] = [
   },
   {
     id: 'links',
-    items: [{ name: 'unsubscribe_link', labelKey: 'text.variables.unsubscribeLink', kind: 'user' }],
+    items: [{ name: 'unsubscribe_link', labelKey: 'text.variables.unsubscribeLink', kind: 'builtin' }],
   },
 ];
 
@@ -97,3 +97,14 @@ export function buildAllowedVariableNameSets(args: {
   return { allowedUser, allowedBuiltin };
 }
 
+export function isBuiltinVariableName(name: string): boolean {
+  const attribute = name.trim();
+  if (!attribute) return false;
+  return BASE_VARIABLE_GROUPS.some((group) =>
+    group.items.some((item) => item.kind === 'builtin' && item.name === attribute),
+  );
+}
+
+export function requiresVariableDefault(name: string, kind: VariableKind = 'user'): boolean {
+  return kind === 'user';
+}

@@ -51,7 +51,13 @@ import * as ViewColumnIconModule from '@mui/icons-material/ViewColumn';
 import * as MonitorOutlinedModule from '@mui/icons-material/MonitorOutlined';
 import * as PhoneIphoneOutlinedModule from '@mui/icons-material/PhoneIphoneOutlined';
 import { Language, t } from '../i18n';
-import { VARIABLE_NAME_RE, type VariableGroup, type VariableGroupId, type VariableKind } from '../documents/blocks/Text/variableCatalog';
+import {
+  VARIABLE_NAME_RE,
+  requiresVariableDefault,
+  type VariableGroup,
+  type VariableGroupId,
+  type VariableKind,
+} from '../documents/blocks/Text/variableCatalog';
 
 import editorTheme from '../theme';
 import { resolveMuiIcon } from '../utils/resolveMuiIcon';
@@ -62,6 +68,7 @@ import {
   HTML_EDITOR_VARIABLE_GROUPS,
   isHtmlEditorBuiltinVariableName,
   mergeScannedHtmlEditorVariables,
+  normalizeHtmlEditorBuiltinSyntax,
   normalizeHtmlEditorVariables,
   scanHtmlEditorVariables,
   type HtmlEditorVariableInput,
@@ -251,7 +258,8 @@ ref: React.Ref<HtmlEditorRef>,
   const [mode, setMode] = useState<HtmlEditorMode>(initialMode);
   const [device, setDevice] = useState<HtmlEditorDevice>(initialDevice);
   const [theme, setTheme] = useState<string>(() => getStoredTheme(initialTheme));
-  const [internalValue, setInternalValue] = useState(value);
+  const [internalValue, setInternalValue] = useState(() => normalizeHtmlEditorBuiltinSyntax(value));
+  const internalValueRef = useRef(normalizeHtmlEditorBuiltinSyntax(value));
   const [rightTab, setRightTab] = useState<HtmlEditorRightTab>(initialRightTab);
   const [htmlVariables, setHtmlVariables] = useState<HtmlEditorVariableItem[]>(() => normalizeHtmlEditorVariables(variables));
   const [showVariableErrors, setShowVariableErrors] = useState(false);
@@ -263,6 +271,8 @@ ref: React.Ref<HtmlEditorRef>,
   const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const codeMirrorViewRef = useRef<any>(null);
   const htmlVariablesRef = useRef<HtmlEditorVariableItem[]>(htmlVariables);
+  const lastUserChangeValueRef = useRef<string | null>(null);
+  const lastExternalValueRef = useRef(value);
   const variableSettingsRef = useRef<HTMLDivElement>(null);
   const detectedVariablesRef = useRef<HTMLDivElement>(null);
   const pendingDetectedScrollRef = useRef(false);
@@ -270,10 +280,25 @@ ref: React.Ref<HtmlEditorRef>,
   // iframe ref 必须在组件顶层声明，不能在 renderPreview 函数内部
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // 同步外部 value 变化
   useEffect(() => {
-    if (value !== internalValue) {
-      setInternalValue(value);
+    internalValueRef.current = internalValue;
+  }, [internalValue]);
+
+  // 同步外部 value 变化：仅在 prop 真正变化时处理，避免把用户输入中的本地 state 回滚成旧 value。
+  useEffect(() => {
+    if (value === lastExternalValueRef.current) return;
+    lastExternalValueRef.current = value;
+
+    if (value === lastUserChangeValueRef.current) {
+      lastUserChangeValueRef.current = null;
+      return;
+    }
+
+    lastUserChangeValueRef.current = null;
+    const nextValue = normalizeHtmlEditorBuiltinSyntax(value);
+    if (nextValue !== internalValueRef.current) {
+      internalValueRef.current = nextValue;
+      setInternalValue(nextValue);
     }
   }, [value]);
 
@@ -330,6 +355,8 @@ ref: React.Ref<HtmlEditorRef>,
 
   // 防抖处理 onChange
   const handleChangeDebounced = (newValue: string) => {
+    lastUserChangeValueRef.current = newValue;
+    internalValueRef.current = newValue;
     setInternalValue(newValue);
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
@@ -355,7 +382,9 @@ ref: React.Ref<HtmlEditorRef>,
     }
     const nextVariables = scanVariablesFromValue(currentValue);
     const missing = requireVariableDefaults
-      ? nextVariables.filter((item) => item.type === 'user' && item.default.trim() === '')
+      ? nextVariables.filter(
+          (item) => item.type === 'user' && requiresVariableDefault(item.attribute, 'user') && item.default.trim() === '',
+        )
       : [];
     setShowVariableErrors(missing.length > 0);
     if (missing.length > 0) {
@@ -962,9 +991,10 @@ ref: React.Ref<HtmlEditorRef>,
           {translate('htmlEditor.variables.empty')}
         </Box>
       ) : (
-        <Box sx={{ display: 'grid', gap: 0.25 }}>
+        <Box sx={{ display: 'grid', gap: 0.75 }}>
           {visibleHtmlVariables.map((item, index) => {
-            const isMissing = showVariableErrors && item.type === 'user' && item.default.trim() === '';
+            const needsDefault = item.type === 'user' && requiresVariableDefault(item.attribute, 'user');
+            const isMissing = showVariableErrors && needsDefault && item.default.trim() === '';
             const sameNameCount = visibleHtmlVariables.filter((v) => v.type === item.type && v.attribute === item.attribute).length;
             const sameNameIndex = visibleHtmlVariables
               .slice(0, index + 1)
@@ -1004,28 +1034,33 @@ ref: React.Ref<HtmlEditorRef>,
                 >
                   {sameNameCount > 1 ? `${item.variable} (${sameNameIndex})` : item.variable}
                 </Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  disabled={item.type === 'system'}
-                  value={item.default}
-                  label={isMissing ? translate('text.variables.defaultValueLabel') : undefined}
-                  placeholder={
-                    item.type === 'system'
-                      ? translate('htmlEditor.variables.systemDefault')
-                      : translate('text.variables.defaultPlaceholder')
-                  }
-                  error={isMissing}
-                  helperText={isMissing ? translate('text.variables.defaultRequired') : undefined}
-                  FormHelperTextProps={compactHelperTextProps}
-                  onChange={(event) => handleVariableDefaultChange(item.variableInstanceId, event.target.value)}
-                  sx={{
-                    '& .MuiInputBase-input': {
-                      py: 0.75,
-                      fontSize: 13,
-                    },
-                  }}
-                />
+                {needsDefault ? (
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={item.default}
+                    label={isMissing ? translate('text.variables.defaultValueLabel') : undefined}
+                    placeholder={translate('text.variables.defaultPlaceholder')}
+                    error={isMissing}
+                    helperText={isMissing ? translate('text.variables.defaultRequired') : ' '}
+                    FormHelperTextProps={compactHelperTextProps}
+                    onChange={(event) => handleVariableDefaultChange(item.variableInstanceId, event.target.value)}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        minHeight: 40,
+                        alignItems: 'center',
+                      },
+                      '& .MuiInputBase-input': {
+                        py: 1.25,
+                        fontSize: 13,
+                      },
+                    }}
+                  />
+                ) : (
+                  <Typography component="div" variant="body2" color="text.secondary" sx={{ fontSize: 13 }}>
+                    {translate('htmlEditor.variables.systemDefault')}
+                  </Typography>
+                )}
               </Box>
             );
           })}

@@ -29,7 +29,14 @@ import {
   readInlineStyleInRangeFromHtmlString,
 } from '../../../../documents/blocks/Text/textDom';
 import type { TEditorConfiguration } from '../../../../documents/editor/core';
-import { BASE_VARIABLE_GROUPS, CustomVariableDefinition, VARIABLE_NAME_RE, VariableGroup, VariableGroupId } from '../../../../documents/blocks/Text/variableCatalog';
+import {
+  BASE_VARIABLE_GROUPS,
+  CustomVariableDefinition,
+  VARIABLE_NAME_RE,
+  VariableGroup,
+  VariableGroupId,
+  requiresVariableDefault,
+} from '../../../../documents/blocks/Text/variableCatalog';
 import { TStyle } from '../../../../documents/blocks/helpers/TStyle';
 
 import BaseSidebarPanel from './helpers/BaseSidebarPanel';
@@ -417,6 +424,7 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
     for (const o of occ) {
       if (o.builtin) continue;
       if (!allowedVariableNames.has(o.name)) continue;
+      if (!requiresVariableDefault(o.name, 'user')) continue;
       if (!o.instanceId) continue;
       const n = nameCount.get(o.name) ?? 0;
       nameCount.set(o.name, n + 1);
@@ -450,6 +458,9 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   const [linkTargetBlank, setLinkTargetBlank] = useState<boolean>(true);
   const [linkUrlTouched, setLinkUrlTouched] = useState<boolean>(false);
   const linkUrlInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingVariableNeedsDefault = pendingVariableInsert
+    ? pendingVariableInsert.kind === 'user' && requiresVariableDefault(pendingVariableInsert.name, 'user')
+    : false;
 
   const RFC5322_EMAIL_RE =
     /^(?:[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-zA-Z0-9-]*[a-zA-Z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/;
@@ -598,6 +609,21 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
       handleCloseVariable();
       return;
     }
+    if (!requiresVariableDefault(name, 'user')) {
+      const token = `{{${name}}}`;
+      if (selectedInsertedVariable && textSelection) {
+        queueTextDomApply(blockId, {
+          kind: 'replaceVariable',
+          token,
+          start: textSelection.start,
+          end: textSelection.end,
+        });
+      } else {
+        queueTextDomApply(blockId, { kind: 'variable', token });
+      }
+      handleCloseVariable();
+      return;
+    }
     setPendingVariableInsert({ name, kind });
     setPendingVariableDefault('');
     setPendingVariableDefaultTouched(false);
@@ -678,7 +704,7 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
   const handleConfirmInsertVariable = () => {
     if (!pendingVariableInsert) return;
     const defaultValue = pendingVariableDefault.trim();
-    if (defaultValue === '') return;
+    if (pendingVariableNeedsDefault && defaultValue === '') return;
     const token = pendingVariableInsert.kind === 'builtin' ? `{%${pendingVariableInsert.name}%}` : `{{${pendingVariableInsert.name}}}`;
     if (selectedInsertedVariable && textSelection) {
       queueTextDomApply(blockId, {
@@ -686,13 +712,13 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
         token,
         start: textSelection.start,
         end: textSelection.end,
-        defaultValue,
+        ...(defaultValue ? { defaultValue } : {}),
       });
     } else {
       queueTextDomApply(blockId, {
         kind: 'variable',
         token,
-        defaultValue,
+        ...(defaultValue ? { defaultValue } : {}),
       });
     }
     handleCloseVariable();
@@ -1160,9 +1186,11 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
                 label={
                   <>
                     {t('text.variables.defaultValueLabel')}
-                    <Box component="span" sx={{ color: 'error.main', ml: 0.25 }}>
-                      *
-                    </Box>
+                    {pendingVariableNeedsDefault && (
+                      <Box component="span" sx={{ color: 'error.main', ml: 0.25 }}>
+                        *
+                      </Box>
+                    )}
                   </>
                 }
                 value={pendingVariableDefault}
@@ -1172,8 +1200,12 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
                   if (!pendingVariableDefaultTouched) setPendingVariableDefaultTouched(true);
                 }}
                 onBlur={() => setPendingVariableDefaultTouched(true)}
-                error={pendingVariableDefaultTouched && pendingVariableDefault.trim() === ''}
-                helperText={pendingVariableDefaultTouched && pendingVariableDefault.trim() === '' ? t('text.variables.defaultRequired') : ' '}
+                error={pendingVariableNeedsDefault && pendingVariableDefaultTouched && pendingVariableDefault.trim() === ''}
+                helperText={
+                  pendingVariableNeedsDefault && pendingVariableDefaultTouched && pendingVariableDefault.trim() === ''
+                    ? t('text.variables.defaultRequired')
+                    : ' '
+                }
               />
               <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', pt: 0.5 }}>
                 <Button variant="outlined" onClick={handleBackToVariablePick}>
@@ -1182,7 +1214,7 @@ export default function TextSidebarPanel({ blockId, data, setData }: TextSidebar
                 <Button
                   variant="contained"
                   onClick={handleConfirmInsertVariable}
-                  disabled={pendingVariableDefault.trim() === ''}
+                  disabled={pendingVariableNeedsDefault && pendingVariableDefault.trim() === ''}
                 >
                   {t('text.variables.confirmInsert')}
                 </Button>
