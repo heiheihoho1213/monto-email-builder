@@ -229,6 +229,9 @@ npm install
 # 启动开发服务器
 npm run dev
 
+## 实际应用
+https://uspeedo.com/en/email 欢迎使用
+
 # 构建
 npm run build
 ```
