@@ -220,6 +220,15 @@ function MyComponent() {
 - ✅ 图片上传支持
 - ✅ 完全可定制
 
+## 实际应用
+
+已实际应用于uspeedo邮件产品：https://uspeedo.com/en/email 欢迎使用
+
+提供大量精美邮件模板：https://console.uspeedo.com/email/template
+
+<img width="1513" height="941" alt="image" src="https://github.com/user-attachments/assets/a0861627-2894-40aa-a464-7624aaa59c07" />
+
+
 ## 开发
 
 ```bash
@@ -228,9 +237,6 @@ npm install
 
 # 启动开发服务器
 npm run dev
-
-## 实际应用
-https://uspeedo.com/en/email 欢迎使用
 
 # 构建
 npm run build
