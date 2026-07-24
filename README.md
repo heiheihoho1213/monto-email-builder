@@ -222,7 +222,7 @@ function MyComponent() {
 
 ## 实际应用
 
-已实际应用于uspeedo邮件产品：https://uspeedo.com/en/email 欢迎使用
+已实际应用于[uspeedo邮件产品](https://console.uspeedo.com/email?source_code=HI3880) 欢迎使用
 
 提供大量精美邮件模板：https://console.uspeedo.com/email/template?source_code=HI3880
 
