@@ -224,7 +224,7 @@ function MyComponent() {
 
 已实际应用于uspeedo邮件产品：https://uspeedo.com/en/email 欢迎使用
 
-提供大量精美邮件模板：https://console.uspeedo.com/email/template
+提供大量精美邮件模板：https://console.uspeedo.com/email/template?source_code=HI3880
 
 <img width="1513" height="941" alt="image" src="https://github.com/user-attachments/assets/a0861627-2894-40aa-a464-7624aaa59c07" />
 
