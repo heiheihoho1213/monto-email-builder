@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'monto-email-core';
 import {
   initializeStore,
   resetDocument,
+  setEditingSlot,
   setImageUploadHandler,
   setShowJsonFeatures,
   setShowSamplesDrawerTitle,
@@ -235,6 +236,7 @@ const EmailBuilder = forwardRef<EmailBuilderRef, EmailBuilderProps>(({
   useEffect(() => {
     if (initialDocument !== undefined) {
       const hydrated = hydrateVariableDefaultsFromEmbeddedVariables(initialDocument);
+      setEditingSlot(null);
       resetDocument(applyExternalVariableDefaultsToDocument(hydrated, variables));
     }
   }, [initialDocument]);

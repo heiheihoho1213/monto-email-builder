@@ -7,7 +7,8 @@ import * as DeleteOutlinedModule from '@mui/icons-material/DeleteOutlined';
 import { Divider, IconButton, Paper, Stack, SxProps, Tooltip } from '@mui/material';
 
 import { TEditorBlock, TEditorConfiguration } from '../../../editor/core';
-import { resetDocument, setSelectedBlockId, useDocument } from '../../../editor/EditorContext';
+import { replaceDocument, resetDocument, setSelectedBlockId, useDocument } from '../../../editor/EditorContext';
+import { HEADER_BLOCK_ID, clearHeaderFooter, isLockedBlockId } from '../../../editor/headerFooter';
 import { ColumnsContainerProps } from '../../ColumnsContainer/ColumnsContainerPropsSchema';
 
 import { resolveMuiIcon } from '../../../../utils/resolveMuiIcon';
@@ -119,7 +120,8 @@ export default function TuneMenu({ blockId }: Props) {
     let childrenIds: string[] | null | undefined = null;
 
     if (container.type === 'EmailLayout') {
-      childrenIds = container.data.childrenIds;
+      // 页眉/页脚固定在首尾，不参与上下移动
+      childrenIds = container.data.childrenIds?.filter((id) => !isLockedBlockId(id));
     } else if (container.type === 'Container') {
       childrenIds = container.data.props?.childrenIds;
     } else if (container.type === 'ColumnsContainer' && parentInfo.columnIndex !== null) {
@@ -415,6 +417,23 @@ export default function TuneMenu({ blockId }: Props) {
     resetDocument(nDocument);
     setSelectedBlockId(blockId);
   };
+
+  // 页眉/页脚只提供删除：清空内容后画布重新提示选择模板
+  if (isLockedBlockId(blockId)) {
+    const handleResetSlot = () => {
+      replaceDocument(clearHeaderFooter(document, blockId === HEADER_BLOCK_ID ? 'header' : 'footer'));
+      setSelectedBlockId(null);
+    };
+    return (
+      <Paper sx={sx} onClick={(ev) => ev.stopPropagation()}>
+        <Tooltip title="Delete" placement="left" arrow>
+          <IconButton onClick={handleResetSlot} sx={{ color: 'text.primary' }}>
+            <DeleteOutlined color="error" fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Paper>
+    );
+  }
 
   return (
     <Paper sx={sx} onClick={(ev) => ev.stopPropagation()}>

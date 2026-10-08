@@ -3,7 +3,8 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 
 import { TEditorBlock } from '../../../documents/editor/core';
-import { setDocument, useDocument, useSelectedBlockId } from '../../../documents/editor/EditorContext';
+import { setDocument, useDocument, useEditingSlot, useSelectedBlockId } from '../../../documents/editor/EditorContext';
+import { isLockedBlockId } from '../../../documents/editor/headerFooter';
 import { useTranslation } from '../../../i18n/useTranslation';
 
 import ButtonSidebarPanel from './input-panels/ButtonSidebarPanel';
@@ -31,6 +32,7 @@ export default function ConfigurationPanel() {
   const { t } = useTranslation();
   const document = useDocument();
   const selectedBlockId = useSelectedBlockId();
+  const editingSlot = useEditingSlot();
 
   if (!selectedBlockId) {
     return renderMessage(t('inspector.clickBlockToInspect'));
@@ -38,6 +40,11 @@ export default function ConfigurationPanel() {
   const block = document[selectedBlockId];
   if (!block) {
     return renderMessage(t('inspector.blockNotFound', { id: selectedBlockId }));
+  }
+
+  // 完整邮件视图中页眉/页脚只读，需通过「编辑」进入单独编辑
+  if (isLockedBlockId(selectedBlockId) && editingSlot !== selectedBlockId) {
+    return renderMessage(t('headerFooter.readOnlyHint'));
   }
 
   const setBlock = (conf: TEditorBlock) => setDocument({ [selectedBlockId]: conf });

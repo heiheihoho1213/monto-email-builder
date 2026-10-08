@@ -1,9 +1,12 @@
 import React from 'react';
 
-import { useCurrentBlockId } from '../../editor/EditorBlock';
-import { setDocument, setSelectedBlockId, useDocument, editorStateStore } from '../../editor/EditorContext';
+import EditorBlock, { useCurrentBlockId } from '../../editor/EditorBlock';
+import { setDocument, setSelectedBlockId, useDocument, editorStateStore, useEditingSlot, setEditingSlot } from '../../editor/EditorContext';
+import { useTranslation } from '../../../i18n/useTranslation';
 import EditorChildrenIds from '../helpers/EditorChildrenIds';
+import HeaderFooterPlaceholder, { ReadOnlyHeaderFooter } from './HeaderFooterPlaceholder';
 import { TEditorBlock } from '../../editor/core';
+import { FOOTER_BLOCK_ID, HEADER_BLOCK_ID, isLockedBlockId } from '../../editor/headerFooter';
 
 import { EmailLayoutProps } from './EmailLayoutPropsSchema';
 
@@ -47,8 +50,25 @@ function getFontFamily(fontFamily: EmailLayoutProps['fontFamily']) {
 }
 
 export default function EmailLayoutEditor(props: EmailLayoutProps) {
-  const childrenIds = props.childrenIds ?? [];
+  const allChildrenIds = props.childrenIds ?? [];
+  // 页眉/页脚固定在首尾单独渲染，中间内容区才允许增删/拖拽排序
+  const childrenIds = allChildrenIds.filter((id) => !isLockedBlockId(id));
+  const withLockedSlots = (ids: string[]) => [HEADER_BLOCK_ID, ...ids.filter((id) => !isLockedBlockId(id)), FOOTER_BLOCK_ID];
   const document = useDocument();
+  const editingSlot = useEditingSlot();
+  const { t } = useTranslation();
+
+  // 页眉/页脚为空时显示「选择页眉/页脚」占位；
+  // 完整邮件视图下页眉/页脚只读，只能在左侧「页眉/页脚模板」中进入单独编辑
+  const renderSlot = (slot: 'header' | 'footer') => {
+    const slotId = slot === 'header' ? HEADER_BLOCK_ID : FOOTER_BLOCK_ID;
+    const slotBlock = document[slotId];
+    if (!slotBlock) return null;
+    const isEmpty = slotBlock.type === 'Container' && !(slotBlock.data.props?.childrenIds ?? []).length;
+    if (isEmpty) return <HeaderFooterPlaceholder slot={slot} />;
+    if (editingSlot === slot) return <EditorBlock id={slotId} />;
+    return <ReadOnlyHeaderFooter slot={slot} />;
+  };
   const currentBlockId = useCurrentBlockId();
 
   const handleDropOnEmptyArea = (e: React.DragEvent) => {
@@ -57,7 +77,8 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
     const isInsideEditorChildrenIds = target.closest('[data-column-content="true"]') !== null;
 
     // 如果是在 EditorChildrenIds 内部，不处理（由 EditorChildrenIds 自己处理）
-    if (isInsideEditorChildrenIds) {
+    // 单独编辑页眉/页脚时，空白区域不接收拖放（只能拖入该区域内部）
+    if (isInsideEditorChildrenIds || editingSlot) {
       return;
     }
 
@@ -192,7 +213,7 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
     }
 
     // 追加到最下方
-    const newChildrenIds = [...childrenIds, blockId];
+    const newChildrenIds = withLockedSlots([...childrenIds, blockId]);
     const latestDocumentAfterRemove = editorStateStore.getState().document;
     const blockExists = latestDocumentAfterRemove[blockId] && latestDocumentAfterRemove[blockId].type;
 
@@ -259,6 +280,40 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
         minHeight: '100%',
       }}
     >
+      {editingSlot && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            maxWidth: props.width ? `${props.width}px` : '600px',
+            margin: '-16px auto 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '13px',
+            color: '#525252',
+          }}
+        >
+          <span>{editingSlot === 'header' ? t('headerFooter.editingHeader') : t('headerFooter.editingFooter')}</span>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingSlot(null);
+              setSelectedBlockId(null);
+            }}
+            style={{
+              border: 'none',
+              borderRadius: '4px',
+              padding: '4px 12px',
+              cursor: 'pointer',
+              color: '#fff',
+              backgroundColor: '#0079CC',
+              fontSize: '13px',
+            }}
+          >
+            {t('headerFooter.done')}
+          </button>
+        </div>
+      )}
       <table
         align="center"
         width="100%"
@@ -285,6 +340,11 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
         <tbody>
           <tr style={{ width: '100%' }}>
             <td>
+              {editingSlot === 'header' && renderSlot('header')}
+              {editingSlot === 'footer' && renderSlot('footer')}
+              {!editingSlot && (
+              <>
+              {renderSlot('header')}
               <EditorChildrenIds
                 childrenIds={childrenIds}
                 containerId={currentBlockId}
@@ -301,7 +361,7 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
                         type: 'EmailLayout',
                         data: {
                           ...document[currentBlockId].data,
-                          childrenIds: childrenIds,
+                          childrenIds: withLockedSlots(childrenIds),
                         },
                       },
                     });
@@ -316,7 +376,7 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
                         type: 'EmailLayout',
                         data: {
                           ...latestDocument[currentBlockId].data,
-                          childrenIds: childrenIds,
+                          childrenIds: withLockedSlots(childrenIds),
                         },
                       },
                     };
@@ -329,6 +389,9 @@ export default function EmailLayoutEditor(props: EmailLayoutProps) {
                   }
                 }}
               />
+              {renderSlot('footer')}
+              </>
+              )}
             </td>
           </tr>
         </tbody>

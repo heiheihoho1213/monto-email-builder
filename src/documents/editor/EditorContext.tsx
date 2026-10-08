@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'monto-email-core';
 
 import { TEditorConfiguration } from './core';
 import { HistoryManager } from './HistoryManager';
+import { ensureHeaderFooter } from './headerFooter';
 
 import { getLanguage, Language, setLanguage as setI18nLanguage } from '../../i18n';
 
@@ -56,6 +57,9 @@ type TValue = {
 
   inspectorDrawerOpen: boolean;
   samplesDrawerOpen: boolean;
+
+  /** 正在单独编辑页眉/页脚时，画布只显示该区域 */
+  editingSlot: 'header' | 'footer' | null;
 
   // 图片上传函数配置
   imageUploadHandler?: (file: File) => Promise<string>;
@@ -120,7 +124,7 @@ export function initializeStore(config?: {
   if (config?.showSamplesDrawerTitle !== undefined) initialShowSamplesDrawerTitle = config.showSamplesDrawerTitle;
 
   // 2) 计算本次初始化要应用到 store 的值（以传参为准）
-  const doc = config?.document ?? initialDocument ?? EMPTY_EMAIL_MESSAGE;
+  const doc = ensureHeaderFooter(config?.document ?? initialDocument ?? EMPTY_EMAIL_MESSAGE);
   const lang = config?.language ?? initialLanguage ?? getLanguage();
   const showJson = config?.showJsonFeatures ?? initialShowJsonFeatures;
   const showTitle = config?.showSamplesDrawerTitle ?? initialShowSamplesDrawerTitle;
@@ -149,6 +153,7 @@ export function initializeStore(config?: {
     selectedScreenSize: 'desktop',
     inspectorDrawerOpen: true,
     samplesDrawerOpen: true,
+    editingSlot: null,
   });
 
   // 同步更新 i18n（保持外部 props 与内部语言一致）
@@ -159,12 +164,12 @@ import EMPTY_EMAIL_MESSAGE from '../../getConfiguration/sample/empty-email-messa
 
 // 确保历史记录管理器已初始化
 if (!historyManager) {
-  const doc = initialDocument || EMPTY_EMAIL_MESSAGE;
+  const doc = ensureHeaderFooter(initialDocument || EMPTY_EMAIL_MESSAGE);
   historyManager = new HistoryManager(doc);
 }
 
 const editorStateStore = create<TValue>((set, get) => ({
-  document: initialDocument || EMPTY_EMAIL_MESSAGE,
+  document: ensureHeaderFooter(initialDocument || EMPTY_EMAIL_MESSAGE),
   selectedBlockId: null,
   textSelection: null,
   textCaret: null,
@@ -177,6 +182,7 @@ const editorStateStore = create<TValue>((set, get) => ({
 
   inspectorDrawerOpen: true,
   samplesDrawerOpen: true,
+  editingSlot: null,
 
   language: initialLanguage || getLanguage(),
   contactAttributes: [],
@@ -320,7 +326,8 @@ function computeHtmlAndNotify(document: TEditorConfiguration, onChange: (doc: TE
   onChange(document, html);
 }
 
-export function resetDocument(document: TValue['document']) {
+export function resetDocument(rawDocument: TValue['document']) {
+  const document = ensureHeaderFooter(rawDocument);
   // 重置历史记录管理器
   if (historyManager) {
     historyManager.reset(document);
@@ -345,10 +352,11 @@ export function resetDocument(document: TValue['document']) {
 
 export function setDocument(document: TValue['document'], options?: { recordHistory?: boolean }) {
   const originalDocument = editorStateStore.getState().document;
-  const newDocument = {
+  // 页眉/页脚始终位于根节点首尾，且不可删除
+  const newDocument = ensureHeaderFooter({
     ...originalDocument,
     ...document,
-  };
+  });
 
   // 如果需要记录历史（默认记录）
   if (options?.recordHistory !== false && historyManager) {
@@ -376,6 +384,27 @@ export function setDocument(document: TValue['document'], options?: { recordHist
       });
     }
   }
+}
+
+/** 整体替换 document（可删除块），并记录历史 */
+export function replaceDocument(rawDocument: TValue['document']) {
+  const recordedDocument = historyManager
+    ? historyManager.record(ensureHeaderFooter(rawDocument))
+    : ensureHeaderFooter(rawDocument);
+  editorStateStore.setState({ document: recordedDocument });
+
+  const onChange = editorStateStore.getState().onChange;
+  if (onChange) {
+    queueMicrotask(() => computeHtmlAndNotify(recordedDocument, onChange));
+  }
+}
+
+export function useEditingSlot() {
+  return editorStateStore((s) => s.editingSlot);
+}
+
+export function setEditingSlot(editingSlot: TValue['editingSlot']) {
+  return editorStateStore.setState({ editingSlot });
 }
 
 export function setOnChange(onChange: TValue['onChange']) {

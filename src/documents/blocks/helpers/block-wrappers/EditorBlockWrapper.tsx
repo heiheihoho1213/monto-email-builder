@@ -3,8 +3,10 @@ import React, { CSSProperties, useState, useRef, useEffect } from 'react';
 import { Box, IconButton } from '@mui/material';
 import * as DragIndicatorModule from '@mui/icons-material/DragIndicator';
 import { useCurrentBlockId } from '../../../editor/EditorBlock';
-import { setSelectedBlockId, useSelectedBlockId, editorStateStore } from '../../../editor/EditorContext';
+import { setSelectedBlockId, useSelectedBlockId, editorStateStore, useEditingSlot } from '../../../editor/EditorContext';
 import TuneMenu from './TuneMenu';
+import { HEADER_BLOCK_ID, isLockedBlockId } from '../../../editor/headerFooter';
+import { useTranslation } from '../../../../i18n/useTranslation';
 
 import { resolveMuiIcon } from '../../../../utils/resolveMuiIcon';
 
@@ -27,7 +29,13 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
   const editorDocument = editorStateStore.getState().document;
   const blockData = editorDocument[blockId];
   // ColumnsContainer 也可以拖拽，但需要在 handleDragStart 中检查是否点击的是列区域
-  const isDraggable = true;
+  // 页眉/页脚不可拖拽、不可删除
+  const isLocked = isLockedBlockId(blockId);
+  const isDraggable = !isLocked;
+  // 完整邮件视图下页眉/页脚内容只读，只能选中整个区域
+  const editingSlot = useEditingSlot();
+  const isReadOnlySlot = isLocked && editingSlot !== blockId;
+  const { t } = useTranslation();
 
   // 检查是否是 Container 或 ColumnsContainer
   const isContainer = blockData?.type === 'Container' || blockData?.type === 'ColumnsContainer';
@@ -194,7 +202,28 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
       }}
     >
       {/* 拖拽 Handler - 鼠标悬停时显示，但如果鼠标在子元素上则不显示（针对 Container 和 ColumnsContainer） */}
-      {mouseInside && (!isContainer || !mouseOnChild) && (
+      {isLocked && (mouseInside || selectedBlockId === blockId) && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            zIndex: 10,
+            px: 0.75,
+            py: 0.25,
+            fontSize: 11,
+            fontWeight: 600,
+            lineHeight: 1.4,
+            color: '#fff',
+            backgroundColor: 'rgba(0,121,204,0.9)',
+            borderBottomRightRadius: 4,
+            pointerEvents: 'none',
+          }}
+        >
+          {blockId === HEADER_BLOCK_ID ? t('headerFooter.headerLabel') : t('headerFooter.footerLabel')}
+        </Box>
+      )}
+      {!isLocked && mouseInside && (!isContainer || !mouseOnChild) && (
         <IconButton
           size="small"
           onMouseDown={(e) => {
@@ -227,7 +256,13 @@ export default function EditorBlockWrapper({ children }: TEditorBlockWrapperProp
         </IconButton>
       )}
       {renderMenu()}
-      {children}
+      {isReadOnlySlot ? (
+        <div aria-readonly="true" style={{ pointerEvents: 'none', userSelect: 'none' }}>
+          {children}
+        </div>
+      ) : (
+        children
+      )}
     </Box>
   );
 }

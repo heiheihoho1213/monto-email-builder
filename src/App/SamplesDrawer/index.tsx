@@ -1,20 +1,17 @@
-import React, { useRef, useState } from 'react';
+import React from 'react';
 
-import * as ArrowRightOutlinedModule from '@mui/icons-material/ArrowRightOutlined';
-import { Button, Divider, Drawer, Stack, Typography, Popover, Paper, Box, Link } from '@mui/material';
+import { Button, Divider, Drawer, Stack, Typography } from '@mui/material';
 
-import { resetDocument, useSamplesDrawerOpen, setDocument, setSelectedBlockId, useDocument, useShowSamplesDrawerTitle } from '../../documents/editor/EditorContext';
+import { resetDocument, useSamplesDrawerOpen, setDocument, setSelectedBlockId, useDocument, useShowSamplesDrawerTitle, editorStateStore, setEditingSlot } from '../../documents/editor/EditorContext';
+import { FOOTER_BLOCK_ID, HEADER_BLOCK_ID } from '../../documents/editor/headerFooter';
 import { useLeftPanelSlot } from '../../LeftPanelSlotContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { TEditorBlock } from '../../documents/editor/core';
 import EMPTY_EMAIL_MESSAGE from '../../getConfiguration/sample/empty-email-message';
 
-import SidebarButton from './SidebarButton';
+import BuiltInTemplates from './BuiltInTemplates';
+import HeaderFooterTemplates from './HeaderFooterTemplates';
 import BlocksGrid from '../../documents/blocks/helpers/EditorChildrenIds/AddBlockMenu/BlocksGrid';
-
-import { resolveMuiIcon } from '../../utils/resolveMuiIcon';
-
-const ArrowRightOutlined = resolveMuiIcon(ArrowRightOutlinedModule);
 
 export const SAMPLES_DRAWER_WIDTH = 240;
 
@@ -30,6 +27,7 @@ export default function SamplesDrawer() {
   const leftPanelSlot = useLeftPanelSlot();
 
   const handleNewDocumentClick = () => {
+    setEditingSlot(null);
     resetDocument(EMPTY_EMAIL_MESSAGE);
   };
 
@@ -44,24 +42,30 @@ export default function SamplesDrawer() {
   };
 
   // 处理从侧边栏添加块
-  const [moreAnchorEl, setMoreAnchorEl] = useState<HTMLElement | null>(null);
-  const moreCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleMoreOpen = (e: React.MouseEvent<HTMLElement>) => {
-    if (moreCloseTimeoutRef.current) clearTimeout(moreCloseTimeoutRef.current);
-    setMoreAnchorEl(e.currentTarget);
-  };
-  const handleMoreClose = (delay = 0) => {
-    if (moreCloseTimeoutRef.current) clearTimeout(moreCloseTimeoutRef.current);
-    if (delay) {
-      moreCloseTimeoutRef.current = setTimeout(() => setMoreAnchorEl(null), delay);
-    } else {
-      moreCloseTimeoutRef.current = null;
-      setMoreAnchorEl(null);
-    }
-  };
-
   const handleBlockSelect = (block: TEditorBlock) => {
+    // 单独编辑页眉/页脚时，新块加入该区域
+    const editingSlot = editorStateStore.getState().editingSlot;
+    if (editingSlot) {
+      const slotId = editingSlot === 'header' ? HEADER_BLOCK_ID : FOOTER_BLOCK_ID;
+      const slotBlock = document[slotId];
+      if (!slotBlock || slotBlock.type !== 'Container') {
+        return;
+      }
+      const newBlockId = generateId();
+      setDocument({
+        [slotId]: {
+          type: 'Container',
+          data: {
+            ...slotBlock.data,
+            props: { ...slotBlock.data.props, childrenIds: [...(slotBlock.data.props?.childrenIds ?? []), newBlockId] },
+          },
+        },
+        [newBlockId]: block,
+      });
+      setSelectedBlockId(newBlockId);
+      return;
+    }
+
     const rootId = findRootEmailLayoutId();
     if (!rootId) {
       return;
@@ -146,65 +150,7 @@ export default function SamplesDrawer() {
                 <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, fontWeight: 500 }}>
                   {t('common.useBuiltInTemplates')}
                 </Typography>
-                <Stack alignItems="flex-start">
-                  <SidebarButton sampleName="basic-template">{t('samples.quickStart')}</SidebarButton>
-                  <SidebarButton sampleName="welcome">{t('samples.welcomeEmail')}</SidebarButton>
-                  <SidebarButton sampleName="one-time-password">{t('samples.oneTimePasscode')}</SidebarButton>
-                  <SidebarButton sampleName="reset-password">{t('samples.resetPassword')}</SidebarButton>
-                  <SidebarButton sampleName="order-ecomerce">{t('samples.orderEcommerce')}</SidebarButton>
-                  <SidebarButton sampleName="subscription-receipt">{t('samples.subscriptionReceipt')}</SidebarButton>
-                  <SidebarButton sampleName="reservation-reminder">{t('samples.reservationReminder')}</SidebarButton>
-                  <SidebarButton sampleName="post-metrics-report">{t('samples.postMetrics')}</SidebarButton>
-                  <SidebarButton sampleName="respond-to-message">{t('samples.respondToMessage')}</SidebarButton>
-
-                  <Box
-                    onMouseEnter={handleMoreOpen}
-                    onMouseLeave={() => handleMoreClose(180)}
-                    sx={{ width: '100%' }}
-                  >
-                    <Button
-                      size="small"
-                      sx={{ cursor: 'default', width: '100%', justifyContent: 'space-between' }}
-                    >
-                      <span>{t('common.more')}</span>
-                      <ArrowRightOutlined />
-                    </Button>
-                  </Box>
-                  <Link
-                    href="https://uspeedo.com/email"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    variant="caption"
-                    sx={{ px: 0.75, display: 'block', mt: 0.5 }}
-                  >
-                    {t('common.moreTemplatesAtUspeedo')}
-                  </Link>
-                  <Popover
-                    open={Boolean(moreAnchorEl)}
-                    anchorEl={moreAnchorEl}
-                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                    transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                    slotProps={{
-                      paper: {
-                        onMouseEnter: () => { if (moreCloseTimeoutRef.current) clearTimeout(moreCloseTimeoutRef.current); },
-                        onMouseLeave: () => handleMoreClose(180),
-                      },
-                    }}
-                    disableRestoreFocus
-                    sx={{ pointerEvents: moreAnchorEl ? 'auto' : 'none' }}
-                  >
-                    <Paper elevation={8} sx={{ py: 0.5, minWidth: 200 }}>
-                      <Stack py={0.5}>
-                        <SidebarButton sampleName="uspeedo-invite-to-event">{'uspeedo invite to event'}</SidebarButton>
-                        <SidebarButton sampleName="uspeedo-new-product-launch">{'uspeedo new product launch'}</SidebarButton>
-                        <SidebarButton sampleName="uspeedo-education">{'uspeedo education'}</SidebarButton>
-                        <SidebarButton sampleName="uspeedo-welcome">{'uspeedo welcome'}</SidebarButton>
-                        <SidebarButton sampleName="uspeedo-mothers-day">{'uspeedo mother\'s day'}</SidebarButton>
-                        <SidebarButton sampleName="uspeedo-shopping-cart">{'uspeedo shopping cart'}</SidebarButton>
-                      </Stack>
-                    </Paper>
-                  </Popover>
-                </Stack>
+                <BuiltInTemplates />
               </Stack>
 
               <Divider />
@@ -212,6 +158,10 @@ export default function SamplesDrawer() {
           )}
 
           {leftPanelSlot ? leftPanelSlot : null}
+
+          <HeaderFooterTemplates />
+
+          <Divider />
 
           <Stack spacing={1} sx={{ mt: showSamplesDrawerTitle ? 0 : '16px !important' }}>
             <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, fontWeight: 500 }}>
